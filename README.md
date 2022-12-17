@@ -14,9 +14,13 @@ Well then head on to the compilation section
 
 ## Compilation
 
-## Branches
+Pothole is written in Nim, so you'll need the nim compiler, your favorite C compiler, GNU make or any decent `make` implementation.
 
-The nim branch contains my attempt at writing Pothole in Nim. It's good, but I want to do it in Julia
+Simply run `make all` to build Pothole, by default it will build with sane options and be optimized for speed rather than size.
+
+## Running as-is
+
+You can execute `make test` to compile Pothole with debug options and run it instantly. This is more intended for developer testing and it is not recommended for average users.
 
 ## Copyright
 
