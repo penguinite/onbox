@@ -53,7 +53,7 @@ proc getInt*(key: string): int =
     
 proc getArray*(key:string): seq[string] =
     if exists(key) == false:
-        lib.err("Key" & key & "could not be found","conf.getBool()")
+        lib.err("Key" & key & "could not be found","conf.getArray()")
     return @[""]
 
 proc getBool*(key: string): bool =
