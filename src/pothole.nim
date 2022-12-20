@@ -3,7 +3,7 @@
 
 import conf
 import env
-import strutils
+import std/strutils
 
 echo("Pothole")
 echo("Copyright © Leo Gavilieau 2022.")
@@ -15,3 +15,4 @@ echo("Using config file: ", env.fetchConfig())
 # Setup conf.nim to parse the configuration file
 conf.setup(env.fetchConfig())
 
+echo("Getting SoulSignature: ", $conf.getBool("SignYourSoulAway"))
