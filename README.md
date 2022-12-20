@@ -10,7 +10,9 @@ It might be someday in the future more stable, but I am busy with other things a
 
 ### But I still want to use it
 
-Well then head on to the compilation section
+Well then head on to the compilation section, but don't expect it to fully work out-of-the-box, configuration is required.
+
+If I had to give an estimate, i'd say that Pothole is 0.01% towards reaching its goal of being a barely-working lightweight ActivityPub backend.
 
 ## Compilation
 

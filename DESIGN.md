@@ -26,7 +26,11 @@ AdminEmail="admin@example.ph"
 
 # Arrays are done like so:
 # Very similar to Python, right?
-# Except this time, quotes are absolutely neccessary
+# Arrays can only consist of Ints
+InstanceRules=["Hail Tux!","Hail Me!","Hail Pothole!"]
+
+# Arrays can also be multiline
+# while regular values cannot.
 InstanceRules=[
 	"Hail Tux!",
 	"Hail Me!",
@@ -34,15 +38,14 @@ InstanceRules=[
 ]
 
 # You might think, what about numbers?
-# Not needed. Pothole will convert strings
-# to integers if and when needed. Just
-# wrap them in quotes OR:
-# Add them like this
+# Pothole will convert strings to integers 
+# if and when needed. Just wrap them
+# in quotes. Or you can put them in like this:
 TheShitsIGive=0
 
 # Ok but what about booleans?
 # Right here we accept numbers
-# and strings as input but mos
+# and strings as input but most
 # importantly we make it case
 # insensitive.
 
@@ -63,7 +66,7 @@ SignYourSoulAway=0
 # Make it so easy its hard to screw up...
 ```
 
-You might think this looks lame or boring but it's easy to implement, probably faster than whatever TOML parser we're using and maybe even safer from a supply chain perspective.
+You might think this looks lame or boring but it's easy to implement, probably faster than whatever TOML parser we're using and maybe even safer from a supply chain perspective. I would want to avoid using third-party modules as much as possible since I want to write my own code that I can understand.
 
 ### Make sure every request to config data is double-checked
 
@@ -91,6 +94,10 @@ web.startServer(app, portnum)
 I know it looks and sounds inefficient but this would be way easier than having to constantly debug missing things. if what you are implementing uses an optional configuration parameter then make sure to double-check it or Error out in peace!
 
 Required options do not have to be double-checked, if they are not there then just crash and let the user deal with it! It's their fault after all...
+
+### Parse keys/options as lowercase by default.
+
+I don't think it makes sense to distinguish "PORT", "Port" and "port" in the configuration file, the configuration parser should ideally lowercase all values when adding them to `configTable` so that programs don't worry about if they are spelling it right.
 
 ## Startup routine
 

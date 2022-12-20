@@ -33,7 +33,7 @@ proc existsLongOption*(option: string): bool =
 proc fetchConfig*(): string =
     var x:string = "pothole.conf" # Temporary variable to protect configfile var
     if existsEnv("POTHOLE_CONFIG"):
-        x = getEnv("POTHOLE_CONFGI")
+        x = getEnv("POTHOLE_CONFIG")
 
     if existsLongOption("config"):
         x = getLongOption("config")

@@ -6,7 +6,7 @@ import env
 import std/strutils
 
 echo("Pothole")
-echo("Copyright © Leo Gavilieau 2022.")
+echo("Copyright © Pothole Project 2022.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
 
 
@@ -15,4 +15,6 @@ echo("Using config file: ", env.fetchConfig())
 # Setup conf.nim to parse the configuration file
 conf.setup(env.fetchConfig())
 
-echo("Getting SoulSignature: ", $conf.getBool("SignYourSoulAway"))
+echo(toLower(getString("dbtype")))
+
+# And we all *shut* down...

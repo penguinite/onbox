@@ -11,10 +11,10 @@ CDEBFLAGS=--app:console --opt:speed --threads:on --stackTrace:on
 build: clean
 	$(CC) c $(CPRODFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim
 
-.SILENT: clean test build
-.PHONY: clean test
+.SILENT: clean test build copystuff
+.PHONY: clean test copystuff
 
-all: build clean
+all: copystuff build clean
 
 clean:
 	echo "Cleaning up build folder if it exists..."
@@ -23,9 +23,14 @@ clean:
 	fi
 	mkdir "$(BUILDDIR)"
 
+copystuff: clean
+	cp $(SRCDIR)/pothole.conf $(BUILDDIR)/pothole.conf
+	cp $(SRCDIR)/pothole.example.conf $(BUILDDIR)/pothole.example.conf
+	cp LICENSE $(BUILDDIR)/LICENSE
+
 debug: clean
 	$(CC) c $(CDEBFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim 
 
-test:
+test: copystuff
 	echo "Compiling pothole..."
 	$(CC) r $(CDEBFLAGS) $(SRCDIR)/pothole.nim
