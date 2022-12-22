@@ -3,6 +3,7 @@
 
 import conf
 import env
+import lib
 
 echo("Pothole version ", lib.ver)
 echo("Copyright © Pothole Project 2022.")

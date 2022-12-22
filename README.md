@@ -16,13 +16,15 @@ If I had to give an estimate, i'd say that Pothole is 0.01% towards reaching its
 
 ## Compilation
 
-Pothole is written in Nim, so you'll need the nim compiler, your favorite C compiler, GNU make or any decent `make` implementation.
+Pothole is written in Nim, so you'll need the nim compiler and your favorite C compiler (`gcc` and `clang` work pretty well)
 
-Simply run `make all` to build Pothole, by default it will build with sane options and be optimized for speed rather than size.
+Simply run `nimble build` to build Pothole, by default it will build with sane options and be optimized for speed rather than size.
 
 ## Running as-is
 
-You can execute `make test` to compile Pothole with debug options and run it instantly. This is more intended for developer testing and it is not recommended for average users.
+You can execute `make test` to compile Pothole with debug options and run it instantly. This is more intended for developer testing and it is not recommended for average users. **Note:** This method requires GNU make or any decent `make` implementation.
+
+But if you do not want to install make then you can use the following command to execute and run Pothole as-is: `nim r  -d:release --opt:speed --threads:on --stackTrace:on src/pothole.nim`. `make test` is an alias for that command.
 
 ## Copyright
 

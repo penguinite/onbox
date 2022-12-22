@@ -5,7 +5,7 @@
 import os
 
 var lastwarn*: string = ""; # A variable to store the last-recorded warning.
-
+var ver*:string = "0.0.1"
 # If debugMode is set to true then
 # any and all calls to debug()
 # will be printed to stderr.
