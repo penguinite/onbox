@@ -1,0 +1,80 @@
+I am using this as a guide for how to store user data in databases. 
+
+table_catalog | table_schema | table_name |             column_name              |          data_type          
+---------------+--------------+------------+--------------------------------------+-----------------------------
+ akkoma        | public       | users      | status_ttl_days                      | integer
+ akkoma        | public       | users      | is_moderator                         | boolean
+ akkoma        | public       | users      | is_admin                             | boolean
+ akkoma        | public       | users      | show_role                            | boolean
+ akkoma        | public       | users      | mastofe_settings                     | jsonb
+ akkoma        | public       | users      | hide_followers_count                 | boolean
+ akkoma        | public       | users      | hide_follows_count                   | boolean
+ akkoma        | public       | users      | hide_followers                       | boolean
+ akkoma        | public       | users      | hide_follows                         | boolean
+ akkoma        | public       | users      | hide_favorites                       | boolean
+ akkoma        | public       | users      | email_notifications                  | jsonb
+ akkoma        | public       | users      | mascot                               | jsonb
+ akkoma        | public       | users      | emoji                                | jsonb
+ akkoma        | public       | users      | pleroma_settings_store               | jsonb
+ akkoma        | public       | users      | fields                               | jsonb
+ akkoma        | public       | users      | raw_fields                           | jsonb
+ akkoma        | public       | users      | is_discoverable                      | boolean
+ akkoma        | public       | users      | invisible                            | boolean
+ akkoma        | public       | users      | notification_settings                | jsonb
+ akkoma        | public       | users      | skip_thread_containment              | boolean
+ akkoma        | public       | users      | allow_following_move                 | boolean
+ akkoma        | public       | users      | accepts_chat_messages                | boolean
+ akkoma        | public       | users      | is_approved                          | boolean
+ akkoma        | public       | users      | last_active_at                       | timestamp without time zone
+ akkoma        | public       | users      | pinned_objects                       | jsonb
+ akkoma        | public       | users      | disclose_client                      | boolean
+ akkoma        | public       | users      | is_suggested                         | boolean
+ akkoma        | public       | users      | last_status_at                       | timestamp without time zone
+ akkoma        | public       | users      | id                                   | uuid
+ akkoma        | public       | users      | inserted_at                          | timestamp without time zone
+ akkoma        | public       | users      | updated_at                           | timestamp without time zone
+ akkoma        | public       | users      | avatar                               | jsonb
+ akkoma        | public       | users      | local                                | boolean
+ akkoma        | public       | users      | last_refreshed_at                    | timestamp without time zone
+ akkoma        | public       | users      | last_digest_emailed_at               | timestamp without time zone
+ akkoma        | public       | users      | multi_factor_authentication_settings | jsonb
+ akkoma        | public       | users      | banner                               | jsonb
+ akkoma        | public       | users      | background                           | jsonb
+ akkoma        | public       | users      | note_count                           | integer
+ akkoma        | public       | users      | follower_count                       | integer
+ akkoma        | public       | users      | following_count                      | integer
+ akkoma        | public       | users      | is_locked                            | boolean
+ akkoma        | public       | users      | is_confirmed                         | boolean
+ akkoma        | public       | users      | password_reset_pending               | boolean
+ akkoma        | public       | users      | is_active                            | boolean
+ akkoma        | public       | users      | no_rich_text                         | boolean
+ akkoma        | public       | users      | ap_enabled                           | boolean
+ akkoma        | public       | users      | email                                | USER-DEFINED
+ akkoma        | public       | users      | password_hash                        | character varying
+ akkoma        | public       | users      | name                                 | character varying
+ akkoma        | public       | users      | nickname                             | USER-DEFINED
+ akkoma        | public       | users      | bio                                  | text
+ akkoma        | public       | users      | domain_blocks                        | ARRAY
+ akkoma        | public       | users      | mutes                                | ARRAY
+ akkoma        | public       | users      | ap_id                                | character varying
+ akkoma        | public       | users      | muted_reblogs                        | ARRAY
+ akkoma        | public       | users      | muted_notifications                  | ARRAY
+ akkoma        | public       | users      | follower_address                     | character varying
+ akkoma        | public       | users      | subscribers                          | ARRAY
+ akkoma        | public       | users      | tags                                 | ARRAY
+ akkoma        | public       | users      | inbox                                | text
+ akkoma        | public       | users      | shared_inbox                         | text
+ akkoma        | public       | users      | following_address                    | character varying
+ akkoma        | public       | users      | keys                                 | text
+ akkoma        | public       | users      | featured_address                     | character varying
+ akkoma        | public       | users      | language                             | character varying
+ akkoma        | public       | users      | also_known_as                        | ARRAY
+ akkoma        | public       | users      | registration_reason                  | text
+ akkoma        | public       | users      | actor_type                           | character varying
+ akkoma        | public       | users      | uri                                  | text
+ akkoma        | public       | users      | raw_bio                              | text
+ akkoma        | public       | users      | public_key                           | text
+ akkoma        | public       | users      | confirmation_token                   | text
+ akkoma        | public       | users      | default_scope                        | character varying
+ akkoma        | public       | users      | blocks                               | ARRAY
+(75 rows)

@@ -196,7 +196,7 @@ proc setup*(configfile: string): bool {.discardable.} =
             if isEmptyOrWhitespace(key) or isEmptyOrWhitespace(val):
                 continue # Key/Val is empty so we skip the iteration
 
-            lib.debug("Single! Key: " & $key & ", Val: " & $val & ", Line: " & $line,"conf.setup.SingleHit")
+            lib.debug("Single! Key: " & $key & ", Val: " & $val & ", Line: " & $line,"conf.setup.SingleHit",3)
             configTable[key] = val;
             
             # Reset the vars
@@ -214,7 +214,7 @@ proc setup*(configfile: string): bool {.discardable.} =
             if isEmptyOrWhitespace(key) or isEmptyOrWhitespace(val):
                 continue # Key/Val is empty so we skip the iteration
             
-            lib.debug("Array! Key: " & $key & ", Val: " & $val & ", Line: " & $line,"conf.setup.ArrayHit")
+            lib.debug("Array! Key: " & $key & ", Val: " & $val & ", Line: " & $line,"conf.setup.ArrayHit",3)
             configTableA[key] = parseArray(val);
 
             # Reset the vars

@@ -28,9 +28,12 @@ copystuff: clean
 	cp $(SRCDIR)/pothole.example.conf $(BUILDDIR)/pothole.example.conf
 	cp LICENSE $(BUILDDIR)/LICENSE
 
-debug: clean
+debug: copystuff clean
 	$(CC) c $(CDEBFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim 
 
-test: copystuff
+test: copystuff debug clean
+	cd "$(BUILDDIR)"; ./pothole;
+
+rtest: copystuff
 	echo "Compiling pothole..."
 	$(CC) r $(CDEBFLAGS) $(SRCDIR)/pothole.nim

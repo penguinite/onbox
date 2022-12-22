@@ -1,6 +1,6 @@
 # Pothole
 
-A lightweight ActivityPub backend.
+A lightweight ActivityPub backend writte in Nim. 
 
 ## Does it work?
 

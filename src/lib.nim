@@ -2,21 +2,29 @@
 # Licensed under the AGPL version 3 or later.
 # lib.nim ;; Shared data values across the app
 
-import os
+import std/db_sqlite
 
+var doesDbExist*: bool = false;
+var db*: DbConn = nil;
 var lastwarn*: string = ""; # A variable to store the last-recorded warning.
 var ver*:string = "0.0.1"
-# If debugMode is set to true then
-# any and all calls to debug()
-# will be printed to stderr.
-# By default, debugBuffer is only
-# printed on errors...
-var debugMode*:bool = false;
 
-if existsEnv("POTHOLE_DEBUG"):
-    debugMode = true;
-
+# Debug level
+# 1: Very basic info
+# 2: 1 + output from db.setup()
+# 3: 2 + conf.setup()
+# 4: All output...
+var debugMode*:int = 1;
 var debugBuffer*:seq[string] = @[];
+
+# A convenient exit function
+# This also closes the database
+# so no corruption occurs.
+proc exit*(code: int = 0): bool {.discardable.} =
+    # Close database before quitting.
+    if doesDbExist == true:
+        db.close()
+    quit(code)
 
 # Functions to print to stderr.
 # This is mostly for wrapping.
@@ -31,7 +39,7 @@ proc err*(cause:string,place:string): bool {.discardable.} =
     stderr.writeLine("Printing debug buffer:")
     for x in debugBuffer:
         stderr.writeLine(x)
-    quit(1)
+    exit(1)
 
 # A warning is something that isn't as
 # urgent.
@@ -41,9 +49,20 @@ proc warn*(cause: string, place: string): bool {.discardable.} =
     return true
 
 # Print to the debugBuffer and maybe stderr
-proc debug*(cause: string, place: string): bool {.discardable.} =
+proc debug*(cause: string, place: string, level:int = 1): bool {.discardable.} =
     var tobePrinted = "(" & place & "): " & cause # For some strange reason, we need to do it like this
-    if debugMode == true:
+    if level <= debugMode:
         stderr.writeLine(tobePrinted)
     debugBuffer.add(tobePrinted)
     return true
+
+
+## User class
+# makes it easy to process users.
+type User* = object
+    id*: string
+    name*: string
+    email*: string
+    handle*: string
+    password*: string
+    bio*: string

@@ -108,3 +108,45 @@ It falls back to searching for a file named `pothole.conf` in the current workin
 Yada yada, at the end of the entire startup routine it should start a webserver at 3500 or a port specified in the config file, this means Pothole won't need root permissions but it also has to be proxied behind a much more powerful and stable web server (Nginx, Caddy etc.)
 
 This approach is more secure.
+
+## Database stuff
+
+This section is all about the database, ie. what tables exist, their purpose and how they are formatted. Yada yada.
+
+I am not trying to add ActivityPub support *yet* but I am trying to experiment with a small-scale social network app.
+
+For now, I will be experimenting with sqlite databases, it's important to note that sqlite is quite different. See sqlite adaptations section.
+
+To store users, we will need a separate table with the following columns:
+
+```sql
+CREATE TABLE users (
+	id BLOB PRIMARY KEY,
+	name VARCHAR(255),
+	email VARCHAR(255),
+	handle VARCHAR(65535)
+);
+```
+
+Meanwhile to store posts, we will need a separate table with the following columns:
+
+```sql
+CREATE TABLE posts (
+    id BLOB PRIMARY KEY,
+    sender VARCHAR(65535),
+	written TIMESTAMP,
+	recipients VARCHAR(65535),
+    post VARCHAR(65535)
+);
+```
+
+### Sqlite adaptations
+
+Sqlite is quite different from MariaDB or PostgreSQL, for one, it does not care about text length. We can store a very long post in a varchar and sqlite does not care if it exceeds that length.
+
+There is also no UUID datatype, we have to add it in as a string or blob (I chose blob)
+
+What about recipients? In Akkoma, recipients are implemented as an ARRAY in the database. But we don't have that with sqlite so we have to use strings again, we *could* re-purpose conf.parseArray()
+
+conf.parseArray() is too slow for this purpose though, since it was designed for an entirely different form of data. 
+We could store recipients like so: `bob@bob.thebuilder,alice@alice.wonderland` since commas *cannot* be in domain names or usernames and then use strutils.split() to split the commas into a sequence that can be evaluated.
