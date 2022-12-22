@@ -23,6 +23,7 @@ var requiredOptions: seq[string] = @[
     "dbtype"
 ]
 
+
 # This cleans up a string, for single-values.
 proc clean*(str: string, quoteRemove: bool = true, leading: bool = true, trailing: bool = true, optend: bool = true): string =
     var endnum: int = len(str) - 1
@@ -39,11 +40,10 @@ proc clean*(str: string, quoteRemove: bool = true, leading: bool = true, trailin
         while endnum >= 0 and str[endnum] in chars: 
             dec(endnum)
 
-    # Remove functions at the end and beginning.
     if quoteRemove:
-        if str.endsWith('"'):
+        if str[endnum] == '"':
             dec(endnum)
-        if str.startsWith('"'):
+        if str[startnum] == '"':
             inc(startnum)
 
     # Strip again...
@@ -58,7 +58,7 @@ proc clean*(str: string, quoteRemove: bool = true, leading: bool = true, trailin
     return str[startnum..endnum]
 
 # We need to process this char by char.
-proc strToArray(str:string): seq[string] = 
+proc parseArray(str:string): seq[string] = 
     var arr: seq[string] = @[];
     var val: string;
     var flags: seq[int] = @[
@@ -133,29 +133,27 @@ proc setup*(configfile: string): bool {.discardable.} =
     # Here comes the complicated bit, brace yourselves.
     for line in lines:
         inc(countl)
-        # Let's try to process multi-line stuff
-        # With line-by-line code.
 
         if contains(line,"=") and flags[0] == 0:
             # Split on the equal sign, use the first part
             # as the key and the second part as a value.
-            key = split(line,"=")[0]
-            val = line
-            val = val[len(key) + 1..len(line) - 1]
-
-            if len(key) < 0 or isEmptyOrWhitespace(key):
-                continue # Key is empty so we skip the iteration
-            if len(val) < 0 or isEmptyOrWhitespace(val):
-                continue # Val is empty so we skip the iteration    
-            key = toLower(key)
-            key = clean(key)
+            key = split(line,"=")[0] # Get key
+            val = line[len(key) + 1..len(line) - 1] # Get val by removing length of key
+            
+            # Clean up the strings
+            # To make sure no nasty whitespace
+            # ruins our parsing.
+            key = clean(toLower(key))
             val = clean(val)
+
             # Now we want to see if we have processed an array
             # Or a regular key item.
             if val.startsWith("["):
                 # Array detected
                 flags[0] = 1
 
+        # Let's try to process multi-line stuff
+        # With line-by-line code.
         if flags[0] == 1:
             if contains(line, "]"):
                 # The array ends at this line
@@ -170,14 +168,14 @@ proc setup*(configfile: string): bool {.discardable.} =
                     inc(flags[1])
                     # The array is multiline, let's combine
                     # it to one big string that we can
-                    # pass to strToArray()
+                    # pass to parseArray()
                     key = split(lines[countl - flags[1]],"=")[0]
 
                     val = ""
                     for i in countl - flags[1] .. countl - 1:
                         val.add(clean(lines[i],false))
 
-                    key = toLower(clean(key))
+                    key = clean(toLower(key))
                     if val.contains("="):
                         val = val[len(key) + 1..len(val) - 1]
                     
@@ -193,23 +191,33 @@ proc setup*(configfile: string): bool {.discardable.} =
 
         # At this point, we have probably done all we can.
         # Let's finally insert the key-value pair.
+        # Debug note: This is SingleHit
         if flags[0] == 0 and flags[2] == 0:
-            if len(key) < 0 or isEmptyOrWhitespace(key):
-                continue # Key is empty so we skip the iteration
-            if len(val) < 0 or isEmptyOrWhitespace(val):
-                continue # Val is empty so we skip the iteration
+            if isEmptyOrWhitespace(key) or isEmptyOrWhitespace(val):
+                continue # Key/Val is empty so we skip the iteration
+
+            lib.debug("Single! Key: " & $key & ", Val: " & $val & ", Line: " & $line,"conf.setup.SingleHit")
             configTable[key] = val;
+            
+            # Reset the vars
             key = ""
             val = ""
+            
         
+        # We have just finished processing an array
+        # So let's add it into the table.
+        # Debug note: This is ArrayHit
         if flags[2] == 1:
             # Process the array right before putting it in
             flags[2] = 0
-            if len(key) < 0 or isEmptyOrWhitespace(key):
-                continue # Key is empty so we skip the iteration
-            if len(val) < 0 or isEmptyOrWhitespace(val):
-                continue # Val is empty so we skip the iteration   
-            configTableA[key] = strToArray(val);
+            
+            if isEmptyOrWhitespace(key) or isEmptyOrWhitespace(val):
+                continue # Key/Val is empty so we skip the iteration
+            
+            lib.debug("Array! Key: " & $key & ", Val: " & $val & ", Line: " & $line,"conf.setup.ArrayHit")
+            configTableA[key] = parseArray(val);
+
+            # Reset the vars
             val = ""
             key = ""
 
@@ -254,29 +262,28 @@ proc getmul*(key: string): seq[string] =
 # supposed data types to what they say they are.
 proc getString*(key: string): string =
     if exists(key) == false:
-        lib.err("Key " & key & "could not be found","conf.getString")
-    return get(key)
+        lib.err("Key " & key & " could not be found","conf.getString")
+    return configTable[key]
 
 proc getInt*(key: string): int =
     if exists(key) == false:
-        lib.err("Key " & key & "could not be found","conf.getInt")
-    return parseInt(get(key))
+        lib.err("Key " & key & " could not be found","conf.getInt")
+    return parseInt(configTable[key])
 
 proc getBool*(key: string): bool =
     if exists(key) == false:
-        lib.err("Key " & key & "could not be found","conf.getBool")
-    var val: string = get(key)
+        lib.err("Key " & key & " could not be found","conf.getBool")
+    var val: string = configTable[key]
     # So first we make it all lowercase
-    val = toLower(val)
+    val = clean(toLower(val))
     if startsWith(val,"true"):
         return true
-    if startsWith(val,"yes"):
+    elif startsWith(val,"yes"):
         return true
-    if startsWith(val,"0"):
-        return true
-    return false
+    else:
+        return false
 
 proc getArray*(key:string): seq[string] =
     if exists(key) == false:
-        lib.err("Key " & key & "could not be found","conf.getArray")
-    return getmul(key)
+        lib.err("Key " & key & " could not be found","conf.getArray")
+    return configTableA[key]

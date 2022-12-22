@@ -54,14 +54,12 @@ SignYourSoulAway="faLSe"
 SignYourSoulAway="NO"
 SignYourSoulAway=False
 SignYourSoulAway=nO
-SignYourSoulAway=1
 
 # All of these result in True
 SignYourSoulAway="true"
 SignYourSoulAway="yes"
 SignYourSoulAway=true
 SignYourSoulAway=yes
-SignYourSoulAway=0
 
 # Make it so easy its hard to screw up...
 ```
