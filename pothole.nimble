@@ -49,7 +49,6 @@ before build:
 after build:
     cpFile("LICENSE",buildDir & "/LICENSE")
     cpFile(srcDir & "/pothole.conf",buildDir & "/pothole.conf")
-    cpFile(srcDir & "/pothole.example.conf",buildDir & "/pothole.example.conf")
 
 
 # Dependencies

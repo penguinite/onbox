@@ -9,6 +9,10 @@ I wanna try to make Pothole as light as possible. This means:
 
 So here are the things I decided.
 
+## Using Nim as a programming language.
+
+I just think Nim is so awesome.
+
 ## A custom config language instead of TOML.
 
 Instead of depending on an extra library for configuration, we could do it ourselves.

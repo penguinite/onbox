@@ -5,8 +5,9 @@ SRCDIR=src
 BUILDDIR=build
 CC=nim
 CP=cp -rv
-CPRODFLAGS=--app:console -d:release -d:safe --opt:speed --threads:on --stackTrace:on 
-CDEBFLAGS=--app:console -d:debug --threads:on --stackTrace:on 
+CPRODFLAGS=--app:console -d:release --opt:speed --threads:off --stackTrace:on 
+CSAFEFLAGS=$(CPRODFLAGS) -d:safe # Experimenting with Memory safety in Nim, do not use.
+CDEBFLAGS=--app:console -d:debug --threadAnalysis:off --threads:on --opt:speed --stackTrace:on 
 
 build: clean
 	$(CC) c $(CPRODFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim
@@ -25,7 +26,6 @@ clean:
 
 copystuff: clean
 	cp pothole.conf $(BUILDDIR)/pothole.conf
-	cp pothole.example.conf $(BUILDDIR)/pothole.example.conf
 	cp LICENSE $(BUILDDIR)/LICENSE
 
 debug: copystuff clean
@@ -33,6 +33,12 @@ debug: copystuff clean
 
 test: copystuff debug clean
 	cd "$(BUILDDIR)"; ./pothole;
+
+# Experimenting with Memory safety in Nim
+# This is not useful for production and it might actually cause
+# Bugs in production builds
+safe: copystuff clean
+	$(CC) c $(CSAFEFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim
 
 rtest: copystuff
 	echo "Compiling pothole..."

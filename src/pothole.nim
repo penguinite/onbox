@@ -1,46 +1,41 @@
 # Copyright © Pothole Project 2022
 # Licensed under the AGPL version 3 or later.
 
-import conf # For fetching configuration data
-import env # For fetching information from the environment
-import lib # Shared data, procedures etc. 
-import db # For database operations
-import os # For file system operations
+# From Pothole
+import lib
 
-echo("Pothole version ", lib.ver)
+# From standard library
+import std/os
+import std/parsecfg
+
+# From nimble
+import jester
+
+var configfile: string = "pothole.conf"
+if existsEnv("POTHOLE_CONFIG"):
+  configfile = getEnv("POTHOLE_CONFIG")
+
+# We have to initialize it for every specific thread.
+# Fortunately conf.setup() is independent, unfortunately
+# It's quite slow.
+#
+# Maybe someone can send a GitHub issue to the Jester devs
+# so they can fix this and allows us to use let instead of const?
+{.gcsafe.}:
+  try:
+    var dict = loadConfig(configfile)
+  except:
+    error("Failed to load configuration file!","main.startup")
+
+echo("Pothole version ")
 echo("Copyright © Pothole Project 2022.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
-echo("Using config file: ", env.fetchConfig())
 
-if existsEnv("POTHOLE_DEBUG"):
-    lib.debugMode = 1;
+router main:
+  get "/":
+    resp Http200, ""
+  
+while isMainModule:
+    var realjester = initJester(main, settings=newSettings(port=Port(3500)))
+    realjester.serve()
 
-lib.debug("Using config file: " & $env.fetchConfig(),"main.startup")
-lib.debug("Current working directory: " & $os.getCurrentDir(),"main.startup")
-
-# Setup conf.nim to parse the configuration file
-conf.setup(env.fetchConfig())
-
-# Setup db.nim
-db.setup()
-
-var customMan: User;
-customMan.id = "123x"
-customMan.name = "quartz"
-customMan.email = "trustymusty@protonmail.com"
-customMan.handle = ""
-customMan.password = "123"
-customMan.bio = ""
-
-if $typeof(db.addUser(customMan)) == "User":
-    # We know it has succeeded
-    echo("It worked?")
-
-
-if dbcon == nil:
-    quit(0)
-else:
-    db.close()
-    quit(0)
-
-# And we all *shut* down...
