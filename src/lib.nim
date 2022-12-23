@@ -1,11 +1,9 @@
 # Copyright © Pothole Project 2022
 # Licensed under the AGPL version 3 or later.
-# lib.nim ;; Shared data values across the app
+# lib.nim ;; Shared data and procedures across the app
 
-import std/db_sqlite
+import std/oids
 
-var doesDbExist*: bool = false;
-var db*: DbConn = nil;
 var lastwarn*: string = ""; # A variable to store the last-recorded warning.
 var ver*:string = "0.0.1"
 
@@ -16,15 +14,6 @@ var ver*:string = "0.0.1"
 # 4: All output...
 var debugMode*:int = 1;
 var debugBuffer*:seq[string] = @[];
-
-# A convenient exit function
-# This also closes the database
-# so no corruption occurs.
-proc exit*(code: int = 0): bool {.discardable.} =
-    # Close database before quitting.
-    if doesDbExist == true:
-        db.close()
-    quit(code)
 
 # Functions to print to stderr.
 # This is mostly for wrapping.
@@ -39,7 +28,7 @@ proc err*(cause:string,place:string): bool {.discardable.} =
     stderr.writeLine("Printing debug buffer:")
     for x in debugBuffer:
         stderr.writeLine(x)
-    exit(1)
+    quit(1)
 
 # A warning is something that isn't as
 # urgent.
@@ -66,3 +55,39 @@ type User* = object
     handle*: string
     password*: string
     bio*: string
+
+# Custom implementation of isEmptyOrWhitespace
+proc isEmptyOrWhitespace(str: string): bool =
+    if len(str) <= 0:
+        return true
+
+    const chars: set[char] = {' ', '\t', '\v', '\r', '\l', '\f', '\e', ' '}
+    for x in str:
+        if x notin chars:
+            return false
+        return true
+
+    return false
+
+# Returns a validated User object
+proc fixUser*(user: User): User =
+    var newuser: User;
+    # These are the things that we *cannot* fix. No matter what.
+    if isEmptyOrWhitespace(user.email) or isEmptyOrWhitespace(user.name) or isEmptyOrWhitespace(user.password):
+        echo("User: " & $user,"lib.fixUser")
+        echo("Missing critical field","lib.fixUser")
+        quit(1)
+        
+    # Add old values
+    newuser.name = user.name
+    newuser.password = user.password
+    newuser.email = user.email
+
+    if isEmptyOrWhitespace(user.id):
+        newuser.id = $genOid()
+    if isEmptyOrWhitespace(user.handle):
+        newuser.handle = user.name
+    if isEmptyOrWhitespace(user.bio):
+        newuser.bio = "Hello! I'm " & newuser.handle
+
+    return newuser

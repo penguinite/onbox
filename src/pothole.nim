@@ -7,8 +7,6 @@ import lib # Shared data, procedures etc.
 import db # For database operations
 import os # For file system operations
 
-import std/oids
-
 echo("Pothole version ", lib.ver)
 echo("Copyright © Pothole Project 2022.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
@@ -24,18 +22,25 @@ lib.debug("Current working directory: " & $os.getCurrentDir(),"main.startup")
 conf.setup(env.fetchConfig())
 
 # Setup db.nim
-db.setup(conf.getString("dbtype"))
+db.setup()
 
 var customMan: User;
-customMan.id = $genOid()
+customMan.id = "123x"
 customMan.name = "quartz"
 customMan.email = "trustymusty@protonmail.com"
-customMan.handle = "Louie Quartz"
+customMan.handle = ""
 customMan.password = "123"
-customMan.bio = "I create stuff! Stay safe.\nPronouns: any"
-db.addUser(customMan)
+customMan.bio = ""
+
+if $typeof(db.addUser(customMan)) == "User":
+    # We know it has succeeded
+    echo("It worked?")
 
 
-lib.exit()
+if dbcon == nil:
+    quit(0)
+else:
+    db.close()
+    quit(0)
 
 # And we all *shut* down...

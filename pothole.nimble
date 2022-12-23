@@ -16,7 +16,7 @@ bin           = @["pothole"]
 backend       = "c"
 
 var
-    srcDir:string="src"
+    srcDir:string="."
     buildDir:string="build"
 
 # Add different switches depending on if we are in debug/release mode

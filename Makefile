@@ -5,8 +5,8 @@ SRCDIR=src
 BUILDDIR=build
 CC=nim
 CP=cp -rv
-CPRODFLAGS=--app:console -d:release --opt:speed --threads:on --stackTrace:on 
-CDEBFLAGS=--app:console --opt:speed --threads:on --stackTrace:on 
+CPRODFLAGS=--app:console -d:release -d:safe --opt:speed --threads:on --stackTrace:on 
+CDEBFLAGS=--app:console -d:debug --threads:on --stackTrace:on 
 
 build: clean
 	$(CC) c $(CPRODFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim
@@ -24,8 +24,8 @@ clean:
 	mkdir "$(BUILDDIR)"
 
 copystuff: clean
-	cp $(SRCDIR)/pothole.conf $(BUILDDIR)/pothole.conf
-	cp $(SRCDIR)/pothole.example.conf $(BUILDDIR)/pothole.example.conf
+	cp pothole.conf $(BUILDDIR)/pothole.conf
+	cp pothole.example.conf $(BUILDDIR)/pothole.example.conf
 	cp LICENSE $(BUILDDIR)/LICENSE
 
 debug: copystuff clean
