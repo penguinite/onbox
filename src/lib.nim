@@ -2,6 +2,12 @@
 # Licensed under AGPL version 3 or later.
 # lib.nim   ;;  Shared procedures/functions
 
+# Required configuration file options to check for.
+# Split by : and use the first item as a section and the other as a key
+const requiredConfigOptions*: seq[string] = @[
+  "db:type"
+]
+
 # Debugging procedure
 proc error*(str: string, caller: string = ""): bool {.discardable.} =
   var newcaller = caller

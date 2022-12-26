@@ -54,3 +54,4 @@ after build:
 # Dependencies
 
 requires "nim >= 1.6.10"
+requires "prologue >= 0.6.4"

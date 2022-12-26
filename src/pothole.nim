@@ -3,39 +3,59 @@
 
 # From Pothole
 import lib
+import conf
+import routes
 
 # From standard library
-import std/os
-import std/parsecfg
+import std/[strutils, parsecfg, os]
 
 # From nimble
-import jester
+import prologue
 
-var configfile: string = "pothole.conf"
-if existsEnv("POTHOLE_CONFIG"):
-  configfile = getEnv("POTHOLE_CONFIG")
-
-# We have to initialize it for every specific thread.
-# Fortunately conf.setup() is independent, unfortunately
-# It's quite slow.
-#
-# Maybe someone can send a GitHub issue to the Jester devs
-# so they can fix this and allows us to use let instead of const?
-{.gcsafe.}:
-  try:
-    var dict = loadConfig(configfile)
-  except:
-    error("Failed to load configuration file!","main.startup")
 
 echo("Pothole version ")
 echo("Copyright © Pothole Project 2022.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
 
-router main:
-  get "/":
-    resp Http200, ""
-  
-while isMainModule:
-    var realjester = initJester(main, settings=newSettings(port=Port(3500)))
-    realjester.serve()
 
+var configfile: string = "pothole.conf"
+if existsEnv("POTHOLE_CONFIG"):
+  configfile = getEnv("POTHOLE_CONFIG")
+
+
+if conf.setup(loadConfig(configfile)) == false:
+  error("Failed to load configuration file!", "main.startup")
+
+# Now... We have to check if our required configuration
+# options are actually there
+for x in lib.requiredConfigOptions:
+  var list = x.split(":")
+  if exists(list[0],list[1]):
+    continue
+  else:
+    error("Missing key " & list[1] & " in section " & list[0], "main.startup")
+
+
+
+echo("Config file used: ", configfile)
+
+# Fetch port from config file
+
+var realport = Port(3500)
+if exists("web","port"):
+  realport = Port(parseInt(get("web","port")))
+
+let settings = newSettings(appName = "Pothole",port = realport)
+
+var app = newApp(settings = settings)
+
+app.addRoute(routes.patterns, "/")
+app.run()
+while isMainModule:
+  app.run()
+
+
+quit(0)
+
+
+# And we all *shut* down...
