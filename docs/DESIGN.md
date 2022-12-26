@@ -124,23 +124,28 @@ For now, I will be experimenting with sqlite databases, it's important to note t
 To store users, we will need a separate table with the following columns:
 
 ```sql
-CREATE TABLE users (
-	id BLOB PRIMARY KEY,
-	name VARCHAR(255),
-	email VARCHAR(255),
-	handle VARCHAR(65535)
+CREATE TABLE IF NOT EXISTS users (
+  id BLOB PRIMARY KEY,
+  handle VARCHAR(65535) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  local BOOLEAN, 
+  email VARCHAR(255),
+  bio VARCHAR(65535),
+  password VARCHAR(65535) NOT NULL
 );
 ```
 
 Meanwhile to store posts, we will need a separate table with the following columns:
 
 ```sql
-CREATE TABLE posts (
-    id BLOB PRIMARY KEY,
-    sender VARCHAR(65535),
-	written TIMESTAMP,
-	recipients VARCHAR(65535),
-    post VARCHAR(65535)
+CREATE TABLE IF NOT EXISTS posts (
+  id BLOB PRIMARY KEY,
+  sender VARCHAR(65535) NOT NULL,
+  written TIMESTAMP NOT NULL,
+  updated TIMESTAMP,
+  recipients VARCHAR(65535),
+  post VARCHAR(65535) NOT NULL,
+  FOREIGN KEY (sender) REFERENCES users (id)
 );
 ```
 

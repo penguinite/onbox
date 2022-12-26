@@ -5,6 +5,7 @@
 import lib
 import conf
 import routes
+import data
 
 # From standard library
 import std/[strutils, parsecfg, os]

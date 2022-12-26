@@ -16,9 +16,17 @@ If I had to give an estimate, i'd say that Pothole is 0.01% towards reaching its
 
 ## Compilation
 
-Pothole is written in Nim, so you'll need the nim compiler and your favorite C compiler (`gcc` and `clang` work pretty well)
+Pothole is written in Nim, so you'll need the nim compiler, your favorite C compiler (`gcc` and `clang` work pretty well) and Nimble.
 
 Simply run `nimble build` to build Pothole, by default it will build with sane options and be optimized for speed rather than size.
+
+It will also install any and all dependencies for you!
+
+## Installation
+
+For now, installation relies on Nimble's built-in installer, I don't know how it works but running `nimble install` builds the project and adds it to your PATH, if you are building for yourself then this is probably the best method.
+
+But make sure to copy the example configuration file since Nimble does not do it for you, and also make sure to edit it for your own needs.
 
 ## Running as-is
 
