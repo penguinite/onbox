@@ -6,9 +6,12 @@
 
 # From Pothole
 import lib
+import crypto
 
 # From Nim's standard library
-import std/[oids, strutils]
+import std/strutils
+
+
 
 # User data type, which represents actual users in the database.
 # Note: Most of these are escaped using strutils.escape()
@@ -44,71 +47,103 @@ import std/[oids, strutils]
 # Various helper procedures related to Users and Posts
 # db.nim contains the actual user-creation procedures
 
+# A function to create a new user from a handle and password
+# This user is not validated or escaped.
+proc newUser*(handle,password: string, local:bool): User =
+  if isEmptyOrWhitespace(handle):
+    error("Missing critical fields!\nProvided: " & handle & ", " & password)
+  var newuser: User;
+
+  # Create password and hash ONLY if user is local
+  if local == true:
+    for x in localInvalidHandle:
+      newuser.handle = newuser.handle.replace($x,"")
+    newuser.local = true
+  else:
+    newuser.local = false
+  
+  # Every User in our database will have an ID.
+  newuser.id = randomString() # the 16 character default is good enough for IDs
+  if local: 
+    newuser.salt = randomString(16) # 32 characters is double what NIST recommends for salt lengths.
+    newuser.password = hash(password, newuser.salt, 160000) # 120000 is what NIST recommends, but let's go a bit overboard.
+    
+  newuser.handle = handle
+  
+  return newuser
+
+# A function remove any unsafe characters
+proc safeifyHandle(handle: string): string =
+  var newhandle = handle;
+  var i: int = len(newhandle) - 1
+  for x in 0 .. i:
+    if newhandle[x] in unsafeHandleChars:
+      newhandle = newhandle.replace($newhandle[x],"")
+      i = len(newhandle) - 1
+  return newhandle
+
 # The fillEverything boolean tells us whether or not
 # we should add everything ourselves or just leave it empty
 # This procedure validates every field and makes it ready for
 # transfer to database. Make sure to unescape.
-proc safeifyUser*(handle: var string, password: var string, name: string, email: var string, bio: var string, fillEverything: bool = true): User =
+proc escapeUser*(olduser: User): User =
   # Basic validation
   # We only need handle and password, the rest can be guessed.
-  if isEmptyOrWhitespace(handle) or isEmptyOrWhitespace(password):
-    var toBePrinted: seq[string] = @[handle,name,email,bio,password]
-    error("Missing required fields for adding users\nUser: " & $toBePrinted,"lib.newUser")
+  if isEmptyOrWhitespace(olduser.handle) or isEmptyOrWhitespace(olduser.password):
+    error("Missing required fields for adding users\nUser: " & $olduser,"data.escapeUser")
   
   # Now let's add the info
   var newuser: User;
 
-  # But first let's make this lowercase and safe.
-  handle = toLowerAscii(escape(handle))
-
-  # Let's loop over every character and check it against unsafeHandleChars
-  for x in 0 .. len(handle) - 1:
-    if handle[x] in unsafeHandleChars:
-      handle = handle.replace($handle[x],"")
-  
-  newuser.handle = handle
+  # First, we loop over unsafeHandleChars and remove any characters that were found
+  # Then we escape it, and turn it to lower-case ASCII
+  newuser.handle = escape(safeifyHandle(toLowerAscii(olduser.handle)),"","")
   
   # Now let's do the display name.
-  if isEmptyOrWhitespace(name):
+  if isEmptyOrWhitespace(olduser.name):
     newuser.name = newuser.handle
   else:
-    newuser.name = escape(name)
+    newuser.name = olduser.name.replace($'\\',"")
+    newuser.name = escape(newuser.name,"","")
 
   # Now email.
   # We can use the same thing as we did with handle
-  if isEmptyOrWhitespace(email):
+  if isEmptyOrWhitespace(olduser.email):
     newuser.email = ""
   else:
-    newuser.email = toLowerAscii(escape(email))
+    # First, we loop over unsafeHandleChars and remove any characters that were found
+    # Then we escape it, and turn it to lower-case ASCII
+    newuser.email = safeifyHandle(toLowerAscii(olduser.email))
 
-    # Let's loop over every character and check it against unsafeHandleChars
-    for x in 0 .. len(email) - 1:
-      if email[x] in unsafeHandleChars:
-        email = email.replace($email[x],"")
-
-    newuser.email = email
-
-  # A bit of heuristics for local.
-  if name.contains("@") and name.contains("."):
-    newuser.local = false
-  else:
-    newuser.local = true
+  newuser.local = olduser.local
 
   # Bio.
-  if isEmptyOrWhitespace(bio):
-    newuser.bio = "Hi! I\'m " & $newuser.name
+  if isEmptyOrWhitespace(olduser.bio):
+    newuser.bio = ""
   else:
-    newuser.bio = escape(bio)
+    newuser.bio = escape(olduser.bio,"","")
    
-  # Store password and escape it
-  newuser.password = escape(password)
-  # Fill everything that's missing
-  if fillEverything:
-    newuser.id = $genOid()
-    newuser.salt = $genOid()
-  else:
-    if len(newuser.id) <= 0:
-      newuser.id = ""
-    if len(newuser.salt) <= 0:
-      newuser.salt = ""
+  # Store password & salt but escape it first.
+  newuser.password = escape(olduser.password,"","")
+  newuser.salt = escape(olduser.salt,"","")
+
+  return newuser
     
+# A procedure to unescape/revert most changes
+# made by escapeUser()
+proc unescapeUser*(olduser: User): User =
+  var newuser: User;
+  if isEmptyOrWhitespace(olduser.handle) or isEmptyOrWhitespace(olduser.id):
+    error("Faulty user provided. \nUser: " & $olduser, "data.unescapeUser")
+  newuser.id = olduser.id
+  newuser.handle = unescape(olduser.handle)
+  newuser.name = unescape(olduser.name)
+  newuser.email = unescape(olduser.email)
+  newuser.local = olduser.local
+  newuser.bio = unescape(olduser.bio)
+  newuser.password = unescape(olduser.password)
+  newuser.salt = unescape(olduser.salt)
+  return newuser
+
+# Basically escapeUser() without all the 
+# escaping.

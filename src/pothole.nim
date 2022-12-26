@@ -5,7 +5,7 @@
 import lib
 import conf
 import routes
-import data
+import db
 
 # From standard library
 import std/[strutils, parsecfg, os]
@@ -15,7 +15,7 @@ import prologue
 
 
 echo("Pothole version ")
-echo("Copyright © Pothole Project 2022.")
+echo("Copyright © Louie Quartz 2022.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
 
 
@@ -23,6 +23,7 @@ var configfile: string = "pothole.conf"
 if existsEnv("POTHOLE_CONFIG"):
   configfile = getEnv("POTHOLE_CONFIG")
 
+echo("Config file used: ", configfile)
 
 if conf.setup(loadConfig(configfile)) == false:
   error("Failed to load configuration file!", "main.startup")
@@ -36,12 +37,15 @@ for x in lib.requiredConfigOptions:
   else:
     error("Missing key " & list[1] & " in section " & list[0], "main.startup")
 
+# Catch Ctrl+C
+setControlCHook(lib.exit)
 
+# Initialize the database
+echo("Initializing database")
+db.init()
 
-echo("Config file used: ", configfile)
 
 # Fetch port from config file
-
 var realport = Port(3500)
 if exists("web","port"):
   realport = Port(parseInt(get("web","port")))
@@ -50,13 +54,15 @@ let settings = newSettings(appName = "Pothole",port = realport)
 
 var app = newApp(settings = settings)
 
-app.addRoute(routes.patterns, "/")
-app.run()
+app.addRoute("/", routes.index,@[HttpGet, HttpPost])
+
 while isMainModule:
   app.run()
 
+exit()
 
-quit(0)
+
+
 
 
 # And we all *shut* down...

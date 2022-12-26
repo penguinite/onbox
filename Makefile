@@ -5,9 +5,9 @@ SRCDIR=src
 BUILDDIR=build
 CC=nim
 CP=cp -rv
-CPRODFLAGS=--app:console -d:release --opt:speed --threads:off --stackTrace:on 
+CPRODFLAGS=--app:console -d:release --dynlibOverride:ssl --opt:speed --threads:off --stackTrace:on 
 CSAFEFLAGS=$(CPRODFLAGS) -d:safe # Experimenting with Memory safety in Nim, do not use.
-CDEBFLAGS=--app:console -d:debug --threadAnalysis:off --threads:on --opt:speed --stackTrace:on 
+CDEBFLAGS=--app:console -d:debug -d:ssl --threadAnalysis:off --threads:on --opt:speed --stackTrace:on 
 
 build: clean
 	$(CC) c $(CPRODFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim

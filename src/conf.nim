@@ -22,4 +22,4 @@ proc setup*(newcnf: Config): bool =
       config = newcnf
     return true
   except:
-    return false
+    return false # ?

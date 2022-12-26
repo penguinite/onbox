@@ -11,7 +11,11 @@ So here are the things I decided.
 
 ## Using Nim as a programming language.
 
-I just think Nim is so awesome.
+Nim is an amazing language, I love the syntax so much! and I also love how fast it is, I tried this with Julia before but Julia is not fit for this task, it does not compile down to a binary without some workarounds and experimental plugins, which I do not like.
+
+I also just love the documentation, the standard library is amazing, it has so many features.
+
+Overall, the language is fun, safe and just plain awesome! It's like Python syntactically but more like C in terms of what you can do with it. 
 
 ## A custom config language instead of TOML.
 
