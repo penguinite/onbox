@@ -163,3 +163,17 @@ What about recipients? In Akkoma, recipients are implemented as an ARRAY in the 
 
 conf.parseArray() is too slow for this purpose though, since it was designed for an entirely different form of data. 
 We could store recipients like so: `bob@bob.thebuilder,alice@alice.wonderland` since commas *cannot* be in domain names or usernames and then use strutils.split() to split the commas into a sequence that can be evaluated.
+
+## Considerations for this project
+
+I have to go soon but I wanted to write a bit about what I want this project to be, so that I do not lose track of myself. First and foremost, I want pothole to be a lightweight ActivityPub backend, I want to get as close to minimalism and speed as I can and then I want to turn Pothole into a customization heaven, what do I mean by that? Well I mean, something like Tumblr, where each user can design their own "blog" with real HTML and CSS, that sounds exciting to me!
+
+Tumblr is going to implement ActivityPub support but most instances are probably going to block them considering how huge they are (hundreds upon hundreds of times bigger than mastodon.social and mastodon.social is already blocked by a huge portion of the Fediverse) so I wanted to re-create Tumblr but in a much easier-to-deploy form and way lighter form that actually lasts!
+
+If this succeeds, then we will have a:
+1. easy-to-deploy, lightweight, scalable CMS
+2. with support for multiple users
+3. and where each user can design their own blog
+4. with support for ActivityPub.
+
+WHAT MORE COULD ANYONE POSSIBLY WANT! But that's in the future, now, I have to work to achieve the first stage which is a stable, reliable ActivityPub backend that consumes little resources. I will optimize it AS MUCH AS POSSIBLE, to get it as fast as possible and to use as little memory as possible. Minimal systems are reliable systems and reliable systems are secure systems.
