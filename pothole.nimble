@@ -54,5 +54,5 @@ after build:
 # Dependencies
 
 requires "nim >= 1.6.10"
-requires "prologue >= 0.6.4"
+requires "jester >= 0.5.0"
 requires "nimcrypto >= 0.5.4"

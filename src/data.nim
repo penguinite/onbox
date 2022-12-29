@@ -66,14 +66,14 @@ proc newUser*(handle,password: string, local:bool): User =
   newuser.id = randomString() # the 16 character default is good enough for IDs
   if local: 
     newuser.salt = randomString(16) # 32 characters is double what NIST recommends for salt lengths.
-    newuser.password = hash(password, newuser.salt, 160000) # 120000 is what NIST recommends, but let's go a bit overboard.
+    newuser.password = hash(password, newuser.salt) # 160000 is what Pleroma/Akkoma uses and it's a little bit higher than what NIST recommends for this key-derivation function.
     
   newuser.handle = handle
   
   return newuser
 
 # A function remove any unsafe characters
-proc safeifyHandle(handle: string): string =
+proc safeifyHandle*(handle: string): string =
   var newhandle = handle;
   var i: int = len(newhandle) - 1
   for x in 0 .. i:
@@ -103,7 +103,6 @@ proc escapeUser*(olduser: User): User =
   if isEmptyOrWhitespace(olduser.name):
     newuser.name = newuser.handle
   else:
-    newuser.name = olduser.name.replace($'\\',"")
     newuser.name = escape(newuser.name,"","")
 
   # Now email.
@@ -135,12 +134,28 @@ proc unescapeUser*(olduser: User): User =
   var newuser: User;
   if isEmptyOrWhitespace(olduser.handle) or isEmptyOrWhitespace(olduser.id):
     error("Faulty user provided. \nUser: " & $olduser, "data.unescapeUser")
+
+  # Verify id exists.
   newuser.id = olduser.id
   newuser.handle = unescape(olduser.handle)
-  newuser.name = unescape(olduser.name)
-  newuser.email = unescape(olduser.email)
+
+  if isEmptyOrWhitespace(olduser.name):
+    newuser.name = newuser.handle
+  else:
+    newuser.name = unescape(olduser.name)
+
+  if isEmptyOrWhitespace(olduser.email):
+    newuser.email = ""
+  else:
+    newuser.email = unescape(olduser.email)
+  
   newuser.local = olduser.local
-  newuser.bio = unescape(olduser.bio)
+  
+  if isEmptyOrWhitespace(olduser.bio):
+    newuser.bio = ""
+  else:  
+    newuser.bio = unescape(olduser.bio)
+    
   newuser.password = unescape(olduser.password)
   newuser.salt = unescape(olduser.salt)
   return newuser

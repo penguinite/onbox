@@ -49,11 +49,12 @@ proc init*(dbtype: string = get("database","type")) =
 proc addUser*(user: User): bool =
   var newuser: User = escapeUser(user);
   debug("Inserting user " & $newuser, "db.addUser")
-  if db.tryExec(sql"INSERT INTO users (id, handle, name, local, email, bio, password, salt) VALUES (?, ?, ?, ?, ?, ?, ?, ?,",newuser.id, newuser.handle, newuser.name, newuser.local, newuser.email, newuser.bio, newuser.password, newuser.salt):
+  if db.tryExec(sql"INSERT OR REPLACE INTO users (id, handle, name, local, email, bio, password, salt) VALUES (?, ?, ?, ?, ?, ?, ?, ?,",newuser.id, newuser.handle, newuser.name, newuser.local, newuser.email, newuser.bio, newuser.password, newuser.salt):
     return true
   else:
     error "Failed to insert user " & $newuser, "db.addUser"
 
+# TODO: Add some basic validation or data.unescapeUser()
 proc constructUserFromRow*(row: Row): User =
   var user: User;
   echo($row)
@@ -71,9 +72,27 @@ proc constructUserFromRow*(row: Row): User =
   return unescapeUser(user)
 
 proc getUserById*(id: string): User =
-  var row = db.getRow(sql"SELECT * FROM users WHERE id = ?", id)
+  var row = db.getRow(sql"SELECT * FROM users WHERE id = ?;", id)
   return constructUserFromRow(row)
 
 proc getUserByHandle*(handle: string): User =
-  var row = db.getRow(sql"SELECT * FROM users WHERE handle = ?", handle)
+  var row = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", handle)
   return constructUserFromRow(row)
+
+
+# Update single value in table
+# This escapes the string so
+# Use updateUserByHandle or updateUserById
+proc update*(table, condition, column, value: string, ): bool =
+  try:
+    db.exec(sql"UPDATE ? SET ? = ? WHERE ? ", table, column, escape(value,"",""), condition)
+    return true
+  except:
+    return false
+
+proc updateUserByHandle*(handle, column, value: string): bool =
+  try:
+    var handle2 = escape(safeifyHandle(toLowerAscii(handle)),"","")
+    update("users","handle = " & handle2,column,value)
+  except:
+    return false

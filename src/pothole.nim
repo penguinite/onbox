@@ -11,7 +11,7 @@ import db
 import std/[strutils, parsecfg, os]
 
 # From nimble
-import prologue
+import jester
 
 
 echo("Pothole version ")
@@ -37,27 +37,23 @@ for x in lib.requiredConfigOptions:
   else:
     error("Missing key " & list[1] & " in section " & list[0], "main.startup")
 
-# Catch Ctrl+C
+# Catch Ctrl+C so we can exit without causing a stacktrace
 setControlCHook(lib.exit)
 
 # Initialize the database
 echo("Initializing database")
 db.init()
 
-
 # Fetch port from config file
 var realport = Port(3500)
 if exists("web","port"):
   realport = Port(parseInt(get("web","port")))
 
-let settings = newSettings(appName = "Pothole",port = realport)
-
-var app = newApp(settings = settings)
-
-app.addRoute("/", routes.index,@[HttpGet, HttpPost])
-
 while isMainModule:
-  app.run()
+  let settings = newSettings(port=realport)
+  var app = initJester(potholeRouter, settings=settings)
+  # Start the web server. Let's hope for good luck!
+  app.serve()
 
 exit()
 

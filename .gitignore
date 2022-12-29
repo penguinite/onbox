@@ -1,3 +1,4 @@
 build
 main.db
-src/htmldocs/
+*.db
+*htmldocs*
