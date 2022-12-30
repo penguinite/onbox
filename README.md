@@ -2,9 +2,7 @@
 
 A lightweight ActivityPub backend writte in Nim. 
 
-*Note:* This is the stable branch, which as the name suggests, is stable and should be good enough for production environments. This branch however might have less features than the master branch, pick your poison: bleeding-edge or stability.
-
-Make sure to build using `nimble build`!
+*Note:* This is the main branch, It's not as stable as the `stable` branch but it does include newer features. For server environments, you should use the `stable` branch.
 
 ## Does it work?
 
