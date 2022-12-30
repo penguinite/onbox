@@ -7,11 +7,11 @@
 
 # From Pothole
 #import conf
-import lib
-import data
+#import lib
+#import data
 
 # From standard libraries
-from std/strutils import replace
+#from std/strutils import replace
 
 # From Nimble/other sources
 import jester

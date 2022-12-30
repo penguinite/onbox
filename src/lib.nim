@@ -3,10 +3,10 @@
 # lib.nim   ;;  Shared procedures/functions
 
 # For JSON datatype in Post definition.
-from std/json import JsonNode
+#from std/json import JsonNode
 
 # Required configuration file options to check for.
-# Split by : and use the first item as a section and the other as a key
+# Split by ":" and use the first item as a section and the other as a key
 const requiredConfigOptions*: seq[string] = @[
   "database:type"
 ]
@@ -25,9 +25,11 @@ const localInvalidHandle*: set[char] = {'@',':','.'}
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
-
+const version*: string = "0.0.1"
 # User data type, which represents actual users in the database.
 # Check data.nim for information on how this is validated
+# Confusingly, "name" means display name and "handle" means
+# actual username. It's too late to change this now sadly.
 type 
   User* = object
     id*: string 
@@ -39,22 +41,8 @@ type
     password*: string
     salt*: string
 
-# Post data type, which represents posts in the database.
-# Check data.nim for information on how this is validated
-type
-  Post* = object
-    id*: string
-    sender*: string 
-    written*: string 
-    updated*: string
-    recipients*: seq[string] 
-    post*: JsonNode
-
 type
   UserRef* = ref User
-
-type
-  PostRef* = ref Post
 
 # Debug function
 # We want it to store 40 strings

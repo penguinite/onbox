@@ -26,6 +26,7 @@ when defined(debug):
     switch("opt","speed")
     switch("checks","on")
     switch("stackTrace","on")
+    switch("threadAnalysis","off")
     switch("define","debug")
 else:
     # Release flags
@@ -34,8 +35,8 @@ else:
     switch("opt","speed")
     switch("app","console")
     switch("stackTrace","on")
+    switch("threadAnalysis","off")
     switch("define","release")
-
 
 task clean, "Removes build folder if it exists":
     if dirExists(buildDir):

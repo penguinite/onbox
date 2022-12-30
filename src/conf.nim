@@ -7,7 +7,7 @@ from crypto import randomString
 # From stdlib
 from std/parsecfg import getSectionValue, Config
 
-let weirdDefault: string = randomString(64) & $int.high & randomString(64) & $int.high & "THIS IS NOT IMPOSSIBLE TO PREDICT BUT IT'S VERY HARD, GIVE UP!"
+let weirdDefault: string = "PotholeCM:" & randomString(72) & $int.high
 
 ## Shared functions for handling the configuration file.
 ## in the past, Pothole used a custom parser and this

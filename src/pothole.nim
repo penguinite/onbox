@@ -14,7 +14,7 @@ import std/[strutils, parsecfg, os]
 import jester
 
 
-echo("Pothole version ")
+echo("Pothole version ", lib.version)
 echo("Copyright © Louie Quartz 2022.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
 
@@ -56,8 +56,6 @@ while isMainModule:
   app.serve()
 
 exit()
-
-
 
 
 

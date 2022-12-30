@@ -3,12 +3,24 @@
 # Or we could move it to a new file called ap.nim
 
 from std/json import JsonNode
+import lib
 
+# An extension of a user.
 type
   Actor* = object
     inbox*: string
     outbox*: string
-
+    
+# This thing represents activities
+# Maybe in the future we could
 type
   Activity* = object
-    data*: JsonNode
+    id*: string
+    sender*: string 
+    written*: string 
+    updated*: string
+    recipients*: seq[string]
+    unknown*: JsonNode # Stores unknown AP parameters and data.
+
+type
+  ActivityRef* = ref Activity
