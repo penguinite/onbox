@@ -6,6 +6,7 @@ import lib
 import conf
 import routes
 import db
+import data 
 
 # From standard library
 import std/[strutils, parsecfg, os]
@@ -55,7 +56,7 @@ while isMainModule:
   # Start the web server. Let's hope for good luck!
   app.serve()
 
-exit()
+  exit()
 
 
 

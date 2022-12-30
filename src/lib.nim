@@ -2,18 +2,43 @@
 # Licensed under AGPL version 3 or later.
 # lib.nim   ;;  Shared procedures/functions
 
-# For JSON datatype in Post definition.
-#from std/json import JsonNode
+# For macro definition
+from std/macros import newIdentNode, newDotExpr, strVal
+
+# User data type, which represents actual users in the database.
+# Check data.nim for information on how this is validated
+# Confusingly, "name" means display name and "handle" means
+# actual username. It's too late to change this now sadly.
+#
+# NOTE: If you are going to extend this  type then please
+# edit the database schema in the exact order of User.
+#
+# EXTRA NOTE: If you are going to add a new datatype,
+# maybe int for the number of followers, then please
+# edit escape() and unescape() from data.nim and also edit
+# addUser() and constructUserFromRow() from db.nim
+# so they won't error out!
+type 
+  User* = object
+    id*: string 
+    handle*: string 
+    name*: string 
+    local*: bool 
+    email*: string 
+    bio*: string
+    password*: string
+    salt*: string
+    is_frozen*: bool
+
+type
+  UserRef* = ref User
+
 
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
 const requiredConfigOptions*: seq[string] = @[
   "database:type"
 ]
-
-# An error or empty string
-# Why use this? Well I dunno.
-const null*: string = ""
 
 # A set of unsafe characters, this filters anything that doesn't make a valid email.
 const unsafeHandleChars*: set[char] = {'!',' ','"','#','$','%','&','\'','(',')','*','+',',',';','<','=','>','?','[','\\',']','^','`','{','}','|','~'}
@@ -25,60 +50,57 @@ const localInvalidHandle*: set[char] = {'@',':','.'}
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
+# App version
 const version*: string = "0.0.1"
-# User data type, which represents actual users in the database.
-# Check data.nim for information on how this is validated
-# Confusingly, "name" means display name and "handle" means
-# actual username. It's too late to change this now sadly.
-type 
-  User* = object
-    id*: string 
-    handle*: string 
-    name*: string 
-    local*: bool 
-    email*: string 
-    bio*: string
-    password*: string
-    salt*: string
 
-type
-  UserRef* = ref User
+# How many items can be in debugBuffer before deleting some to save space
+# Set to 0 to disable
+const maxDebugItems: int = 40;
 
-# Debug function
-# We want it to store 40 strings
-# No more, no less.
-var debugBuffer: seq[string];
-var debugPrint: bool = false;
-proc debug*(str: string, caller: string = $getFrame().procname) =
-  if len(debugBuffer) > 40:
-    debugBuffer.del(0)
-  var toBeAdded = "!(" & caller & "): " & str
+proc exit*() {.noconv.} =
+  ## Exit function
+  ## Maybe we can close the database on exit?
+  quit(0)
+
+{.cast(gcsafe).}:
+  var debugBuffer {.threadvar.}: seq[string]; # A sequence to store debug strings in.
+  var debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
+
+proc debug*(str, caller: string) =
+  ## Adds a string to the debug buffer and optionally
+  ## prints it if debugPrint is set to true.
+   
+  # Delete an item from the debug buffer if it gets too big
+  if maxDebugItems > 0:
+    if len(debugBuffer) > maxDebugItems - 1:
+      debugBuffer.del(0)
+
+  # Actually add it to the debug buffer
+  var toBeAdded = "(" & caller & "): " & str
   debugBuffer.add(toBeAdded)
+
+  # Optionally print it. (If debugPrint is set to true)
   if debugPrint:
     stderr.writeLine(toBeAdded)
 
-proc exit*() {.noconv.} =
-  quit(0)
-
-# Debugging procedure
-proc error*(str: string, caller: string = ""): bool {.discardable.} =
-  var newcaller = caller
-  if len(newcaller) <= 0:
-    try:
-      newcaller = $getFrame().procname
-    except:
-      newcaller = "Unknown"
-  var toBePrinted = "Error: (" & newcaller & "): " & str
+proc error*(str: string, caller: string = "Unknown"): bool {.discardable.} =
+  ## Exits the program, writes a stacktrace and maybe print the debug buffer.
+  var toBePrinted = "\nError: (" & caller & "): " & str
   stderr.writeLine("Printing stacktrace...")
   writeStackTrace()
-  stderr.writeLine("Printing debug buffer...")
-  for x in debugBuffer:
-    stderr.writeLine(x)
+
+  # Only print debug buffer if debugPrint is disabled
+  # If this isn't here then the output gets too messy.
+  if debugPrint == false:
+    stderr.writeLine("Printing debug buffer...")
+    for x in debugBuffer:
+      stderr.writeLine(x)
+
   stderr.writeLine(toBePrinted)
   exit()
 
-# Also known as, error() for procedures without side effects (Aka. functions)
 func err*(str: string, caller: string = "Unknown"): bool {.discardable.} = 
+  ## Also known as, error() for procedures without side effects (Aka. functions)
   var toBePrinted = "(" & caller & "): " & str
   debugEcho(toBePrinted)
 
@@ -86,3 +108,19 @@ func err*(str: string, caller: string = "Unknown"): bool {.discardable.} =
   {.cast(noSideEffect).}:
     writeStackTrace()
   exit()
+
+func len*(O: object): int =
+  ## A procedure to get the total number of fields in any object
+  var i: int = 0;
+  for x in O.fields:
+    inc(i)
+  return i
+
+macro get*(obj: object, fld: string): untyped =
+  ## A procedure to get a field of an object using a string.
+  ## Like so: user.get("local") == user.local
+  newDotExpr(obj, newIdentNode(fld.strVal))
+
+# This was neccessary to get Nim to stop fucking giving me errors
+proc convertIfNeccessary*(thing: string): string =
+  return thing

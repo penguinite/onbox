@@ -12,7 +12,13 @@ type
     outbox*: string
     
 # This thing represents activities
-# Maybe in the future we could
+# Post data type, which represents posts in the database.
+# -    id: string      =    A OID that represents the actual post (Db: blob primary key)
+# -    sender: string  =    A string containing the sender of the post (Db: varchar not null)
+# -    written: string =    A timestamp of when the post was written (Db: timestamp not null)
+# -    updated: string =    A timestamp of when the post was updated (or null if it wasn't) (Db: timestamp)
+# -    post: string    =    Actual JSON Data for the post (Db: varchar)
+# - recipients:seq[str]=    A sequence of recipients (Db: varchar)
 type
   Activity* = object
     id*: string
