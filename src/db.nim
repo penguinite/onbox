@@ -155,3 +155,29 @@ proc getIdFromHandle*(handle: string): string =
 proc getHandleFromId*(id: string): string =
   ## A function to convert an id to a handle.
   return getUserById(id).handle
+
+proc userIdExists*(id:string): bool =
+  var row = db.getRow(sql"SELECT * FROM users WHERE id = ?;", id)
+  var hit: int = 0;
+  var i: int = 0;
+  for x in row:
+    inc(i)
+    if x == "":
+      inc(hit)
+  if hit == i:
+    return false;
+  else:
+    return true
+
+proc userHandleExists*(handle:string): bool =
+  var row = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", handle)
+  var hit: int = 0;
+  var i: int = 0;
+  for x in row:
+    inc(i)
+    if x == "":
+      inc(hit)
+  if hit == i:
+    return false;
+  else:
+    return true
