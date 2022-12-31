@@ -9,7 +9,7 @@
 #import conf
 #import lib
 #import data
-import db
+import db, web
 
 # From standard libraries
 from std/strutils import replace, contains
@@ -19,7 +19,7 @@ import jester
 
 router main:
   get "/":
-    resp("Welcome to Pothole!\n")
+    resp(web.indexPage())
   get "/users/@user":
     var user = @"user"
     # Assume the client has requested a user by handle
