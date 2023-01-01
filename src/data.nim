@@ -108,7 +108,7 @@ proc unescape*(user: var User): User =
 
     when user.get(key) is string:
       # Store string as is, just escape it though.
-      user.get(key) = unescape(value)
+      user.get(key) = unescape(value,"","")
       
   return user
 

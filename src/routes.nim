@@ -28,8 +28,7 @@ router main:
     if not userHandleExists(user):
       resp(web.errorPage("No user found.",404))
     
-    #resp(web.userPage(user))
-    resp($getUserByHandle(user))
+    resp(web.userPage(getUserByHandle(user)))
 
   get "/css/style.css":
     resp(fetchStatic("style.css"))

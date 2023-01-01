@@ -19,60 +19,7 @@ Overall, the language is fun, safe and just plain awesome! It's like Python synt
 
 ## A custom config language instead of TOML.
 
-Instead of depending on an extra library for configuration, we could do it ourselves.
-
-So this is the hypothetical config language, you will notice that it is very similar to cgit.
-
-```ini
-# So here's how this language would look in theory:
-# Lines beginning with # are comments
-# You cannot do inline comments at all...
-# I just don't think that's a good feature
-
-# So let's try to configure something.
-AdminEmail="admin@example.ph"
-
-# Arrays are done like so:
-# Very similar to Python, right?
-# Arrays can only consist of Ints
-InstanceRules=["Hail Tux!","Hail Me!","Hail Pothole!"]
-
-# Arrays can also be multiline
-# while regular values cannot.
-InstanceRules=[
-	"Hail Tux!",
-	"Hail Me!",
-	"Hail Pothole!",
-]
-
-# You might think, what about numbers?
-# Pothole will convert strings to integers 
-# if and when needed. Just wrap them
-# in quotes. Or you can put them in like this:
-TheShitsIGive=0
-
-# Ok but what about booleans?
-# Right here we accept numbers
-# and strings as input but most
-# importantly we make it case
-# insensitive.
-
-# All of these result in False
-SignYourSoulAway="faLSe"
-SignYourSoulAway="NO"
-SignYourSoulAway=False
-SignYourSoulAway=nO
-
-# All of these result in True
-SignYourSoulAway="true"
-SignYourSoulAway="yes"
-SignYourSoulAway=true
-SignYourSoulAway=yes
-
-# Make it so easy its hard to screw up...
-```
-
-You might think this looks lame or boring but it's easy to implement, probably faster than whatever TOML parser we're using and maybe even safer from a supply chain perspective. I would want to avoid using third-party modules as much as possible since I want to write my own code that I can understand.
+*Note:* In the very early days of the project, I created a custom config parser but I switched to std/parsecfg. So to reflect this, this section has been removed and no longer applies.
 
 ### Make sure every request to config data is double-checked
 
@@ -87,12 +34,12 @@ web.startServer(app, portnum)
 The program runs fine on your machine but complains on the other ones, it crashes! But what gives? Well it turns out "PortNum" is missing on some configuration. It's way easier for you as a developer to double-check that it exists first like so:
 
 ```nim
-var portnum: int;
+var portnum: Port;
 
 if conf.exists("PortNum"):
-    portnum = conf.getInt("PortNum")
+    portnum = Port(parseInt(conf.get("PortNum")))
 else:
-    portnum = 3500
+    portnum = Port(3500)
 
 web.startServer(app, portnum)
 ```
@@ -180,3 +127,16 @@ If this succeeds, then we will have a:
 4. with support for ActivityPub.
 
 WHAT MORE COULD ANYONE POSSIBLY WANT! But that's in the future, now, I have to work to achieve the first stage which is a stable, reliable ActivityPub backend that consumes little resources. I will optimize it AS MUCH AS POSSIBLE, to get it as fast as possible and to use as little memory as possible. Minimal systems are reliable systems and reliable systems are secure systems.
+
+## How blogs are stored.
+
+"Blogs" are basically user themes.
+Here is how they are stored in Pothole: `blogs[1]/user-id[2]/*.html[3]`
+
+1. This is the blogs folder, which contains all blog files for all users. It can be configured in the configuration file (Folder section, Blog attribute), by default, Pothole will use "blogs/" if it's not in the config
+2. This is the User ID. 
+3. This is the actual blog directory, any files in it will be served as-is except for 3 main files, all blogs must consist of these 3 files:
+  3.1. index.html: This is our main user page, it will be displayed when a person goes to the external user profile, it's regular HTML with a bit of a custom syntax mixed in for displaying posts and user data.
+  3.2. post.html: This is an individual post page, it will be used to display a single post individually or in a thread. It can also contain said custom syntax with *some* changes. Note: if we are displaying a thread then we would want to apply each user's theme on all posts whether they come from other users or from other servers.
+  3.3 error.html: This is used when an error occurs, ie. if a post doesn't exist. It should only have one custom tag which is "$(USER_ERR)" (case-sensitive), that will be replaced with an error summary.
+

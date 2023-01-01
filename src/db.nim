@@ -90,8 +90,8 @@ proc addUser*(user: User): bool =
     inc(i)
     # If its string, add it surrounding quotes
     # Otherwise add it whole
-    if key is string:
-      sqlStatement.add("\"" & $value & "\"")
+    when newuser.get(key) is string:
+      sqlStatement.add(value)
     else:  
       sqlStatement.add($value)
     

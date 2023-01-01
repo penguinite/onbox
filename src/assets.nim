@@ -17,10 +17,10 @@ from strutils import split, parseBool, contains
 when not defined(noEmbed):
   proc staticAsset(asset: string): string =
     const resources: Table[string,string] = {
-      "index.html": staticRead("../assets/index.html"),
-      "style.css": staticRead("../assets/style.css"),
-      "user.html": staticRead("../assets/user.html"),
-      "error.html": staticRead("../assets/error.html")
+      "index.html": staticRead("../assets/index.html"), # Main index page
+      "style.css": staticRead("../assets/style.css"), # Styling for default user blog
+      "user.html": staticRead("../assets/user.html"), # Default user blog
+      "error.html": staticRead("../assets/error.html") # Error page
     }.toTable()
     return resources[asset]
 
@@ -113,3 +113,9 @@ proc fetchUpload*(asset, id2: string, data: string = ""): string =
       trueAsset = data
     writeFile(uploadsFolder & id & asset,trueAsset)
     return trueAsset
+
+# So... Blogs are just user themes basically.
+# How blogs are stored and so on is documented in docs/DESIGN.md
+# This procedure basically returns the directory where userPage will look for blog themes. It will double-check that all files exist and create them from embedded assets if they don't.
+proc fetchBlog*(id: string): string =
+  return ""

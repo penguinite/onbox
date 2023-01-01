@@ -4,11 +4,11 @@
 # This module is specifically for generating webpages.
 # and user pages.
 #
-# TODO: Find a better way of templating...
+
 import conf
 import assets
-from strutils import replace, parseBool, parseInt
-from lib import version
+import strutils
+import lib
 
 proc indexPage*(): string =
   var page = assets.fetchStatic("index.html")
@@ -43,3 +43,9 @@ proc errorPage*(error:string,code:int=0): string=
   page = page.replace("$(ERROR)",error)
   page = page.replace("$(POTHOLE_VER)",potholever)
   return page
+
+# Let's try to make this fast and amazing.
+# Firstly, read user's blog 
+proc userPage*(user: User): string =
+  var html = assets.fetchBlog(user.id)
+  return 
