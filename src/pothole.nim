@@ -19,6 +19,8 @@ echo("Pothole version ", lib.version)
 echo("Copyright © Louie Quartz 2022.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
 
+# Catch Ctrl+C so we can exit without causing a stacktrace
+setControlCHook(lib.exit)
 
 var configfile: string = "pothole.conf"
 if existsEnv("POTHOLE_CONFIG"):
@@ -38,8 +40,46 @@ for x in lib.requiredConfigOptions:
   else:
     error("Missing key " & list[1] & " in section " & list[0], "main.startup")
 
-# Catch Ctrl+C so we can exit without causing a stacktrace
-setControlCHook(lib.exit)
+# Let's create static folders!
+# Or at the very least, check they exist!
+if exists("folders","static"):
+  staticFolder = conf.get("folders","static")
+
+if exists("folders","uploads"):
+  uploadsFolder = conf.get("folders","uploads")
+
+if exists("folders","blogs"):
+  blogsFolder = conf.get("folders","blogs")
+
+if staticFolder[len(staticFolder) - 1] == '/':
+  discard # Nim does not have "does not equal" operator
+else:
+  staticFolder.add("/")
+
+if uploadsFolder[len(uploadsFolder) - 1] == '/':
+  discard # Nim does not have "does not equal" operator
+else:
+  uploadsFolder.add("/")
+
+if blogsFolder[len(blogsFolder) - 1] == '/':
+  discard # Nim does not have "does not equal" operator
+else:
+  blogsFolder.add("/")
+
+proc c(folder:string): bool =
+  if not dirExists(folder):
+    try:
+      createDir(folder)
+    except:
+      return false
+  return true
+
+if c(staticFolder) == false or c(uploadsFolder) == false or c(blogsFolder) == false:
+  var caller = "main.startup.FolderCheck"
+  debug("Static folder: " & staticFolder, caller)
+  debug("Uploads folder: " & uploadsFolder, caller)
+  debug("Blogs folder: " & blogsFolder, caller)
+  error("A special folder that is vital for Pothole doesn't exist or failed to be created.",caller)
 
 # Initialize the database
 echo("Initializing database")
@@ -64,6 +104,8 @@ while isMainModule:
   app.serve()
 
   exit()
+
+
 
 
 

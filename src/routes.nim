@@ -9,7 +9,7 @@
 #import conf
 #import lib
 #import data
-import db, web, assets,lib
+import db, web, assets, lib
 
 # From standard libraries
 from std/strutils import replace, contains
@@ -32,6 +32,9 @@ router main:
 
   get "/css/style.css":
     resp(fetchStatic("style.css"))
+
+  get "/favicon.ico":
+    resp(Http200,"")
       
 
 var potholeRouter* = main

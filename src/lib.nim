@@ -39,6 +39,19 @@ type
     written*: string # A timestamp of when the Post was created
     updated*: string # A timestamp of when then Post was last edited
 
+# Special folders will be cached for speed
+# Yes, we have to lie to the compiler again
+# But it's fine! These will be initialized on
+# startup and never touched again!
+{.cast(gcsafe).}:
+  var staticFolder* = "static/";
+  var uploadsFolder* = "uploads/";
+  var blogsFolder* = "blogs/";
+  # I am not sure why but Pothole doesn't compile unless I do this
+  # I am willing to put it down under "weird things that happen with jester"
+  var debugBuffer {.threadvar.}: seq[string]; # A sequence to store debug strings in.
+  var debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
+
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
 const requiredConfigOptions*: seq[string] = @[
@@ -56,7 +69,7 @@ const localInvalidHandle*: set[char] = {'@',':','.'}
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
 # App version
-const version*: string = "0.0.1"
+const version*: string = "0.0.2"
 
 # How many items can be in debugBuffer before deleting some to save space
 # Set to 0 to disable
@@ -66,10 +79,6 @@ proc exit*() {.noconv.} =
   ## Exit function
   ## Maybe we can close the database on exit?
   quit(0)
-
-{.cast(gcsafe).}:
-  var debugBuffer {.threadvar.}: seq[string]; # A sequence to store debug strings in.
-  var debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
 
 proc debug*(str, caller: string) =
   ## Adds a string to the debug buffer and optionally

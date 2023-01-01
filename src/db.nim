@@ -53,8 +53,7 @@ proc init*(dbtype: string = get("database","type")) =
 proc addUser*(user: User): bool =
   ## This takes a User object and puts it in the database  
   var newuser: User = user.escape();
-  debug("Inserting user " & $newuser, "db.addUser")
-  
+  #debug("Inserting user " & $newuser, "db.addUser")
   
   # Check if user exists first.
   var idRow = db.getRow(sql"SELECT * FROM users WHERE id = ?;", newuser.id)
