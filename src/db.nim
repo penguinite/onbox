@@ -7,6 +7,7 @@
 import lib
 import conf
 import data
+import crypto
 
 # From standard library
 import std/[db_sqlite,strutils]
@@ -50,10 +51,23 @@ proc init*(dbtype: string = get("database","type")) =
 # the User data type however we want in the future without
 # having to change a lot
 proc addUser*(user: User): bool =
-  ## This takes a User object and puts it in the database
+  ## This takes a User object and puts it in the database  
   var newuser: User = user.escape();
-  #debug("Inserting user " & $newuser, "db.addUser")
+  debug("Inserting user " & $newuser, "db.addUser")
   
+  
+  # Check if user exists first.
+  var idRow = db.getRow(sql"SELECT * FROM users WHERE id = ?;", newuser.id)
+  var handleRow = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", newuser.handle)
+
+  # Check if the ID exists already, if it does then generate a new one.
+  if idRow[0] == newuser.id:
+    newuser.id = randomString()
+  
+  # Check if the handle exists already, if it does then return false and don't proceed.
+  if handleRow[0] == newuser.handle:
+    return false
+
   # Let's loop over the newuser field pairs and
   # Build the SQL statement as we go.
   var sqlStatement = "INSERT OR REPLACE INTO users ("
@@ -157,6 +171,7 @@ proc getHandleFromId*(id: string): string =
   return getUserById(id).handle
 
 proc userIdExists*(id:string): bool =
+  ## A procedure to check if a user exists by id
   var row = db.getRow(sql"SELECT * FROM users WHERE id = ?;", id)
   var hit: int = 0;
   var i: int = 0;
@@ -170,6 +185,7 @@ proc userIdExists*(id:string): bool =
     return true
 
 proc userHandleExists*(handle:string): bool =
+  ## A procedure to check if a user exists by handle
   var row = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", handle)
   var hit: int = 0;
   var i: int = 0;

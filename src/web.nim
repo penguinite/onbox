@@ -3,6 +3,8 @@
 #
 # This module is specifically for generating webpages.
 # and user pages.
+#
+# TODO: Find a better way of templating...
 import conf
 import assets
 from strutils import replace, parseBool, parseInt

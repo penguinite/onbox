@@ -9,7 +9,7 @@
 #import conf
 #import lib
 #import data
-import db, web, assets
+import db, web, assets,lib
 
 # From standard libraries
 from std/strutils import replace, contains
@@ -29,6 +29,7 @@ router main:
       resp(web.errorPage("No user found.",404))
     
     #resp(web.userPage(user))
+    resp($getUserByHandle(user))
 
   get "/css/style.css":
     resp(fetchStatic("style.css"))

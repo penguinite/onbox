@@ -10,23 +10,17 @@ type
   Actor* = object
     inbox*: string
     outbox*: string
-    
+
 # This thing represents activities
-# Post data type, which represents posts in the database.
-# -    id: string      =    A OID that represents the actual post (Db: blob primary key)
-# -    sender: string  =    A string containing the sender of the post (Db: varchar not null)
-# -    written: string =    A timestamp of when the post was written (Db: timestamp not null)
-# -    updated: string =    A timestamp of when the post was updated (or null if it wasn't) (Db: timestamp)
-# -    post: string    =    Actual JSON Data for the post (Db: varchar)
-# - recipients:seq[str]=    A sequence of recipients (Db: varchar)
 type
   Activity* = object
-    id*: string
-    sender*: string 
-    written*: string 
-    updated*: string
-    recipients*: seq[string]
-    unknown*: JsonNode # Stores unknown AP parameters and data.
+    kind*: string # Stores what type the Activity is (Create, Delete etc.) (NOTE: Nim already reserves "type" so we cannot use that.)
+    id*: string # Stores the location of the Activity
+    to*: seq[string] # A sequence of recipients.
+    actor*: string  # A string containing the actor
+    date*: string # A timestamp of when the Activity was created
+    updated*: string # A timestamp of when then Post was last edited
+    data*: Post # The actual post/object
 
 type
   ActivityRef* = ref Activity

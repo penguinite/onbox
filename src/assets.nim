@@ -14,16 +14,15 @@ from strutils import split, parseBool, contains
 # deallocate memory when a resource is fetched and done.
 #
 # This is for static assets
-proc staticAsset(asset: string): string =
-  var folder = "../assets/"
-  const resources: Table[string,string] = {
-    "index.html": staticRead("../assets/index.html"),
-    "style.css": staticRead("../assets/style.css"),
-    "user.html": staticRead("../assets/user.html"),
-    "error.html": staticRead("../assets/error.html")
-  }.toTable()
-
-  return resources[asset]
+when not defined(noEmbed):
+  proc staticAsset(asset: string): string =
+    const resources: Table[string,string] = {
+      "index.html": staticRead("../assets/index.html"),
+      "style.css": staticRead("../assets/style.css"),
+      "user.html": staticRead("../assets/user.html"),
+      "error.html": staticRead("../assets/error.html")
+    }.toTable()
+    return resources[asset]
 
 proc fetchStatic*(asset: string, data: string = ""): string =
   ## This procedure specifically tries to fetch a static resource.
@@ -56,7 +55,8 @@ proc fetchStatic*(asset: string, data: string = ""): string =
   else:
     var trueAsset: string;
     if data == "":
-      trueAsset = staticAsset(filename & ext)
+      when not defined(noEmbed):
+        trueAsset = staticAsset(filename & ext)
     else:
       trueAsset = data
     writeFile(staticFolder & asset,trueAsset)
@@ -94,7 +94,7 @@ proc fetchUpload*(asset, id2: string, data: string = ""): string =
       createDir(uploadsFolder & id)
 
   # Split path to multiple tuples for easier processing.
-  var (dir, filename, ext) = splitFile(asset)
+  var (dir, filename {.used.}, ext {.used.}) = splitFile(asset)
   
   # Create any sub-directories if they exist
   if dir.contains("/"):

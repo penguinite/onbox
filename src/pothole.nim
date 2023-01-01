@@ -6,14 +6,14 @@ import lib
 import conf
 import routes
 import db
-import data 
+#import data 
+import crypto
 
 # From standard library
 import std/[strutils, parsecfg, os]
 
 # From nimble
 import jester
-
 
 echo("Pothole version ", lib.version)
 echo("Copyright © Louie Quartz 2022.")
@@ -49,6 +49,13 @@ db.init()
 var realport = Port(3500)
 if exists("web","port"):
   realport = Port(parseInt(get("web","port")))
+
+# Some users for debugging
+when defined(debug):
+  var id = randomString()
+  var salt = randomString(18)
+  var user = User(id:id,handle:"quartz",name:"Louie Quartz",local:true,email:"quartz@quartz.quartz",bio:"Hi! I create stuff\nStay safe!",password:hash("123",salt),salt:salt,is_frozen:false)
+  discard db.addUser(user)
 
 while isMainModule:
   let settings = newSettings(port=realport)

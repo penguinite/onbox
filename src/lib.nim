@@ -30,9 +30,14 @@ type
     salt*: string
     is_frozen*: bool
 
-type
-  UserRef* = ref User
-
+type 
+  Post* = object
+    to*: seq[string] # A sequence of recipients.
+    sender*: string # aka attributedTo
+    replyto*: string # Resource/Post person was replying to, 
+    content*: string # The actual content of the post
+    written*: string # A timestamp of when the Post was created
+    updated*: string # A timestamp of when then Post was last edited
 
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key

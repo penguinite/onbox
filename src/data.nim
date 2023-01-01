@@ -48,7 +48,7 @@ proc newUser*(handle,password: string, local:bool = false): User =
   # Every User in our database will have an ID.
   newuser.id = randomString() # the 16 character default is good enough for IDs
   if local: 
-    newuser.salt = randomString(16) # 32 characters is double what NIST recommends for salt lengths.
+    newuser.salt = randomString(18) # 32 characters is double what NIST recommends for salt lengths.
     newuser.password = hash(password, newuser.salt) # 160000 is what Pleroma/Akkoma uses and it's a little bit higher than what NIST recommends for this key-derivation function.
     
   newuser.handle = handle
