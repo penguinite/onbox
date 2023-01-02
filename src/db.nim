@@ -36,14 +36,14 @@ proc init*(dbtype: string = get("database","type")) =
   debug "Creating user's table","db.init"
 
   # Create users table
-  if not db.tryExec(sql("CREATE TABLE IF NOT EXISTS users (id BLOB PRIMARY KEY,handle VARCHAR(65535) UNIQUE NOT NULL,name VARCHAR(65535) NOT NULL,local BOOLEAN NOT NULL, email VARCHAR(255),bio VARCHAR(65535),password VARCHAR(65535), salt VARCHAR(65535), is_frozen BOOLEAN);")):
+  if not db.tryExec(sql("CREATE TABLE IF NOT EXISTS users (id BLOB PRIMARY KEY UNIQUE NOT NULL,handle VARCHAR(65535) UNIQUE NOT NULL,name VARCHAR(65535) NOT NULL,local BOOLEAN NOT NULL, email VARCHAR(255),bio VARCHAR(65535),password VARCHAR(65535), salt VARCHAR(65535), is_frozen BOOLEAN);")):
     # Database failed to initialize
     error("Couldn't initialize database! Creating users table failed!","db.init.actualinit")
 
   debug "Creating posts/activities table","db.init"
 
   # Create posts table
-  if not db.tryExec(sql("CREATE TABLE IF NOT EXISTS posts (id BLOB PRIMARY KEY,sender VARCHAR(65535) NOT NULL,written TIMESTAMP NOT NULL,updated TIMESTAMP,recipients VARCHAR(65535),post VARCHAR(65535) NOT NULL);")):
+  if not db.tryExec(sql("CREATE TABLE IF NOT EXISTS posts ( id BLOB PRIMARY KEY UNIQUE NOT NULL, recipients VARCHAR(65535), sender VARCHAR(65535) NOT NULL, replyto VARCHAR(65535), content VARCHAR(65535), written TIMESTAMP NOT NULL, updated TIMESTAMP, local BOOLEAN NOT NULL );")):
     error("Couldn't initialize database! Creating posts table failed!","db.init.actualinit")
 
 
@@ -172,13 +172,10 @@ proc getHandleFromId*(id: string): string =
 proc userIdExists*(id:string): bool =
   ## A procedure to check if a user exists by id
   var row = db.getRow(sql"SELECT * FROM users WHERE id = ?;", id)
-  var hit: int = 0;
-  var i: int = 0;
-  for x in row:
-    inc(i)
-    if x == "":
-      inc(hit)
-  if hit == i:
+  var emptySeq: seq[string];
+  for x in 0 .. len(row) - 1:
+    emptySeq.add("")
+  if emptySeq == row:
     return false;
   else:
     return true
@@ -186,13 +183,13 @@ proc userIdExists*(id:string): bool =
 proc userHandleExists*(handle:string): bool =
   ## A procedure to check if a user exists by handle
   var row = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", handle)
-  var hit: int = 0;
-  var i: int = 0;
-  for x in row:
-    inc(i)
-    if x == "":
-      inc(hit)
-  if hit == i:
+  var emptySeq: seq[string];
+  for x in 0 .. len(row) - 1:
+    emptySeq.add("")
+  if emptySeq == row:
     return false;
   else:
     return true
+
+proc addPost(post: Post): bool =
+  var newpost = post.escape()

@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-  id BLOB PRIMARY KEY, -- A randomly-generated ID.
+  id BLOB PRIMARY KEY UNIQUE NOT NULL, -- A randomly-generated ID.
   handle VARCHAR(65535) UNIQUE NOT NULL, -- User's actual username
   name VARCHAR(65535) NOT NULL, -- User's display name
   local BOOLEAN NOT NULL, -- A boolean indicating if the user is from here or from somewhere else.
@@ -11,12 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
 );
   
 CREATE TABLE IF NOT EXISTS posts (
-  id BLOB PRIMARY KEY,
-  sender VARCHAR(65535) NOT NULL,
-  written TIMESTAMP NOT NULL,
-  updated TIMESTAMP,
+  id BLOB PRIMARY KEY UNIQUE NOT NULL,
   recipients VARCHAR(65535),
-  post VARCHAR(65535) NOT NULL
+  sender VARCHAR(65535) NOT NULL,
+  replyto VARCHAR(65535),
+  content VARCHAR(65535),
+  written TIMESTAMP NOT NULL,
+  updated TIMESTAMP
 );
 
 -- Inserting some generic users for testing

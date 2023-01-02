@@ -95,6 +95,7 @@ when defined(debug):
   var id = randomString()
   var salt = randomString(18)
   var user = User(id:id,handle:"quartz",name:"Louie Quartz",local:true,email:"quartz@quartz.quartz",bio:"Hi! I create stuff\nStay safe!",password:hash("123",salt),salt:salt,is_frozen:false)
+  var post = newPost()
   discard db.addUser(user)
 
 while isMainModule:

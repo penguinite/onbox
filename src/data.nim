@@ -116,3 +116,24 @@ proc unescape*(user: User): User =
   ## A helper function that initializes a new User object for you!
   var newuser: User = user;
   return newuser.unescape()
+
+proc newPost*(sender,replyto,content: string, recipients: seq[string], local: bool = false): Post =
+  var post: Post;
+  if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
+    error("Missing critical fields for post.","data.newPost")
+
+  # Generate post id
+  post.id = randomString()
+  
+  # Just do this stuff...
+  post.sender = sender
+  post.recipients = recipients
+
+  post
+
+
+  return post
+
+proc escape*(post: var Post): Post =
+
+  return post

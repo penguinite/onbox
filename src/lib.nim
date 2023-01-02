@@ -32,12 +32,14 @@ type
 
 type 
   Post* = object
-    to*: seq[string] # A sequence of recipients.
+    id*: string # A unique id.
+    recipients*: seq[string] # A sequence of recipient's handles.
     sender*: string # aka attributedTo
     replyto*: string # Resource/Post person was replying to, 
     content*: string # The actual content of the post
     written*: string # A timestamp of when the Post was created
     updated*: string # A timestamp of when then Post was last edited
+    local*:bool
 
 # Special folders will be cached for speed
 # Yes, we have to lie to the compiler again

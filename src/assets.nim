@@ -98,5 +98,38 @@ import lib
 # So... Blogs are just user themes basically.
 # How blogs are stored and so on is documented in docs/DESIGN.md
 # This procedure basically returns the directory where userPage will look for blog themes. It will double-check that all files exist and create them from embedded assets if they don't.
-proc fetchBlog*(id: string): string =
-  return ""
+proc fetchBlog*(id2: string): string =
+  debug("Something trying to fetch blogs from user " & id2, "assets.fetchBlog")
+  if not dirExists(blogsFolder):
+    createDir(blogsFolder)
+  
+  var id = id2
+  id.add("/")
+
+  if not dirExists(blogsFolder & id):
+    createDir(blogsFolder & id)
+  
+  # Check for the three main files
+  # and create them from embedded resources
+  # if they do not exist
+  # index.html is called user.html in staticAsset()
+  # post.html is called post.html in staticAsset()
+  # error.html is called user_error.html in staticAsset()
+  var userDir = blogsFolder & id
+
+  # index.html
+  if not fileExists(userDir & "index.html"):
+    when not defined(noEmbed):
+      writeFile(userDir & "index.html", staticAsset("user.html"))
+  
+  # post.html
+  if not fileExists(userDir & "post.html"):
+    when not defined(noEmbed):
+      writeFile(userDir & "post.html", staticAsset("post.html"))
+  
+  # error.html
+  if not fileExists(userDir & "error.html"):
+    when not defined(noEmbed):
+      writeFile(userDir & "error.html", staticAsset("user_error.html"))
+  
+  return userDir
