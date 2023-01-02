@@ -1,5 +1,11 @@
 My personal TODO list for Pothole.
 
+January 2nd, 2023:
+
+Taking a small break due to repetitive stress injuries from poor ergonomic practice and also burnout.
+
+I am not sure when I will be back but I can't keep working on this project if this is my state.
+
 January 1st, 2023:
 
 1. Finish working on user-themes
