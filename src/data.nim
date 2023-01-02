@@ -129,11 +129,13 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string], local: bo
   post.sender = sender
   post.recipients = recipients
 
-  post
-
 
   return post
 
 proc escape*(post: var Post): Post =
 
   return post
+
+proc escape*(post: Post): Post =
+  var newPost: Post = post;
+  return newPost.escape()

@@ -192,4 +192,5 @@ proc userHandleExists*(handle:string): bool =
     return true
 
 proc addPost(post: Post): bool =
-  var newpost = post.escape()
+  var newpost: Post = post.escape()
+  
