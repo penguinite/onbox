@@ -15,7 +15,7 @@ import std/[db_sqlite,strutils]
 {.gcsafe.}:
   var db*:DbConn;
 
-proc init*(dbtype: string = get("database","type")) =
+proc init*(dbtype: string = get("database","type")): int {.discardable.} =
   ## This procedure initializes the database. All on its own!
   ## It uses configuration values from conf to do everything by itself
   var dbtype2 = toLower(dbtype)
@@ -46,6 +46,10 @@ proc init*(dbtype: string = get("database","type")) =
   if not db.tryExec(sql("CREATE TABLE IF NOT EXISTS posts ( id BLOB PRIMARY KEY UNIQUE NOT NULL, recipients VARCHAR(65535), sender VARCHAR(65535) NOT NULL, replyto VARCHAR(65535), content VARCHAR(65535), written TIMESTAMP NOT NULL, updated TIMESTAMP, local BOOLEAN NOT NULL );")):
     error("Couldn't initialize database! Creating posts table failed!","db.init.actualinit")
 
+  echo("Database is done initializing!")
+
+  return 0;
+
 
 # This is over-engineered but it will allow us to define 
 # the User data type however we want in the future without
@@ -65,11 +69,12 @@ proc addUser*(user: User): User =
   # I am not exactly sure if this works but I see no reason why not.
   while (true):
     if db.getRow(sql"SELECT local FROM users WHERE id = ?;", newuser.id) == @[""]:
+      break
+    else:
       # User still exists! Generate new id!
       newuser.id = randomString()
       continue
-    else:
-      break
+      
   
   debug("Inserting user with Id " & newuser.id & " and handle " & newuser.handle, "db.addUser")
 
@@ -145,7 +150,7 @@ proc getUserByHandle*(handle: string): User =
   var row = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", handle)
   return constructUserFromRow(row)
 
-proc update*(table, condition, column, value: string, ): bool =
+proc updateUser*(table, condition, column, value: string, ): bool =
   ## A procedure to update any value, in any column in any table.
   ## This procedure should be wrapped, you can use updateUserByHandle() or
   ## updateUserById() instead of using this directly.
@@ -158,29 +163,32 @@ proc update*(table, condition, column, value: string, ): bool =
 proc updateUserByHandle*(handle, column, value: string): bool =
   ## A procedure to update the user by their handle
   try:
-    var handle2 = escape(safeifyHandle(toLowerAscii(handle)),"","")
-    update("users","handle = " & handle2,column,value)
+    var handle2 = escape(safeifyHandle(toLowerAscii(handle)))
+    updateUser("users","handle = " & handle2,column,value)
   except:
     return false
 
 proc updateUserById*(id, column, value: string): bool = 
   ## A procedure to update the user by their ID
   try:
-    return update("users","id = " & id,column, value)
+    return updateUser("users","id = " & id,column, value)
   except:
     return false
 
 proc getIdFromHandle*(handle: string): string =
   ## A function to convert a handle to an id.
-  return getUserByHandle(handle).id
+  var row = db.getRow(sql"SELECT id FROM users WHERE handle = ?;", escape(safeifyHandle(toLowerAscii(handle))))
+
+  return unescape(row[0])
 
 proc getHandleFromId*(id: string): string =
   ## A function to convert an id to a handle.
-  return getUserById(id).handle
+  var row = db.getRow(sql"SELECT handle FROM users WHERE id = ?;", id)
+  return unescape(row[0])
 
 proc userIdExists*(id:string): bool =
   ## A procedure to check if a user exists by id
-  var row = db.getRow(sql"SELECT * FROM users WHERE id = ?;", id)
+  var row = db.getRow(sql"SELECT id FROM users WHERE id = ?;", id)
   var emptySeq: seq[string];
   for x in 0 .. len(row) - 1:
     emptySeq.add("")
@@ -204,4 +212,3 @@ proc addPost*(post: Post): bool =
   var newpost: Post = post.escape()
   # TODO: Implement this...
   return true
-  

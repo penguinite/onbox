@@ -126,3 +126,25 @@ macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.
   ## Like so: user.get("local") == user.local
   newDotExpr(obj, newIdentNode(fld.strVal))
+
+
+proc isEmptyOrWhitespace*(str: string): bool =
+  ## A faster implementation of strutils.isEmptyOrWhitespace
+  ## This is basically the same thing.
+  for x in str:
+    if x notin whitespace:
+      return false
+  return true
+
+proc cleanString*(str: string): string =
+  ## A procedure to clean a string of whitespacer characters.
+  var startnum = 0;
+  var endnum = len(str) - 1;
+  
+  while str[startnum] in whitespace:
+    inc(startnum)
+
+  while endnum >= 0 and str[endnum] in whitespace:
+    dec(endnum)
+
+  return str[startnum .. endnum]

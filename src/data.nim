@@ -10,7 +10,8 @@ import lib
 import crypto
 
 # From Nim's standard library
-import std/strutils
+import std/strutils except isEmptyOrWhitespace
+
 
 ## User data type, which represents actual users in the database.
 ## Here are all of the fields in a user objects, with an explanation:
@@ -27,14 +28,12 @@ runnableExamples:
   discard
 
 # Various helper procedures related to Users and Posts
-# db.nim contains the actual user-creation procedures
 
 proc newUser*(handle,password: string, local:bool = false): User =
   ## A procedure to create a new user with id, passwords salt and everything!
-  ## The user from this procedure is not validaed or escaped, make sure to run
-  ## user.escape() or just db.addUser() do it for you!
-  if isEmptyOrWhitespace(handle):
-    error("Missing critical fields!\nProvided: " & handle & ", " & password)
+  ## It is highly recommended that you insert your own values
+  ## user.escape() or just let db.addUser() do it for you!
+  
   var newuser: User;
 
   # Create password and hash ONLY if user is local
@@ -49,9 +48,15 @@ proc newUser*(handle,password: string, local:bool = false): User =
   newuser.id = randomString() # the 16 character default is good enough for IDs
   if local: 
     newuser.salt = randomString(18) # 32 characters is double what NIST recommends for salt lengths.
+    if isEmptyOrWhitespace(password):
+      error("Missing password field!","data.newUser")
     newuser.password = hash(password, newuser.salt) # 160000 is what Pleroma/Akkoma uses and it's a little bit higher than what NIST recommends for this key-derivation function.
     
   newuser.handle = handle
+
+  # A new user is typically not frozen
+  # Even for external actors.
+  newuser.is_frozen = false
   
   return newuser
 

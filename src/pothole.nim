@@ -6,7 +6,7 @@ import lib
 import conf
 import routes
 import db
-#import data 
+import data 
 import crypto
 
 # From standard library
@@ -91,12 +91,30 @@ if exists("web","port"):
   realport = Port(parseInt(get("web","port")))
 
 # Some users for debugging
-when defined(debug):
-  var id = randomString()
-  var salt = randomString(18)
-  var user = User(id:id,handle:"quartz",name:"Louie Quartz",local:true,email:"quartz@quartz.quartz",bio:"Hi! I create stuff\nStay safe!",password:hash("123",salt),salt:salt,is_frozen:false)
-  var post = newPost()
-  discard db.addUser(user)
+var mex = 0
+inc(mex) # 1
+echo(mex)
+var user: User;
+#var user = newUser("quartz","123",true)
+user.id = randomString()
+user.password = hash("123",randomString(18))
+user.handle = "quartz"
+user.local = true
+user.name = "Louie Quartz"
+user.email = "quartz@quartz.quartz"
+user.bio = "Hi! I create stuff\nStay safe!"
+user.is_frozen = false
+inc(mex) # 2
+echo(mex)
+discard db.addUser(user)
+inc(mex) # 3
+echo(mex)
+echo("Trying to retrieve user")
+inc(mex) # 4
+echo(mex)
+echo(getIdFromHandle(user.handle))
+inc(mex) # 5
+echo(mex)
 
 
 while isMainModule:
