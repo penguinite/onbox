@@ -14,8 +14,6 @@ It might be someday in the future more stable, but I am busy with other things a
 
 Well then head on to the compilation section, but don't expect it to fully work out-of-the-box, configuration is required.
 
-If I had to give an estimate, i'd say that Pothole is 0.05% towards reaching its goal of being a barely-working lightweight ActivityPub backend.
-
 ## Compilation
 
 Pothole is written in Nim, so you'll need the nim compiler, your favorite C compiler (`gcc` and `clang` work pretty well) and Nimble.
@@ -24,19 +22,12 @@ Simply run `nimble build` to build Pothole, by default it will build with sane o
 
 It will also install any and all dependencies for you!
 
-## Installation
+### Makefile-based compiling
 
-For now, installation relies on Nimble's built-in installer, I don't know how it works but running `nimble install` builds the project and adds it to your PATH, if you are building for yourself then this is probably the best method.
+The makefile is there for developer use as it includes common targets with developmental settings. You can build with release settings using `make all`
 
-But make sure to copy the example configuration file since Nimble does not do it for you, and also make sure to edit it for your own needs.
-
-## Running as-is
-
-You can execute `make test` to compile Pothole with debug options and run it instantly. This is more intended for developer testing and it is not recommended for average users. **Note:** This method requires GNU make or any decent `make` implementation. And it will also compile Pothole with debugging settings which is generally not recommended for servers.
-
-But if you do not want to install `make` then you can use the following command to execute and run Pothole as-is: `nim r  -d:release --opt:speed --threads:on --stackTrace:on src/pothole.nim`. 
 ## Copyright
 
-Copyright © The Pothole Project 2022
+Copyright © Louie Quartz 2022-2023
 
 Licensed under GNU Affero General Public License version 3 or later.

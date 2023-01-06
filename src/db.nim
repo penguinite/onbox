@@ -1,4 +1,4 @@
-# Copyright © Louie Quartz 2022
+# Copyright © Louie Quartz 2022-2023
 # Licensed under the AGPL version 3 or later.
 #
 # db.nim  ;;  Database functions
@@ -50,22 +50,28 @@ proc init*(dbtype: string = get("database","type")) =
 # This is over-engineered but it will allow us to define 
 # the User data type however we want in the future without
 # having to change a lot
-proc addUser*(user: User): bool =
+proc addUser*(user: User): User =
   ## This takes a User object and puts it in the database  
   var newuser: User = user.escape();
-  #debug("Inserting user " & $newuser, "db.addUser")
   
   # Check if user exists first.
-  var idRow = db.getRow(sql"SELECT * FROM users WHERE id = ?;", newuser.id)
   var handleRow = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", newuser.handle)
 
-  # Check if the ID exists already, if it does then generate a new one.
-  if idRow[0] == newuser.id:
-    newuser.id = randomString()
-  
   # Check if the handle exists already, if it does then return false and don't proceed.
   if handleRow[0] == newuser.handle:
-    return false
+    debug("User with handle " & newuser.handle & " already exists!", "db.addUser")
+
+  # A simple loop for checking if the Id exists
+  # I am not exactly sure if this works but I see no reason why not.
+  while (true):
+    if db.getRow(sql"SELECT local FROM users WHERE id = ?;", newuser.id) == @[""]:
+      # User still exists! Generate new id!
+      newuser.id = randomString()
+      continue
+    else:
+      break
+  
+  debug("Inserting user with Id " & newuser.id & " and handle " & newuser.handle, "db.addUser")
 
   # Let's loop over the newuser field pairs and
   # Build the SQL statement as we go.
@@ -101,8 +107,11 @@ proc addUser*(user: User): bool =
 
   # Add the other missing part
   sqlStatement.add(");")
+  if not db.tryExec(db.prepare(sqlStatement)):
+    debug("Tried to insert user " & $newuser, "db.addUser(beforeError)")
+    error("tryExec returns error!", "db.addUser")
 
-  return db.tryExec(db.prepare(sqlStatement))
+  return newuser
 
 proc constructUserFromRow*(row: Row): User =
   ## This procedure takes a database row (from either getUserById() or getUserByHandle())
@@ -116,13 +125,13 @@ proc constructUserFromRow*(row: Row): User =
   var i: int = 0;
 
   for key,value in user.fieldPairs:
-      inc(i)
-      # If its string, add it surrounding quotes
-      # Otherwise add it whole
-      when user.get(key) is bool:
-        user.get(key) = parseBool(row[i - 1])
-      when user.get(key) is string:
-        user.get(key) = convertIfNeccessary(row[i - 1])
+    inc(i)
+    # If its string, add it surrounding quotes
+    # Otherwise add it whole
+    when user.get(key) is bool:
+      user.get(key) = parseBool(row[i - 1])
+    when user.get(key) is string:
+      user.get(key) = row[i - 1]
 
   return user.unescape()
 
@@ -191,6 +200,8 @@ proc userHandleExists*(handle:string): bool =
   else:
     return true
 
-proc addPost(post: Post): bool =
+proc addPost*(post: Post): bool =
   var newpost: Post = post.escape()
+  # TODO: Implement this...
+  return true
   

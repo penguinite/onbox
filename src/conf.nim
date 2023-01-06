@@ -1,4 +1,4 @@
-# Copyright © Louie Quartz 2022
+# Copyright © Louie Quartz 2022-2023
 # Licensed under AGPL Version 3 or later
 
 # From pothole

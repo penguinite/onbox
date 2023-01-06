@@ -1,4 +1,4 @@
-# Copyright © Pothole Project 2022
+# Copyright © Pothole Project 2022-2023
 # Licensed under the AGPL version 3 or later.
 
 # From Pothole
@@ -16,7 +16,7 @@ import std/[strutils, parsecfg, os]
 import jester
 
 echo("Pothole version ", lib.version)
-echo("Copyright © Louie Quartz 2022.")
+echo("Copyright © Louie Quartz 2022-2023.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
 
 # Catch Ctrl+C so we can exit without causing a stacktrace
@@ -97,6 +97,7 @@ when defined(debug):
   var user = User(id:id,handle:"quartz",name:"Louie Quartz",local:true,email:"quartz@quartz.quartz",bio:"Hi! I create stuff\nStay safe!",password:hash("123",salt),salt:salt,is_frozen:false)
   var post = newPost()
   discard db.addUser(user)
+
 
 while isMainModule:
   let settings = newSettings(port=realport)

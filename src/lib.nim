@@ -1,4 +1,4 @@
-# Copyright © Louie Quartz 2022
+# Copyright © Louie Quartz 2022-2023
 # Licensed under AGPL version 3 or later.
 # lib.nim   ;;  Shared procedures/functions
 
@@ -115,16 +115,6 @@ proc error*(str: string, caller: string = "Unknown"): bool {.discardable.} =
   stderr.writeLine(toBePrinted)
   exit()
 
-func err*(str: string, caller: string = "Unknown"): bool {.discardable.} = 
-  ## Also known as, error() for procedures without side effects (Aka. functions)
-  var toBePrinted = "(" & caller & "): " & str
-  debugEcho(toBePrinted)
-
-  # Lie to the compiler to write a stacktrace.
-  {.cast(noSideEffect).}:
-    writeStackTrace()
-  exit()
-
 func len*(O: object): int =
   ## A procedure to get the total number of fields in any object
   var i: int = 0;
@@ -136,7 +126,3 @@ macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.
   ## Like so: user.get("local") == user.local
   newDotExpr(obj, newIdentNode(fld.strVal))
-
-# This was neccessary to get Nim to stop fucking giving me errors
-proc convertIfNeccessary*(thing: string): string =
-  return thing

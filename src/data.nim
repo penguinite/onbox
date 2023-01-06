@@ -1,4 +1,4 @@
-# Copyright © Louie Quartz 2022
+# Copyright © Louie Quartz 2022-2023
 # Licensed under AGPL version 3 or later
 #
 # data.nim:
@@ -117,7 +117,7 @@ proc unescape*(user: User): User =
   var newuser: User = user;
   return newuser.unescape()
 
-proc newPost*(sender,replyto,content: string, recipients: seq[string], local: bool = false): Post =
+proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: string = ""): Post =
   var post: Post;
   if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
     error("Missing critical fields for post.","data.newPost")
@@ -128,14 +128,47 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string], local: bo
   # Just do this stuff...
   post.sender = sender
   post.recipients = recipients
+  post.local = local
+  post.content = content
 
+  if isEmptyOrWhitespace(replyto):
+    post.replyto = ""
+  else:
+    post.replyto = replyto
+
+  if written == "":
+    # TODO: write date generation code here
+    discard
+  else:
+    post.written = written
 
   return post
 
+# Escape function for post
 proc escape*(post: var Post): Post =
+  for key,val in post.fieldPairs:
 
+    when post.get(key) is bool:
+      post.get(key) = val
+    when post.get(key) is string:
+      post.get(key) = escape(val)
+    when post.get(key) is seq[string]:
+      var newseq: seq[string] = @[]
+      for x in val:
+        newseq.add(escape(x))
+      post.get(key) = newseq
+
+  echo(post)
   return post
 
 proc escape*(post: Post): Post =
   var newPost: Post = post;
   return newPost.escape()
+
+proc unescape*(post: var Post): Post =
+  # TODO: Implement unescaping
+  discard
+
+proc unescape*(post: Post): Post =
+  var newPost: Post = post
+  return newPost.unescape()
