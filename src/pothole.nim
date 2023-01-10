@@ -10,7 +10,9 @@ import data
 import crypto
 
 # From standard library
-import std/[strutils, parsecfg, os]
+from std/os import existsEnv, getEnv, dirExists, createDir
+from std/parsecfg import loadConfig
+from std/strutils import split, parseInt
 
 # From nimble
 import jester
@@ -40,8 +42,8 @@ for x in lib.requiredConfigOptions:
   else:
     error("Missing key " & list[1] & " in section " & list[0], "main.startup")
 
-# Let's create static folders!
-# Or at the very least, check they exist!
+# Use folders values from the configuration file
+# If they exist
 if exists("folders","static"):
   staticFolder = conf.get("folders","static")
 
@@ -51,22 +53,16 @@ if exists("folders","uploads"):
 if exists("folders","blogs"):
   blogsFolder = conf.get("folders","blogs")
 
-if staticFolder[len(staticFolder) - 1] == '/':
-  discard # Nim does not have "does not equal" operator
-else:
-  staticFolder.add("/")
+# Generic folder checking function
+# We could replace this with a loop?
+proc c(folder:var string): bool =
 
-if uploadsFolder[len(uploadsFolder) - 1] == '/':
-  discard # Nim does not have "does not equal" operator
-else:
-  uploadsFolder.add("/")
+  # Add slash at end if it does exist
+  if folder[len(folder) - 1] == '/':
+    discard # Nim does not have "does not equal" operator
+  else:
+    folder.add("/")
 
-if blogsFolder[len(blogsFolder) - 1] == '/':
-  discard # Nim does not have "does not equal" operator
-else:
-  blogsFolder.add("/")
-
-proc c(folder:string): bool =
   if not dirExists(folder):
     try:
       createDir(folder)
@@ -106,8 +102,6 @@ while isMainModule:
   var app = initJester(potholeRouter, settings=settings)
   # Start the web server. Let's hope for good luck!
   app.serve()
-
-
 
 
 exit()

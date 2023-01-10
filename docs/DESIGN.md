@@ -670,3 +670,12 @@ What helped me understand `@context` a bit more is this quite from: [@a@pl.nulle
 I want Pothole to be a reliable, efficient server and I think for it to be *that* reliable efficient server, I am gonna have to parse the `@context` and do *something* with it, even if its just validating the activity or storing the activity in a special storage-effective format.*
 
 * Speaking of which: I kind of want to suggest something like a CSV with quotation! we could run strutils.escape() on the values of the activity we want to store so that there is no risk of SQL injections and we could easily strutils.unescape it!
+
+## How Pothole handles ActivityPub
+
+For now, and for the forseeable future, Pothole will only support ActivityPub.
+
+When Pothole receives a Activity it does the following:
+1. Checks for validity (HTTP Signatures, Server check and so on)
+2. Turns it into a Post/User and adds it into the db
+3. Simply exposes it either via the API or user profiles (if its a local post or a local user has replied to a thread.)

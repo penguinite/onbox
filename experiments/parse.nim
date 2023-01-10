@@ -3,8 +3,8 @@ import ../src/lib, ../src/data
 
 
 # A fake user and post 
-var user = newUser()
-var post = newPost()
+var user = User()
+var post = Post()
 
 
 #const file = staticRead("../assets/user.html")

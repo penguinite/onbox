@@ -175,16 +175,6 @@ proc updateUserById*(id, column, value: string): bool =
   except:
     return false
 
-proc getIdFromHandle*(handle: string): string =
-  ## A function to convert a handle to an id.
-  var row = db.getRow(sql"SELECT id FROM users WHERE handle = ?;", escape(safeifyHandle(toLowerAscii(handle))))
-  return unescape(row[0])
-
-proc getHandleFromId*(id: string): string =
-  ## A function to convert an id to a handle.
-  var row = db.getRow(sql"SELECT handle FROM users WHERE id = ?;", id)
-  return unescape(row[0])
-
 proc userIdExists*(id:string): bool =
   ## A procedure to check if a user exists by id
   var row = db.getRow(sql"SELECT id FROM users WHERE id = ?;", id)
@@ -195,11 +185,26 @@ proc userIdExists*(id:string): bool =
 
 proc userHandleExists*(handle:string): bool =
   ## A procedure to check if a user exists by handle
-  var row = db.getRow(sql"SELECT handle FROM users WHERE handle = ?;", handle)
+  var row = db.getRow(sql"SELECT handle FROM users WHERE handle = ?;", escape(safeifyHandle(toLowerAscii(handle))))
   if row == @[""]:
     return false
   else:
     return true
+
+proc getIdFromHandle*(handle: string): string =
+  ## A function to convert a handle to an id.
+  if not userHandleExists(handle):
+    return ""
+  var row = db.getRow(sql"SELECT id FROM users WHERE handle = ?;", escape(safeifyHandle(toLowerAscii(handle))))
+  return unescape(row[0])
+
+proc getHandleFromId*(id: string): string =
+  ## A function to convert an id to a handle.
+  if not userIdExists(id):
+    return ""
+  var row = db.getRow(sql"SELECT handle FROM users WHERE id = ?;", id)
+  return unescape(row[0])
+
 
 proc addPost*(post: Post): bool =
   var newpost: Post = post.escape()

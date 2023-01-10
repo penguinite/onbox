@@ -32,7 +32,6 @@ runnableExamples:
 proc newUser*(handle,password: string, local:bool = false): User =
   ## A procedure to create a new user with id, passwords salt and everything!
   ## It is highly recommended that you insert your own values
-  ## user.escape() or just let db.addUser() do it for you!
   
   var newuser = User()
 
@@ -52,7 +51,7 @@ proc newUser*(handle,password: string, local:bool = false): User =
   if local: 
     newuser.salt = randomString(18) # 32 characters is double what NIST recommends for salt lengths.
     if isEmptyOrWhitespace(password):
-      error("Missing password field!","data.newUser")
+      error("Missing critical field \"Password\"\nProvided: " & handle & ", " & password, "data.newUser")
     newuser.password = hash(password, newuser.salt) # 160000 is what Pleroma/Akkoma uses and it's a little bit higher than what NIST recommends for this key-derivation function.
     
   newuser.handle = handle
@@ -166,7 +165,6 @@ proc escape*(post: var Post): Post =
         newseq.add(escape(x))
       post[].get(key) = newseq
 
-  echo($post)
   return post
 
 proc escape*(post: Post): Post =
@@ -174,7 +172,7 @@ proc escape*(post: Post): Post =
   return newPost.escape()
 
 proc unescape*(post: var Post): Post =
-  # TODO: Implement unescaping
+  # TODO: Implement unescaping for posts
   discard
 
 proc unescape*(post: Post): Post =

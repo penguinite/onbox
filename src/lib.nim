@@ -18,7 +18,7 @@ from std/macros import newIdentNode, newDotExpr, strVal
 # edit escape() and unescape() from data.nim and also edit
 # addUser() and constructUserFromRow() from db.nim
 # so they won't error out!
-type 
+type # This type is documenteded in data.nim
   User* = ref object
     id*: string 
     handle*: string 
@@ -34,12 +34,12 @@ type
   Post* = ref object
     id*: string # A unique id.
     recipients*: seq[string] # A sequence of recipient's handles.
-    sender*: string # aka attributedTo
+    sender*: string # aka attributedTo, basically the person replying.
     replyto*: string # Resource/Post person was replying to, 
     content*: string # The actual content of the post
     written*: string # A timestamp of when the Post was created
     updated*: string # A timestamp of when then Post was last edited
-    local*:bool
+    local*:bool # A boolean indicating whether or not the post came from the local server or external servers
 
 # Special folders will be cached for speed
 # Yes, we have to lie to the compiler again
@@ -48,11 +48,8 @@ type
 {.cast(gcsafe).}:
   var staticFolder* = "static/";
   var uploadsFolder* = "uploads/";
-  var blogsFolder* = "blogs/";
-  # I am not sure why but Pothole doesn't compile unless I do this
-  # I am willing to put it down under "weird things that happen with jester"
+  var blogsFolder* = "blogs/"; # A folder containing the 
   var debugBuffer {.threadvar.}: seq[string]; # A sequence to store debug strings in.
-  var debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
 
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
@@ -67,15 +64,18 @@ const unsafeHandleChars*: set[char] = {'!',' ','"','#','$','%','&','\'','(',')',
 # when registering a local user.
 const localInvalidHandle*: set[char] = {'@',':','.'}
 
-# A set of whitespace characters
-const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
-
 # App version
 const version*: string = "0.0.2"
 
-# How many items can be in debugBuffer before deleting some to save space
+# How many items can be in debugBuffer before deleting some to save memory
 # Set to 0 to disable
 const maxDebugItems: int = 40;
+
+
+const debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
+
+# A set of whitespace characters
+const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
 proc exit*() {.noconv.} =
   ## Exit function
@@ -117,10 +117,9 @@ proc error*(str,caller: string) =
 
 func len*(O: object): int =
   ## A procedure to get the total number of fields in any object
-  var i: int = 0;
+  result = 0
   for x in O.fields:
-    inc(i)
-  return i
+    inc(result)
 
 macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.

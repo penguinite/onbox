@@ -6,10 +6,7 @@
 # would be a disaster.
 
 # From Pothole
-#import conf
-#import lib
-#import data
-import db, web, assets, lib
+import assets, web, db
 
 # From standard libraries
 from std/strutils import replace, contains
