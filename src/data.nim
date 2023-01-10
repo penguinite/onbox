@@ -34,12 +34,15 @@ proc newUser*(handle,password: string, local:bool = false): User =
   ## It is highly recommended that you insert your own values
   ## user.escape() or just let db.addUser() do it for you!
   
-  var newuser: User;
+  var newuser = User()
 
   # Create password and hash ONLY if user is local
   if local == true:
-    for x in localInvalidHandle:
-      newuser.handle = newuser.handle.replace($x,"")
+    var newhandle = ""
+    for x in handle:
+      if x notin localInvalidHandle:
+        newhandle.add(x)
+    newuser.handle = newhandle
     newuser.local = true
   else:
     newuser.local = false
@@ -88,13 +91,13 @@ proc escape*(user: var User): User =
 
   # Loop over all fields in user and escape them.
   # This should be done last thing. 
-  for key, value in user.fieldPairs:
-    when user.get(key) is bool:
-      user.get(key) = value
+  for key, value in user[].fieldPairs:
+    when user[].get(key) is bool:
+      user[].get(key) = value
 
-    when user.get(key) is string:
+    when user[].get(key) is string:
       # Store string as is, just escape it though.
-      user.get(key) = escape(value)
+      user[].get(key) = escape(value)
 
   return user
 
@@ -107,13 +110,13 @@ proc escape*(user: User): User =
 proc unescape*(user: var User): User =
    # Loop over all fields in user and escape them.
   # This should be done last thing. 
-  for key, value in user.fieldPairs:
-    when user.get(key) is bool:
-      user.get(key) = value
+  for key, value in user[].fieldPairs:
+    when user[].get(key) is bool:
+      user[].get(key) = value
 
-    when user.get(key) is string:
+    when user[].get(key) is string:
       # Store string as is, just escape it though.
-      user.get(key) = unescape(value,"","")
+      user[].get(key) = unescape(value,"","")
       
   return user
 
@@ -151,19 +154,19 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], loc
 
 # Escape function for post
 proc escape*(post: var Post): Post =
-  for key,val in post.fieldPairs:
+  for key,val in post[].fieldPairs:
 
-    when post.get(key) is bool:
-      post.get(key) = val
-    when post.get(key) is string:
-      post.get(key) = escape(val)
-    when post.get(key) is seq[string]:
+    when post[].get(key) is bool:
+      post[].get(key) = val
+    when post[].get(key) is string:
+      post[].get(key) = escape(val)
+    when post[].get(key) is seq[string]:
       var newseq: seq[string] = @[]
       for x in val:
         newseq.add(escape(x))
-      post.get(key) = newseq
+      post[].get(key) = newseq
 
-  echo(post)
+  echo($post)
   return post
 
 proc escape*(post: Post): Post =

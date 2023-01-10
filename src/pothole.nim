@@ -91,30 +91,16 @@ if exists("web","port"):
   realport = Port(parseInt(get("web","port")))
 
 # Some users for debugging
-var mex = 0
-inc(mex) # 1
-echo(mex)
-var user: User;
-#var user = newUser("quartz","123",true)
-user.id = randomString()
-user.password = hash("123",randomString(18))
-user.handle = "quartz"
-user.local = true
-user.name = "Louie Quartz"
-user.email = "quartz@quartz.quartz"
-user.bio = "Hi! I create stuff\nStay safe!"
-user.is_frozen = false
-inc(mex) # 2
-echo(mex)
-discard db.addUser(user)
-inc(mex) # 3
-echo(mex)
-echo("Trying to retrieve user")
-inc(mex) # 4
-echo(mex)
-echo(getIdFromHandle(user.handle))
-inc(mex) # 5
-echo(mex)
+when defined(debug):
+  var user = newUser("quartz","123",true)
+  user.name = "Louie Quartz"
+  user.email = "quartz@quartz.quartz"
+  user.bio = "Hi! I create stuff\nStay safe!"
+  # Add it!
+  discard db.addUser(user)
+  echo("Trying to retrieve user")
+  echo(getUserByHandle("quartz"))
+
 
 
 while isMainModule:

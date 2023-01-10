@@ -83,7 +83,7 @@ proc addUser*(user: User): User =
   var sqlStatement = "INSERT OR REPLACE INTO users ("
 
   var i = 0;
-  for key, value in newuser.fieldPairs:
+  for key, value in newuser[].fieldPairs:
     inc(i)
     sqlStatement.add(key & ",")
   
@@ -96,11 +96,11 @@ proc addUser*(user: User): User =
   # The other part of the SQL statement
   # The values.
   i = 0;
-  for key, value in newuser.fieldPairs:
+  for key, value in newuser[].fieldPairs:
     inc(i)
     # If its string, add it surrounding quotes
     # Otherwise add it whole
-    when newuser.get(key) is string:
+    when newuser[].get(key) is string:
       sqlStatement.add(value)
     else:  
       sqlStatement.add($value)
@@ -121,7 +121,7 @@ proc addUser*(user: User): User =
 proc constructUserFromRow*(row: Row): User =
   ## This procedure takes a database row (from either getUserById() or getUserByHandle())
   ## and turns it into an actual User object that can be returned and processed.
-  var user: User;
+  var user = User()
 
   # This looks ugly, I know, I had to wrap it with
   # two specific functions but we don't have to re-write this
@@ -129,14 +129,14 @@ proc constructUserFromRow*(row: Row): User =
   # if we introduce new data types to the User object
   var i: int = 0;
 
-  for key,value in user.fieldPairs:
+  for key,value in user[].fieldPairs:
     inc(i)
     # If its string, add it surrounding quotes
     # Otherwise add it whole
-    when user.get(key) is bool:
-      user.get(key) = parseBool(row[i - 1])
-    when user.get(key) is string:
-      user.get(key) = row[i - 1]
+    when user[].get(key) is bool:
+      user[].get(key) = parseBool(row[i - 1])
+    when user[].get(key) is string:
+      user[].get(key) = row[i - 1]
 
   return user.unescape()
 
@@ -178,7 +178,6 @@ proc updateUserById*(id, column, value: string): bool =
 proc getIdFromHandle*(handle: string): string =
   ## A function to convert a handle to an id.
   var row = db.getRow(sql"SELECT id FROM users WHERE handle = ?;", escape(safeifyHandle(toLowerAscii(handle))))
-
   return unescape(row[0])
 
 proc getHandleFromId*(id: string): string =
@@ -189,22 +188,16 @@ proc getHandleFromId*(id: string): string =
 proc userIdExists*(id:string): bool =
   ## A procedure to check if a user exists by id
   var row = db.getRow(sql"SELECT id FROM users WHERE id = ?;", id)
-  var emptySeq: seq[string];
-  for x in 0 .. len(row) - 1:
-    emptySeq.add("")
-  if emptySeq == row:
-    return false;
+  if row == @[""]:
+    return false
   else:
     return true
 
 proc userHandleExists*(handle:string): bool =
   ## A procedure to check if a user exists by handle
-  var row = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", handle)
-  var emptySeq: seq[string];
-  for x in 0 .. len(row) - 1:
-    emptySeq.add("")
-  if emptySeq == row:
-    return false;
+  var row = db.getRow(sql"SELECT handle FROM users WHERE handle = ?;", handle)
+  if row == @[""]:
+    return false
   else:
     return true
 

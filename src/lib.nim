@@ -19,7 +19,7 @@ from std/macros import newIdentNode, newDotExpr, strVal
 # addUser() and constructUserFromRow() from db.nim
 # so they won't error out!
 type 
-  User* = object
+  User* = ref object
     id*: string 
     handle*: string 
     name*: string 
@@ -31,7 +31,7 @@ type
     is_frozen*: bool
 
 type 
-  Post* = object
+  Post* = ref object
     id*: string # A unique id.
     recipients*: seq[string] # A sequence of recipient's handles.
     sender*: string # aka attributedTo
@@ -148,3 +148,17 @@ proc cleanString*(str: string): string =
     dec(endnum)
 
   return str[startnum .. endnum]
+
+proc `$`*(obj: User): string =
+  result.add("(")
+  for key,val in obj[].fieldPairs:
+    result.add("\"" & key & "\": \"" & $val & "\",")
+  result = result[0 .. len(result) - 2]
+  result.add(")")
+
+proc `$`*(obj: Post): string =
+  result.add("(")
+  for key,val in obj[].fieldPairs:
+    result.add("\"" & key & "\": \"" & $val & "\",")
+  result = result[0 .. len(result) - 2]
+  result.add(")")
