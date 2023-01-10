@@ -91,7 +91,7 @@ if exists("web","port"):
   realport = Port(parseInt(get("web","port")))
 
 # Some users for debugging
-when defined(debug):
+when defined(release):
   var user = newUser("quartz","123",true)
   user.name = "Louie Quartz"
   user.email = "quartz@quartz.quartz"
@@ -101,18 +101,14 @@ when defined(debug):
   echo("Trying to retrieve user")
   echo(getUserByHandle("quartz"))
 
-
-
 while isMainModule:
   let settings = newSettings(port=realport)
   var app = initJester(potholeRouter, settings=settings)
   # Start the web server. Let's hope for good luck!
   app.serve()
 
-  exit()
 
 
 
-
-
+exit()
 # And we all *shut* down...

@@ -9,7 +9,11 @@ import std/[base64, random]
 
 proc randomString*(endlen: int = 18): string =
   for i in 0 .. endlen:
-    add(result, char(rand(int('A') .. int('z'))))
+    if rand(5) == 1:
+      add(result, $rand(10))
+    else:
+      add(result, char(rand(int('A') .. int('z'))))
+      
 
 # We use PBKDF2-HMAC-SHA512 by default
 # This procedure is a wrapper for nimcrypto's PBKDF2 implementation

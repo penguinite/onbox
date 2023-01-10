@@ -17,8 +17,10 @@ import lib
       const resources: Table[string,string] = {
         "index.html": staticRead("../assets/index.html"), # Main index page
         "style.css": staticRead("../assets/style.css"), # Styling for default user blog
-        "user.html": staticRead("../assets/user.html"), # Default user blog
-        "error.html": staticRead("../assets/error.html") # Error page
+        "user.html": staticRead("../assets/user.html"), # Default user profile page
+        "post.html": staticRead("../assets/user.html"), # Default user post page
+        "error.html": staticRead("../assets/error.html"), # Error page
+        "user_error.html": staticRead("../assets/error.html") # User error page
       }.toTable()
       return resources[asset]
 
@@ -70,7 +72,7 @@ import lib
     # or error out
     if not dirExists(uploadsFolder & id):
       if data == "":
-        error("User uploads directory does not exist for user id: " & id, )
+        error("User uploads directory does not exist for user id: " & id, "assets.fetchUpload")
       else:
         createDir(uploadsFolder & id)
 

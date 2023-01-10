@@ -2,3 +2,6 @@ build
 main.db
 *.db
 *htmldocs*
+static/
+blogs/
+uploads/
