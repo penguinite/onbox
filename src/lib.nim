@@ -99,7 +99,7 @@ proc debug*(str, caller: string) =
   if debugPrint:
     stderr.writeLine(toBeAdded)
 
-proc error*(str: string, caller: string = "Unknown"): bool {.discardable.} =
+proc error*(str,caller: string) =
   ## Exits the program, writes a stacktrace and maybe print the debug buffer.
   var toBePrinted = "\nError: (" & caller & "): " & str
   stderr.writeLine("Printing stacktrace...")
