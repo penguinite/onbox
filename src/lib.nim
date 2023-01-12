@@ -135,15 +135,15 @@ proc isEmptyOrWhitespace*(str: string): bool =
       return false
   return true
 
-proc cleanString*(str: string): string =
+proc cleanString*(str: string, charset: set[char] = whitespace): string =
   ## A procedure to clean a string of whitespacer characters.
   var startnum = 0;
   var endnum = len(str) - 1;
   
-  while str[startnum] in whitespace:
+  while str[startnum] in charset:
     inc(startnum)
 
-  while endnum >= 0 and str[endnum] in whitespace:
+  while endnum >= 0 and str[endnum] in charset:
     dec(endnum)
 
   return str[startnum .. endnum]

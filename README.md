@@ -1,6 +1,6 @@
 # Pothole
 
-A lightweight ActivityPub backend written in Nim. 
+A lightweight ActivityPub backend written in Nim. Pothole allows you to control your digital life!
 
 *Note:* This is the main branch, It's not as stable as the `stable` branch but it does include newer features. For server environments, you should use the `stable` branch.
 
