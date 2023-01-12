@@ -28,6 +28,6 @@ The makefile is there for developer use as it includes common targets with devel
 
 ## Copyright
 
-Copyright © Louie Quartz 2022-2023
+Copyright © Leo Gavilieau 2022-2023
 
 Licensed under GNU Affero General Public License version 3 or later.

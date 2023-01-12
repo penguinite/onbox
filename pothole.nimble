@@ -7,7 +7,7 @@ else:
     switch("hints","off")
 
 version       = "0.0.2"
-author        = "quartz"
+author        = "xmoo"
 description   = "A lightweight ActivityPub backend."
 license       = "AGPL-3.0-or-later"
 srcDir        = "src"

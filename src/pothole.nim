@@ -18,7 +18,7 @@ from std/strutils import split, parseInt
 import jester
 
 echo("Pothole version ", lib.version)
-echo("Copyright © Louie Quartz 2022-2023.")
+echo("Copyright © Leo Gavilieau 2022-2023.")
 echo("Licensed under the GNU Affero General Public License version 3 or later")
 
 # Catch Ctrl+C so we can exit without causing a stacktrace
@@ -88,14 +88,14 @@ if exists("web","port"):
 
 # Some users for debugging
 when defined(release):
-  var user = newUser("quartz","123",true)
-  user.name = "Louie Quartz"
-  user.email = "quartz@quartz.quartz"
+  var user = newUser("xmoo","123",true)
+  user.name = "Leo Gavilieau"
+  user.email = "xmoo@xmoo.xmoo"
   user.bio = "Hi! I create stuff\nStay safe!"
   # Add it!
   discard db.addUser(user)
   echo("Trying to retrieve user")
-  echo(getUserByHandle("quartz"))
+  echo(getUserByHandle("xmoo"))
 
 while isMainModule:
   let settings = newSettings(port=realport)

@@ -1,4 +1,4 @@
-# Copyright © Louie Quartz 2022-2023
+# Copyright © Leo Gavilieau 2022-2023
 ## This module provides an easy-to-use wrapper for nimcrypto's PBKDF2-HMAC-SHA512 implementation
 ## By default we use 160,000 iterations with that key-derivation function, NIST recommends 120,000 so we 
 ## will go a little overboard.

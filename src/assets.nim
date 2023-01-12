@@ -1,4 +1,4 @@
-# Copyright © Louie Quartz 2022-2023
+# Copyright © Leo Gavilieau 2022-2023
 # Licensed under the AGPL version 3 or later.
 #
 ## A module for fetching resources
