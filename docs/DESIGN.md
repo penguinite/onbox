@@ -112,6 +112,7 @@ Here is how they are stored in Pothole: `blogs[1]/user-id[2]/*.html[3]`
   3.1. index.html: This is our main user page, it will be displayed when a person goes to the external user profile, it's regular HTML with a bit of a custom syntax mixed in for displaying posts and user data.
   3.2. post.html: This is an individual post page, it will be used to display a single post individually or in a thread. It can also contain said custom syntax with *some* changes. Note: if we are displaying a thread then we would want to apply each user's theme on all posts whether they come from other users or from other servers.
   3.3 error.html: This is used when an error occurs, ie. if a post doesn't exist. It should only have one custom tag which is `.Error`(case-sensitive), that will be replaced with an error summary.
+  3.4 list.html: This is used only to list a sequence of posts, for example when viewing user's favorites, posts or replies. This is different from the user.html file but they are both very similar. If this isn't found then user.html is used instead.
 
 
 * For example, index.html can link a stylesheet at {{ $userdir }}/style.css which will be available at the user/static/style.css
@@ -163,7 +164,7 @@ Here is a list of attributes inside the Post scope you can use, anything else wi
 
 6. `Boosts`, integer: Number of Boosts/Repeats/Renotes of the current post.
 
-7. `Content`, HTML: HTML of the post.
+7. `Content`, HTML: HTML of the post. This variable is sanitized.
 
 8. `WrittenIn`, A human-readable date of when the post was written. (Format: Month Day(st/nd/rd/th), Year. Hour:Minutes:Seconds) (Example: December 17th, 2022. 19:04:37) 
 
@@ -199,6 +200,10 @@ The following are functions, simple, logical procedures to do lots of stuff!
 
 6. `ExternalUser`, function 1: string (Username, NOT SHORTENED): This function takes a username and generates a link to the external user profile.
 
+7. `SetPostLimit`, function 1: This function sets a limit to how many posts will be rendered on each page.
+
+8. `Version`, function 1, int: This function is simply used for internal parsing. It's a good idea to set a version before doing anything.
+
 Anyways. Block functions!
 
 Block functions are regular functions with a special ability, they create blocks of code that will be added when the given statement is true.
@@ -211,7 +216,7 @@ For example, say you want to check if a post has a content warning, well then yo
 {{:End}}
 ```
 
-It's very similar to an `if` statement in programming, except Has is a bit more broad and can checks if a Post/User/Something has a valid Object.
+It's very similar to an `if` statement in programming, except Has is a bit more broad and can checks if a Post/User/Something has a valid Object or Attribute.
 
 Here is a list of block functions:
 
@@ -225,9 +230,22 @@ Here is a list of block functions:
 
 #### User scope
 
+1. `Bio`/`Biography`, string: The biography of the user 
+2. `Name`, string: The display name of a user
+3. `Avatar`, string: A link to a user's avatar (image url or `data:` object, either way, to be used in `<img>`)
+4. `Handle`, string: The user's full handle ie. @alice@wonderland.example
+5. `Header`, string: A link to a user's header (image url or `data:` object, either way, to be used in `<img>`)
+6. `
+
+. `Fields`, Table[string,string]: A key-value pair of the user's fields.
+. `Posts`, seq[Post]: a sequence of the user's posts, this respects setpostlimit. By default this also includes replies
+. `Replies`, seq[Post]: a sequence only containing the user's replies, this respects setpostlimit.
+. `Notes`, seq[Post]: a sequence only containing the user's posts, this respects setpostlimit.
+. `Favorites`, seq[Post]: a sequence only containing the user's 
 
 
 
+16. `ExternalLink`, string: A string containing a link to the user profile.
 
 #### Instance scope
 

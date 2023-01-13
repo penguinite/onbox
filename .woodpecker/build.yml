@@ -8,7 +8,7 @@ pipeline:
   build:
     image: nimlang/nim:latest
     commands:
-      - nimble build
+      - nimble build -y
     when:
       event: [pull_request, tag] 
   test:
