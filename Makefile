@@ -5,8 +5,8 @@ SRCDIR=src
 BUILDDIR=build
 CC=nim
 CP=cp -rv
-CPRODFLAGS=--app:console -d:release --opt:speed --threads:off --stackTrace:on 
-CSAFEFLAGS=$(CPRODFLAGS) -d:safe # Experimenting with Memory safety in Nim, do not use.
+CPRODFLAGS=--app:console -d:release --opt:speed --threads:on --threadAnalysis:off --stackTrace:on 
+CSAFEFLAGS=$(CPRODFLAGS) -d:safe # Experimenting with Memory safety in Nim, do not use. Read https://forum.nim-lang.org/t/1961 for more info
 CDEBFLAGS=--app:console -d:debug --threads:on --threadAnalysis:off --opt:speed --stackTrace:on
 
 build: clean
