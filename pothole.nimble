@@ -23,20 +23,19 @@ var
 when defined(debug):
     # Debug flags
     switch("app","console")
-    switch("opt","speed")
-    switch("checks","on")
-    switch("stackTrace","on")
-    switch("threadAnalysis","off")
     switch("define","debug")
+    switch("threads","on")
+    switch("threadAnalysis","off")
+    switch("opt","speed")
+    switch("stackTrace","on")
 else:
     # Release flags
-    switch("checks","on")
-    switch("threads","on")
-    switch("opt","speed")
     switch("app","console")
-    switch("stackTrace","on")
-    switch("threadAnalysis","off")
     switch("define","release")
+    switch("opt","speed")
+    switch("threads","on")
+    switch("threadAnalysis","off")    
+    switch("stackTrace","on")
 
 task clean, "Removes build folder if it exists":
     if dirExists(buildDir):

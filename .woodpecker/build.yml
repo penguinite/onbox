@@ -1,0 +1,19 @@
+pipeline:
+  clone:
+    image: debian
+    commands:
+      - git clone https://git.vern.cc/xmoo/pothole.git
+    when:
+      event: [pull_request, tag] 
+  build:
+    image: nimlang/nim:latest
+    commands:
+      - nimble build
+    when:
+      event: [pull_request, tag] 
+  test:
+    image: nimlang/nim:latest
+    commands:
+      - nimble test
+    when:
+      event: [pull_request, tag] 
