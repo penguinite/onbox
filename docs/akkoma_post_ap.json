@@ -1,0 +1,40 @@
+{
+    "@context": [
+      "https://www.w3.org/ns/activitystreams",
+      "https://ak.vern.cc/schemas/litepub-0.1.jsonld",
+      {
+        "@language": "und"
+      }
+    ],
+    "actor": "https://ak.vern.cc/users/xmoo",
+    "attachment": [],
+    "attributedTo": "https://ak.vern.cc/users/xmoo",
+    "cc": [
+      "https://www.w3.org/ns/activitystreams#Public"
+    ],
+    "content": "<p>The problem is I want all AP activities to be condensed down to either a Post or User object, but those objects are quite limited. Idk I will just look at what type of data this specific post has in AP and implement <em>that</em> into the Post object</p>",
+    "context": "https://ak.vern.cc/contexts/f56c6f7c-a445-4e58-a266-c3be6ad263e5",
+    "conversation": "https://ak.vern.cc/contexts/f56c6f7c-a445-4e58-a266-c3be6ad263e5",
+    "id": "https://ak.vern.cc/objects/f66a28e5-6018-4769-b108-83bd05ab2761",
+    "inReplyTo": "https://ak.vern.cc/objects/0c30562f-cb7b-431c-b692-09ae417c6e06",
+    "published": "2023-01-19T14:10:24.267764Z",
+    "sensitive": null,
+    "source": {
+      "content": "The problem is I want all AP activities to be condensed down to either a Post or User object, but those objects are quite limited.\r\nIdk I will just look at what type of data this specific post has in AP and implement *that* into the Post object",
+      "mediaType": "text/markdown"
+    },
+    "summary": "re: phd",
+    "tag": [
+      {
+        "href": "https://ak.vern.cc/users/xmoo",
+        "name": "@xmoo",
+        "type": "Mention"
+      }
+    ],
+    "to": [
+      "https://ak.vern.cc/users/xmoo",
+      "https://ak.vern.cc/users/xmoo/followers"
+    ],
+    "type": "Note"
+  }
+  

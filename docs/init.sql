@@ -10,14 +10,18 @@ CREATE TABLE IF NOT EXISTS users (
   is_frozen BOOLEAN, -- Indicates if a user is banned. This prevents them from logging in.
 );
   
+
+
 CREATE TABLE IF NOT EXISTS posts (
   id BLOB PRIMARY KEY UNIQUE NOT NULL,
-  recipients VARCHAR(65535),
-  sender VARCHAR(65535) NOT NULL,
-  replyto VARCHAR(65535),
-  content VARCHAR(65535),
-  written TIMESTAMP NOT NULL,
-  updated TIMESTAMP
+  contexts VARCHAR(65535),
+  recipients VARCHAR(65535), 
+  sender VARCHAR(65535) NOT NULL, 
+  replyto VARCHAR(65535), 
+  content VARCHAR(65535) NOT NULL,
+  written TIMESTAMP NOT NULL, 
+  updated TIMESTAMP, 
+  local BOOLEAN NOT NULL 
 );
 
 -- Inserting some generic users for testing

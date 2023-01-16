@@ -1,4 +1,4 @@
-# Pothole ![Build status](https://ci.vern.cc/api/badges/xmoo/pothole/status.svg)
+# Pothole
 
 A lightweight ActivityPub backend written in Nim. Pothole allows you to control your digital life!
 

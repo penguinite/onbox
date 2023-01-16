@@ -6,7 +6,6 @@
 from std/macros import newIdentNode, newDotExpr, strVal
 
 # User data type, which represents actual users in the database.
-# Check data.nim for information on how this is validated
 # Confusingly, "name" means display name and "handle" means
 # actual username. It's too late to change this now sadly.
 #
@@ -18,24 +17,27 @@ from std/macros import newIdentNode, newDotExpr, strVal
 # edit escape() and unescape() from data.nim and also edit
 # addUser() and constructUserFromRow() from db.nim
 # so they won't error out!
-type # This type is documenteded in data.nim
+## Here are all of the fields in a user objects, with an explanation:
+type 
   User* = ref object
-    id*: string 
-    handle*: string 
-    name*: string 
-    local*: bool 
-    email*: string 
-    bio*: string
-    password*: string
-    salt*: string
-    is_frozen*: bool
+    id*: string # An OID that represents the actual user (Db: blob primary key)
+    handle*: string # A string containing the user's actual username (Db: varchar unique not null)
+    name*: string # A string containing the user's display name (Db: varchar)
+    local*: bool # A boolean indicating if this user is from this instance (Db: boolean)
+    email*: string # A string containing the user's email (Db: varchar)
+    bio*: string # A string containing the user's biography (Db: varchar)
+    password*: string # A string to store a hashed + salted password (Db: varchar not null)
+    salt*: string # The actual salt with which to hash the password. (Db: varchar not null)
+    is_frozen*: bool #  A boolean indicating if the user is frozen/banned. (Db: )
 
+# ActivityPub Object/Post
 type 
   Post* = ref object
-    id*: string # A unique id.
+    id*: string # A unique id. (If its an internal post then just leave out the domain name, if it's external then add the full link)
+    contexts*: seq[string] # A sequence of the contexts that this post has.
     recipients*: seq[string] # A sequence of recipient's handles.
-    sender*: string # aka attributedTo, basically the person replying.
-    replyto*: string # Resource/Post person was replying to, 
+    sender*: string # aka attributedTo, basically the person replying. (AP: Actor)
+    replyto*: string # Resource/Post person was replying to,  
     content*: string # The actual content of the post
     written*: string # A timestamp of when the Post was created
     updated*: string # A timestamp of when then Post was last edited
@@ -136,7 +138,7 @@ proc isEmptyOrWhitespace*(str: string): bool =
   return true
 
 proc cleanString*(str: string, charset: set[char] = whitespace): string =
-  ## A procedure to clean a string of whitespacer characters.
+  ## A procedure to clean a string of whitespace characters.
   var startnum = 0;
   var endnum = len(str) - 1;
   
@@ -147,6 +149,25 @@ proc cleanString*(str: string, charset: set[char] = whitespace): string =
     dec(endnum)
 
   return str[startnum .. endnum]
+
+proc cleanLeading*(str: string, charset: set[char] = whitespace): string =
+  ## A procedure to clean the beginning of a string.
+  var startnum = 0;
+  
+  while str[startnum] in charset:
+    inc(startnum)
+
+  return str[startnum .. len(str) - 1]
+
+proc cleanTrailing*(str: string, charset: set[char] = whitespace): string =
+  ## A procedure to clean the end of a string.
+  var endnum = len(str) - 1;
+
+  while endnum >= 0 and str[endnum] in charset:
+    dec(endnum)
+
+  return str[0 .. endnum]
+
 
 proc `$`*(obj: User): string =
   result.add("(")

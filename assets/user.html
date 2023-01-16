@@ -15,7 +15,7 @@
         </main>
 		<!-- Only 15 posts will be displayed per page -->
 		{{ :SetPostLimit = 15; }}
-		{{ :Start = Post; }}
+		{{ :Start = Post; }} <!-- Always start post block with "Post" explicitly -->
 			<div class="post">
 				{{ :IsReply }}
 				<p class="replyto">Replying to <a href="{{ReplyTo}}">a post</a> from <a href="{{ :ExternalUser = OP }}">{{ OP }}</a>
@@ -60,7 +60,7 @@
 				</details>
 				{{ :End }}
 			</div>
-		{{ :End = Post; }}
+		{{ :End = Post; }} <!-- Always end the post block with "Post" explicitly. -->
 		<hr>
 		{{ :Has = $Version; }}
         <p>Pothole version: {{ $Version }}</p>

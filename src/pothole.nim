@@ -58,9 +58,7 @@ if exists("folders","blogs"):
 proc c(folder:var string): bool =
 
   # Add slash at end if it does exist
-  if folder[len(folder) - 1] == '/':
-    discard # Nim does not have "does not equal" operator
-  else:
+  if folder[len(folder) - 1] != '/':
     folder.add("/")
 
   if not dirExists(folder):
@@ -86,16 +84,16 @@ var realport = Port(3500)
 if exists("web","port"):
   realport = Port(parseInt(get("web","port")))
 
-# Some users for debugging
-when defined(release):
-  var user = newUser("xmoo","123",true)
-  user.name = "Leo Gavilieau"
-  user.email = "xmoo@xmoo.xmoo"
-  user.bio = "Hi! I create stuff\nStay safe!"
-  # Add it!
-  discard db.addUser(user)
-  echo("Trying to retrieve user")
-  echo(getUserByHandle("xmoo"))
+# Some users and fake posts for debugging
+when defined(test):
+  import test
+  const mode = true
+  if mode:
+    for x in test.getFakeUsers():
+      echo("Added ", x.handle)
+      discard db.addUser(x)
+    for x in test.getFakePosts():
+      discard db.addPost(x)
 
 while isMainModule:
   let settings = newSettings(port=realport)

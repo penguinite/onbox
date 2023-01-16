@@ -9,23 +9,10 @@
 import lib
 import crypto
 
+
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace
-
-
-## User data type, which represents actual users in the database.
-## Here are all of the fields in a user objects, with an explanation:
-runnableExamples:
-  # -    id: string     =   An OID that represents the actual user (Db: blob primary key)
-  # -    handle: string =   A string containing the user's actual username (Db: varchar unique not null)
-  # -    name: string   =   A string containing the user's display name (Db: varchar)
-  # -    local: bool    =   A boolean indicating if this user is from this instance (Db: boolean)
-  # -    email: string  =   A string containing the user's email (Db: varchar)
-  # -    bio: string    =   A string containing the user's biography (Db: varchar)
-  # -    password:string=   A string to store a hashed + salted password (Db: varchar not null)
-  # -    salt: string   =   The actual salt with which to hash the password. (Db: varchar not null)
-  # -    is_frozen:bool =   A boolen indicating if the user is frozen/banned.
-  discard
+import std/times
 
 # Various helper procedures related to Users and Posts
 
@@ -100,7 +87,6 @@ proc escape*(user: var User): User =
 
   return user
 
-
 proc escape*(user: User): User =
   ## A helper function that initializes a new User object for you!
   var newuser: User = user;
@@ -124,8 +110,8 @@ proc unescape*(user: User): User =
   var newuser: User = user;
   return newuser.unescape()
 
-proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: string = ""): Post =
-  var post: Post;
+proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: string = "", contexts: seq[string] = @[]): Post =
+  var post: Post = Post()
   if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
     error("Missing critical fields for post.","data.newPost")
 
@@ -137,22 +123,23 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], loc
   post.recipients = recipients
   post.local = local
   post.content = content
+  post.contexts = contexts
 
   if isEmptyOrWhitespace(replyto):
     post.replyto = ""
   else:
     post.replyto = replyto
 
-  if written == "":
-    # TODO: write date generation code here
-    discard
+  if isEmptyOrWhitespace(written):
+    post.written = $(now().utc) # Writing time-related code is always going to be messy...
   else:
     post.written = written
 
   return post
 
-# Escape function for post
 proc escape*(post: var Post): Post =
+  ## This procedure takes a post and escapes it
+  ## It basically makes it ready to be added into the database.
   for key,val in post[].fieldPairs:
 
     when post[].get(key) is bool:
@@ -168,13 +155,29 @@ proc escape*(post: var Post): Post =
   return post
 
 proc escape*(post: Post): Post =
+  ## This wraps around escape(post: Post)
   var newPost: Post = post;
   return newPost.escape()
 
 proc unescape*(post: var Post): Post =
-  # TODO: Implement unescaping for posts
-  discard
+  ## This procedure takes a post and unescapes it.
+  for key,val in post[].fieldPairs:
+
+    when post[].get(key) is bool:
+      post[].get(key) = val
+
+    when post[].get(key) is string:
+      post[].get(key) = unescape(val)
+
+    when post[].get(key) is seq[string]:
+      var newseq: seq[string] = @[]
+      for x in val:
+        newseq.add(unescape(x))
+      post[].get(key) = newseq
+
+  return post
 
 proc unescape*(post: Post): Post =
+  ## This wraps around unescape(post: Post)
   var newPost: Post = post
   return newPost.unescape()

@@ -133,5 +133,13 @@ proc fetchBlog*(id2: string): string =
   if not fileExists(userDir & "error.html"):
     when not defined(noEmbed):
       writeFile(userDir & "error.html", staticAsset("user_error.html"))
+
+  # list.html
+  if not fileExists(userDir & "list.html"):
+    when not defined(noEmbed):
+      writeFile(userDir & "list.html", staticAsset("user.html"))
+    
+    # We could probably use user.html
+  
   
   return userDir
