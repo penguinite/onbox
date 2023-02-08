@@ -4,10 +4,6 @@
 # From Pothole
 import lib
 import conf
-import routes
-import db
-import data 
-import crypto
 
 # From standard library
 from std/os import existsEnv, getEnv, dirExists, createDir
@@ -54,9 +50,7 @@ if exists("folders","blogs"):
   blogsFolder = conf.get("folders","blogs")
 
 # Generic folder checking function
-# We could replace this with a loop?
 proc c(folder:var string): bool =
-
   # Add slash at end if it does exist
   if folder[len(folder) - 1] != '/':
     folder.add("/")
@@ -83,17 +77,6 @@ db.init()
 var realport = Port(3500)
 if exists("web","port"):
   realport = Port(parseInt(get("web","port")))
-
-# Some users and fake posts for debugging
-when defined(test):
-  import test
-  const mode = true
-  if mode:
-    for x in test.getFakeUsers():
-      echo("Added ", x.handle)
-      discard db.addUser(x)
-    for x in test.getFakePosts():
-      discard db.addPost(x)
 
 while isMainModule:
   let settings = newSettings(port=realport)

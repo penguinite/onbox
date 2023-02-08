@@ -9,6 +9,8 @@
 ## 
 ## Ie. it's called "Potcode" for a reason... It's for Pothole :P
 
+## This module is very much W.I.P
+
 import tables
 import lib, data, db
 

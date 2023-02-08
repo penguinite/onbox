@@ -128,7 +128,6 @@ macro get*(obj: object, fld: string): untyped =
   ## Like so: user.get("local") == user.local
   newDotExpr(obj, newIdentNode(fld.strVal))
 
-
 proc isEmptyOrWhitespace*(str: string): bool =
   ## A faster implementation of strutils.isEmptyOrWhitespace
   ## This is basically the same thing.

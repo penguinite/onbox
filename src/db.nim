@@ -1,13 +1,17 @@
 # Copyright © Leo Gavilieau 2022-2023
 # Licensed under the AGPL version 3 or later.
 #
-# db.nim  ;;  Database functions
+# db.nim:
+## Various procedures and functions for inserting, updating and deleting data.
+## I am considering moving Post functions from here to post.nim
+## and User functions from here to post.nim
+## 
+## I am also considering re-writing everything here since this whole thing is written specifically for db_sqlite
+## I should consider writing for one database engine, a good one! Like postgres!
 
 # From pothole
-import lib
-import conf
-import data
-import crypto
+import lib,user,post,conf
+from crypto import randomString
 
 # From standard library
 import std/[db_sqlite,strutils]
@@ -15,7 +19,7 @@ import std/[db_sqlite,strutils]
 {.gcsafe.}:
   var db*:DbConn;
 
-proc init*(dbtype: string = get("database","type")): int {.discardable.} =
+proc init*(dbtype: string = conf.get("db","type")): int {.discardable.} =
   ## This procedure initializes the database. All on its own!
   ## It uses configuration values from conf to do everything by itself
   var dbtype2 = toLower(dbtype)
@@ -24,7 +28,7 @@ proc init*(dbtype: string = get("database","type")): int {.discardable.} =
   case dbtype2:
   of "sqlite":
     # Here we try to open the database
-    if exists("database","filename") == false:
+    if not exists("db","filename"):
       error("No database filename provided","db.init.sqlite")
     debug("Opening sqlite database at " & get("database","filename"),"db.init.sqlite")
     db = open(get("database","filename"),"","","")
