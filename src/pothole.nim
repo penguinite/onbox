@@ -2,13 +2,13 @@
 # Licensed under the AGPL version 3 or later.
 
 # From Pothole
-import lib
-import conf
+import lib, conf, dbnew, routes
+from assets import initFolders
 
 # From standard library
 from std/os import existsEnv, getEnv, dirExists, createDir
 from std/parsecfg import loadConfig
-from std/strutils import split, parseInt
+from std/strutils import split, parseInt, toLower
 
 # From nimble
 import jester
@@ -38,40 +38,12 @@ for x in lib.requiredConfigOptions:
   else:
     error("Missing key " & list[1] & " in section " & list[0], "main.startup")
 
-# Use folders values from the configuration file
-# If they exist
-if exists("folders","static"):
-  staticFolder = conf.get("folders","static")
-
-if exists("folders","uploads"):
-  uploadsFolder = conf.get("folders","uploads")
-
-if exists("folders","blogs"):
-  blogsFolder = conf.get("folders","blogs")
-
-# Generic folder checking function
-proc c(folder:var string): bool =
-  # Add slash at end if it does exist
-  if folder[len(folder) - 1] != '/':
-    folder.add("/")
-
-  if not dirExists(folder):
-    try:
-      createDir(folder)
-    except:
-      return false
-  return true
-
-if c(staticFolder) == false or c(uploadsFolder) == false or c(blogsFolder) == false:
-  var caller = "main.startup.FolderCheck"
-  debug("Static folder: " & staticFolder, caller)
-  debug("Uploads folder: " & uploadsFolder, caller)
-  debug("Blogs folder: " & blogsFolder, caller)
-  error("A special folder that is vital for Pothole doesn't exist or failed to be created.",caller)
+# Initialize assets.nim to use the correct folders (Further checking is done in initFolders)
+assets.initFolders()
 
 # Initialize the database
 echo("Initializing database")
-db.init()
+discard init() # Wrap over specific database engine
 
 # Fetch port from config file
 var realport = Port(3500)

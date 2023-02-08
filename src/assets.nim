@@ -4,15 +4,54 @@
 ## A module for fetching resources
 
 import std/[os, tables, strutils]
-import lib
+import lib, conf
+
+var staticFolder = "static/";
+var uploadsFolder = "uploads/";
+var blogsFolder = "blogs/";
+
+proc c(folder:var string): bool =
+  ## A quick function to check folders
+  # Add slash at end if it does exist
+  if folder[len(folder) - 1] != '/':
+    folder.add("/")
+
+  if not dirExists(folder):
+    try:
+        createDir(folder)
+    except:
+      return false
+  return true
+
+proc initFolders*() =
+  ## This function will initialize assets.nim to use the correct folders
+  var caller = "assets.initFolders"
+  debug("Initializing special folders", caller)
+  
+  # Use folders values from the configuration file
+  # If they exist
+  if exists("folders","static"):
+    staticFolder = conf.get("folders","static")
+
+  if exists("folders","uploads"):
+    uploadsFolder = conf.get("folders","uploads")
+
+  if exists("folders","blogs"):
+    blogsFolder = conf.get("folders","blogs")
+  
+  if c(staticFolder) == false or c(uploadsFolder) == false or c(blogsFolder) == false:
+    debug("Static folder: " & staticFolder, caller)
+    debug("Uploads folder: " & uploadsFolder, caller)
+    debug("Blogs folder: " & blogsFolder, caller)
+    error("A special folder that is vital for Pothole doesn't exist or failed to be created.",caller)
 
 # Main asset database.
 # We wrap it in a procedure so Nim will immediately
 # deallocate memory when a resource is fetched and done.
 #
 # This is for static assets
-{.cast(gcsafe).}:
-  when not defined(noEmbed):
+when not defined(noEmbed):
+  {.cast(gcsafe).}:
     proc staticAsset(asset: string): string =
       const resources: Table[string,string] = {
         "index.html": staticRead("../assets/index.html"), # Main index page

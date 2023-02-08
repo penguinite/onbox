@@ -4,7 +4,7 @@
 
 ## This module provides an easy to use interface
 ## for the reference implementation of the Potcode parser.
-## This module heavily depends on data, db and nim and is specifically intended to be used in Pothole.
+## This module heavily depends on Pothole modules (user, db, post, lib, conf)
 ## Heavy modifications would be needed to port this somewhere else.
 ## 
 ## Ie. it's called "Potcode" for a reason... It's for Pothole :P
@@ -12,16 +12,9 @@
 ## This module is very much W.I.P
 
 import tables
-import lib, data, db
+import lib
 
 import strutils except isEmptyOrWhitespace
-
-# A fake user and post for testing
-when defined(debug):
-  var user = User()
-  var post = Post()
-  const file = staticRead("../assets/user.html")
-  #const file = "Hello I'm {{ .Name }}"
 
 # Basically whitespace from lib.nim but with '{' and '}' added in.
 const badCharSet*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f',';', '{', '}'}
@@ -160,15 +153,70 @@ proc parse*(input: string, user: User, post: seq[Post], context: string, extra: 
 
   return result
 
-# This string parses a "simple" page
-# It basically disables the User and Post object.
-proc parseInternal*(input:string, extra: string = ""): string =
-  if isEmptyOrWhitespace(extra):
-    return parse(input, User(), @[Post()], "internal")
-  else:
-    return parse(input, User(), @[Post()], "internal", extra)
+proc parseInternal*(input:string): string =
+  ## This is a watered down version of the parse() command that does not require User or Post objects
+  ## It can be used to parse relatively simple pages, such as error pages and non-user pages (Instance rules fx.)
   
+  var cmdtable: Table[int,string] = initTable[int, string]() # This stores all commands and their identifiers.
+  
+  var parsingCmd: bool = false; # A boolean indicating whether or not we are currently parsing a command.
+  var newcmd = "" # A string to store the command currently being parsed
+  var i = -1; # We have to set it to -1 because when the loop starts it will automatically plus it once to bring it 0. And also, sequences in nim (including strings, which are just sequences of bytes) begin with 0.
 
-when defined(debug):
-  discard parse(file,user,@[post],"user")
-#echo(parse(file))
+  # Loop over every character
+  for ch in input:
+    inc(i)
+
+    # If we are currently in the middle of parsing a command then
+    # just check if its '}' and if it is then do the same +1 check
+    # we did previously with '{'
+    # and end the command if its true.
+    if parsingCmd == true:
+      if ch == '}':
+        if len(input) < i + 1:
+          continue # End of file/string
+
+        if input[i + 1] == '}':
+          parsingCmd = false # Disable parsingCmd mode.
+          cmdtable[len(cmdtable)] = newcmd # Add command
+          result.add("$((" & $len(cmdtable) & "))") # Add marker that we can easily replace in the end.
+          newcmd = "" # Empty this
+          
+      else:
+        newcmd.add(ch)
+      continue
+
+
+    # Here we check for '{', and if the next character
+    # is also a '{', if that's the case then we enable
+    # parsingCmd
+    if ch == '{':
+      
+      if len(input) < i + 1:
+        continue # End of file/string
+
+      if input[i + 1] == '{':
+        parsingCmd = true
+        continue # We have a cmd!
+    
+
+    # One last check so we dont get any ugly '}' chars
+    if ch == '}':
+      if not len(input) > i - 1:
+        continue
+
+      if input[i - 1] == '}':
+        continue
+
+    # Add whatever we have to the end result
+    result.add(ch)
+
+  for key,oldvalue in cmdtable.pairs:
+    var value = oldvalue.cleanString(badCharSet)
+
+    if value.startsWith("$"):
+
+
+
+
+  return result

@@ -1,6 +1,15 @@
 # Copyright © Leo Gavilieau 2022-2023
 # Licensed under AGPL version 3 or later.
-# lib.nim   ;;  Shared procedures/functions
+# lib.nim:
+## This module contains shared data across Pothole.
+## It also contains useful procedures and functions that are
+## used across the app.
+## 
+## Things like object definitions, string-handling functions
+## and debugging functions fit well here but functions that are
+## less commonly used or needed should be put elsewhere (Fx. the escape functions for the User & Post objects are rarely used so they are in separate modules.)
+## 
+## This module is very huge. Please try to put your stuff somewhere else.
 
 # For macro definition
 from std/macros import newIdentNode, newDotExpr, strVal
@@ -43,15 +52,8 @@ type
     updated*: string # A timestamp of when then Post was last edited
     local*:bool # A boolean indicating whether or not the post came from the local server or external servers
 
-# Special folders will be cached for speed
-# Yes, we have to lie to the compiler again
-# But it's fine! These will be initialized on
-# startup and never touched again!
 {.cast(gcsafe).}:
-  var staticFolder* = "static/";
-  var uploadsFolder* = "uploads/";
-  var blogsFolder* = "blogs/"; # A folder containing the 
-  var debugBuffer {.threadvar.}: seq[string]; # A sequence to store debug strings in.
+  var debugBuffer: seq[string]; # A sequence to store debug strings in.
 
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
@@ -73,13 +75,12 @@ const version*: string = "0.0.2"
 # Set to 0 to disable
 const maxDebugItems: int = 40;
 
-
 const debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
 
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
-proc exit*() {.noconv.} =
+func exit*() {.noconv.} =
   ## Exit function
   ## Maybe we can close the database on exit?
   quit(0)
@@ -128,7 +129,7 @@ macro get*(obj: object, fld: string): untyped =
   ## Like so: user.get("local") == user.local
   newDotExpr(obj, newIdentNode(fld.strVal))
 
-proc isEmptyOrWhitespace*(str: string): bool =
+func isEmptyOrWhitespace*(str: string): bool =
   ## A faster implementation of strutils.isEmptyOrWhitespace
   ## This is basically the same thing.
   for x in str:
@@ -136,7 +137,7 @@ proc isEmptyOrWhitespace*(str: string): bool =
       return false
   return true
 
-proc cleanString*(str: string, charset: set[char] = whitespace): string =
+func cleanString*(str: string, charset: set[char] = whitespace): string =
   ## A procedure to clean a string of whitespace characters.
   var startnum = 0;
   var endnum = len(str) - 1;
@@ -149,7 +150,7 @@ proc cleanString*(str: string, charset: set[char] = whitespace): string =
 
   return str[startnum .. endnum]
 
-proc cleanLeading*(str: string, charset: set[char] = whitespace): string =
+func cleanLeading*(str: string, charset: set[char] = whitespace): string =
   ## A procedure to clean the beginning of a string.
   var startnum = 0;
   
@@ -158,7 +159,7 @@ proc cleanLeading*(str: string, charset: set[char] = whitespace): string =
 
   return str[startnum .. len(str) - 1]
 
-proc cleanTrailing*(str: string, charset: set[char] = whitespace): string =
+func cleanTrailing*(str: string, charset: set[char] = whitespace): string =
   ## A procedure to clean the end of a string.
   var endnum = len(str) - 1;
 
@@ -167,17 +168,19 @@ proc cleanTrailing*(str: string, charset: set[char] = whitespace): string =
 
   return str[0 .. endnum]
 
-
-proc `$`*(obj: User): string =
+func `$`*(obj: User): string =
+  ## Turns a User object into a human-readable string
   result.add("(")
   for key,val in obj[].fieldPairs:
     result.add("\"" & key & "\": \"" & $val & "\",")
   result = result[0 .. len(result) - 2]
   result.add(")")
 
-proc `$`*(obj: Post): string =
+func `$`*(obj: Post): string =
+  ## Turns a Post object into a human-readable string
   result.add("(")
   for key,val in obj[].fieldPairs:
     result.add("\"" & key & "\": \"" & $val & "\",")
   result = result[0 .. len(result) - 2]
   result.add(")")
+

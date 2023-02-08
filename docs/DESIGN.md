@@ -249,6 +249,18 @@ Here is a list of block functions:
 
 #### Instance scope
 
+By default, the instance scope cannot be used by users, this can be configured with the `embed_instance_info` config option in the `[user]` block, where `true` means users can embed instance info.
+
+So if `embed_instance_info` is set to true or you are parsing an internal page the following syntax is available for you to use.
+
+1. `Name`, string: A string containing the instance name. (Configured in `[instance]/name`)
+2. `Summary`, string: A string containing the description summary. (Or more technically, the first sentence in the description)
+3. `Description`, string: The full description of the instance (Configured in `[instance]/description`)
+4. `URI`, string: A URI to the instance. (Configured in `[instance]/uri`)
+5. `Version`, string: This string is either empty or it contains the version of Pothole that is currently used, it depends on the `show_version` config option (in `[web]`)
+
+Moving on to functions. All the universal functions (`Has`, `Version`, `End`) are available and there are no other functions.
+
 ## ActivityPub
 
 ### To parse the context, or to not parse the context.
@@ -669,4 +681,4 @@ For now, and for the forseeable future, Pothole will only support ActivityPub.
 When Pothole receives a Activity it does the following:
 1. Checks for validity (HTTP Signatures, Server check and so on)
 2. Turns it into a Post/User and adds it into the db
-3. Simply exposes it either via the API or user profiles (if its a local post or a local user has replied to a thread.)
+3. Simply exposes it either via the API or Potcode

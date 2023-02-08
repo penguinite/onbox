@@ -28,6 +28,7 @@ when defined(debug):
     switch("threadAnalysis","off")
     switch("opt","speed")
     switch("stackTrace","on")
+    switch("define","useSqlite")
 else:
     # Release flags
     switch("app","console")
@@ -36,6 +37,7 @@ else:
     switch("threads","on")
     switch("threadAnalysis","off")    
     switch("stackTrace","on")
+    switch("define","usePostgres")
 
 task clean, "Removes build folder if it exists":
     if dirExists(buildDir):

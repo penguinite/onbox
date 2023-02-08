@@ -6,20 +6,18 @@
 # would be a disaster.
 
 # From Pothole
-import assets, web, db
-
-# From standard libraries
-from std/strutils import replace, contains
+import assets, db, potcode
 
 # From Nimble/other sources
 import jester
 
 router main:
   get "/":
-    resp(web.indexPage())
+    resp 
 
   get "/users/@user":
     var user = @"user"
+    
     # Assume the client has requested a user by handle
     # Let's do some basic validation first
     if not userHandleExists(user):

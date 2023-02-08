@@ -13,33 +13,6 @@ import lib, crypto
 import std/strutils except isEmptyOrWhitespace
 import std/times
 
-proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: string = "", contexts: seq[string] = @[]): Post =
-  var post: Post = Post()
-  if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
-    error("Missing critical fields for post.","data.newPost")
-
-  # Generate post id
-  post.id = randomString()
-  
-  # Just do this stuff...
-  post.sender = sender
-  post.recipients = recipients
-  post.local = local
-  post.content = content
-  post.contexts = contexts
-
-  if isEmptyOrWhitespace(replyto):
-    post.replyto = ""
-  else:
-    post.replyto = replyto
-
-  if isEmptyOrWhitespace(written):
-    post.written = $(now().utc) # Writing time-related code is always going to be messy...
-  else:
-    post.written = written
-
-  return post
-
 proc escape*(olduser: Post): Post =
   ## A procedure to escape a Post object
   var post = olduser[] # De-reference at the start
@@ -79,3 +52,31 @@ proc unescape*(oldpost: Post): Post =
 
   new(result); result[] = post # Re-reference at the end
   return result
+
+proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: string = "", contexts: seq[string] = @[]): Post =
+  var post: Post = Post()
+  if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
+    error("Missing critical fields for post.","data.newPost")
+
+  # Generate post id
+  post.id = randomString()
+  
+  # Just do this stuff...
+  post.sender = sender
+  post.recipients = recipients
+  post.local = local
+  post.content = content
+  post.contexts = contexts
+
+  if isEmptyOrWhitespace(replyto):
+    post.replyto = ""
+  else:
+    post.replyto = replyto
+
+  if isEmptyOrWhitespace(written):
+    post.written = $(now().utc) # Writing time-related code is always going to be messy...
+  else:
+    post.written = written
+
+  return post
+
