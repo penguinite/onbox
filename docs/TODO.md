@@ -1,5 +1,7 @@
 My personal TODO list for Pothole.
 
+February 12th, 2023: I am really bad at TODO lists so I am just gonna stop here.
+
 January 2nd, 2023:
 
 Taking a small break due to repetitive stress injuries from poor ergonomic practice and also burnout.
