@@ -1,9 +1,11 @@
 # Copyright © Pothole Project 2022-2023
 # Licensed under the AGPL version 3 or later.
 
+when defined(windows):
+  {.fatal: "Windows is not supported!".}
+
 # From Pothole
-import lib, conf, dbnew, routes
-from assets import initFolders
+import lib, conf, db, routes
 
 # From standard library
 from std/os import existsEnv, getEnv, dirExists, createDir
@@ -37,9 +39,6 @@ for x in lib.requiredConfigOptions:
     continue
   else:
     error("Missing key " & list[1] & " in section " & list[0], "main.startup")
-
-# Initialize assets.nim to use the correct folders (Further checking is done in initFolders)
-assets.initFolders()
 
 # Initialize the database
 echo("Initializing database")

@@ -6,44 +6,28 @@
 import std/[os, tables, strutils]
 import lib, conf
 
-var staticFolder = "static/";
-var uploadsFolder = "uploads/";
-var blogsFolder = "blogs/";
+proc getFolder(kind: string): string =
+    # static
+  if kind == "static":
+    if conf.exists("folders","static"):
+      return conf.get("folders","static")
+    else:
+      return "static/"
 
-proc c(folder:var string): bool =
-  ## A quick function to check folders
-  # Add slash at end if it does exist
-  if folder[len(folder) - 1] != '/':
-    folder.add("/")
+    # uploads
+  if kind == "uploads":
+    if conf.exists("folders","uploads"):
+      return conf.get("folders","uploads")
+    else:
+      return "uploads/"
 
-  if not dirExists(folder):
-    try:
-        createDir(folder)
-    except:
-      return false
-  return true
+    # blogs
+  if kind == "blogs":
+    if conf.exists("folders","blogs"):
+      return conf.get("folders","blogs")
+    else:
+      return "blogs/"
 
-proc initFolders*() =
-  ## This function will initialize assets.nim to use the correct folders
-  var caller = "assets.initFolders"
-  debug("Initializing special folders", caller)
-  
-  # Use folders values from the configuration file
-  # If they exist
-  if exists("folders","static"):
-    staticFolder = conf.get("folders","static")
-
-  if exists("folders","uploads"):
-    uploadsFolder = conf.get("folders","uploads")
-
-  if exists("folders","blogs"):
-    blogsFolder = conf.get("folders","blogs")
-  
-  if c(staticFolder) == false or c(uploadsFolder) == false or c(blogsFolder) == false:
-    debug("Static folder: " & staticFolder, caller)
-    debug("Uploads folder: " & uploadsFolder, caller)
-    debug("Blogs folder: " & blogsFolder, caller)
-    error("A special folder that is vital for Pothole doesn't exist or failed to be created.",caller)
 
 # Main asset database.
 # We wrap it in a procedure so Nim will immediately
@@ -63,11 +47,13 @@ when not defined(noEmbed):
       }.toTable()
       return resources[asset]
 
+{.cast(gcsafe).}:
   proc fetchStatic*(asset: string, data: string = ""): string =
     ## This procedure specifically tries to fetch a static resource.
-    
     debug("Something trying to fetch static asset: " & asset, "assets.fetchStatic()")
     
+    var staticFolder = getFolder("static")
+
     # Check if directory exists, if not, then create it!
     if not dirExists(staticFolder):
       createDir(staticFolder)
@@ -97,6 +83,8 @@ when not defined(noEmbed):
   proc fetchUpload*(asset, id2: string, data: string = ""): string =
     ## This procedure specifically tries to fetch a user upload.
     debug("Something trying to fetch upload asset: " & asset & "by user (Id): " & id2, "assets.fetchUpload()")
+
+    var uploadsFolder = getFolder("uploads")
 
     var id = id2
     id.add("/")
@@ -136,49 +124,50 @@ when not defined(noEmbed):
       writeFile(uploadsFolder & id & asset,trueAsset)
       return trueAsset
 
-# So... Blogs are just user themes basically.
-# How blogs are stored and so on is documented in docs/DESIGN.md
-# This procedure basically returns the directory where userPage will look for blog themes. It will double-check that all files exist and create them from embedded assets if they don't.
-proc fetchBlog*(id2: string): string =
-  debug("Something trying to fetch blogs from user " & id2, "assets.fetchBlog")
-  if not dirExists(blogsFolder):
-    createDir(blogsFolder)
-  
-  var id = id2
-  id.add("/")
+  # So... Blogs are just user themes basically.
+  # How blogs are stored and so on is documented in docs/DESIGN.md
+  # This procedure basically returns the directory where userPage will look for blog themes. It will double-check that all files exist and  create them from embedded assets if they don't.
+  proc fetchBlog*(id2: string): string =
+    debug("Something trying to fetch blogs from user " & id2, "assets.fetchBlog")
 
-  if not dirExists(blogsFolder & id):
-    createDir(blogsFolder & id)
-  
-  # Check for the three main files
-  # and create them from embedded resources
-  # if they do not exist
-  # index.html is called user.html in staticAsset()
-  # post.html is called post.html in staticAsset()
-  # error.html is called user_error.html in staticAsset()
-  var userDir = blogsFolder & id
+    var blogsFolder = getFolder("blogs")
 
-  # index.html
-  if not fileExists(userDir & "index.html"):
-    when not defined(noEmbed):
-      writeFile(userDir & "index.html", staticAsset("user.html"))
+    if not dirExists(blogsFolder):
+      createDir(blogsFolder)
   
-  # post.html
-  if not fileExists(userDir & "post.html"):
-    when not defined(noEmbed):
-      writeFile(userDir & "post.html", staticAsset("post.html"))
-  
-  # error.html
-  if not fileExists(userDir & "error.html"):
-    when not defined(noEmbed):
-      writeFile(userDir & "error.html", staticAsset("user_error.html"))
+    var id = id2
+    id.add("/")
 
-  # list.html
-  if not fileExists(userDir & "list.html"):
-    when not defined(noEmbed):
-      writeFile(userDir & "list.html", staticAsset("user.html"))
+    if not dirExists(blogsFolder & id):
+      createDir(blogsFolder & id)
+  
+    # Check for the three main files
+    # and create them from embedded resources
+    # if they do not exist
+    # index.html is called user.html in staticAsset()
+    # post.html is called post.html in staticAsset()
+    # error.html is called user_error.html in staticAsset()
+    var userDir = blogsFolder & id
+
+    # index.html
+    if not fileExists(userDir & "index.html"):
+      when not defined(noEmbed):
+        writeFile(userDir & "index.html", staticAsset("user.html"))
+  
+    # post.html
+    if not fileExists(userDir & "post.html"):
+      when not defined(noEmbed):
+        writeFile(userDir & "post.html", staticAsset("post.html"))
+  
+    # error.html
+    if not fileExists(userDir & "error.html"):
+      when not defined(noEmbed):
+        writeFile(userDir & "error.html", staticAsset("user_error.html"))
+
+    # list.html
+    if not fileExists(userDir & "list.html"):
+      when not defined(noEmbed):
+        writeFile(userDir & "list.html", staticAsset("user.html"))
     
     # We could probably use user.html
-  
-  
-  return userDir
+    return userDir

@@ -91,3 +91,11 @@ proc unescape*(olduser: User): User =
   
   new(result); result[] = user # Re-reference it at the end.
   return result
+
+func `$`*(obj: User): string =
+  ## Turns a User object into a human-readable string
+  result.add("(")
+  for key,val in obj[].fieldPairs:
+    result.add("\"" & key & "\": \"" & $val & "\",")
+  result = result[0 .. len(result) - 2]
+  result.add(")")

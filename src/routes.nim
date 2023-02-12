@@ -6,14 +6,14 @@
 # would be a disaster.
 
 # From Pothole
-import assets, db, potcode
+import assets, db
 
 # From Nimble/other sources
 import jester
 
 router main:
   get "/":
-    resp 
+    resp "Ok"
 
   get "/users/@user":
     var user = @"user"
@@ -21,9 +21,9 @@ router main:
     # Assume the client has requested a user by handle
     # Let's do some basic validation first
     if not userHandleExists(user):
-      resp(web.errorPage("No user found.",404))
+      resp(Http404, "No user found.",)
     
-    resp(web.userPage(getUserByHandle(user)))
+    resp(user)
 
   get "/css/style.css":
     resp(fetchStatic("style.css"))

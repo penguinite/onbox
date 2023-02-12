@@ -58,7 +58,10 @@ type
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
 const requiredConfigOptions*: seq[string] = @[
-  "database:type"
+  "db:type",
+  "instance:name",
+  "instance:description",
+  "instance:uri"
 ]
 
 # A set of unsafe characters, this filters anything that doesn't make a valid email.
@@ -72,57 +75,51 @@ const localInvalidHandle*: set[char] = {'@',':','.'}
 const version*: string = "0.0.2"
 
 # How many items can be in debugBuffer before deleting some to save memory
-# Set to 0 to disable
 const maxDebugItems: int = 40;
 
-const debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
+when defined(dontPrintDebug):
+  const debugPrint: bool = false; # A boolean indicating whether or not to print strings as they come.
+else:
+  const debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
 
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
-func exit*() {.noconv.} =
-  ## Exit function
-  ## Maybe we can close the database on exit?
-  quit(0)
+proc exit*() {.noconv.} =
+  quit(1)
 
-proc debug*(str, caller: string) =
-  ## Adds a string to the debug buffer and optionally
-  ## prints it if debugPrint is set to true.
+{.cast(gcsafe).}:
+  proc debug*(str, caller: string) =
+    ## Adds a string to the debug buffer and optionally
+    ## prints it if debugPrint is set to true.
    
-  # Delete an item from the debug buffer if it gets too big
-  if maxDebugItems > 0:
+    # Delete an item from the debug buffer if it gets too big
     if len(debugBuffer) > maxDebugItems - 1:
       debugBuffer.del(0)
 
-  # Actually add it to the debug buffer
-  var toBeAdded = "(" & caller & "): " & str
-  debugBuffer.add(toBeAdded)
+    # Actually add it to the debug buffer
+    var toBeAdded = "(" & caller & "): " & str
+    debugBuffer.add(toBeAdded)
 
-  # Optionally print it. (If debugPrint is set to true)
-  if debugPrint:
-    stderr.writeLine(toBeAdded)
+    # Optionally print it. (If debugPrint is set to true)
+    if debugPrint:
+      stderr.writeLine(toBeAdded)
 
-proc error*(str,caller: string) =
-  ## Exits the program, writes a stacktrace and maybe print the debug buffer.
-  var toBePrinted = "\nError: (" & caller & "): " & str
-  stderr.writeLine("Printing stacktrace...")
-  writeStackTrace()
+{.cast(gcsafe).}:
+  proc error*(str,caller: string) =
+    ## Exits the program, writes a stacktrace and maybe print the debug buffer.
+    stderr.writeLine("Printing stacktrace...")
+    writeStackTrace()
 
-  # Only print debug buffer if debugPrint is disabled
-  # If this isn't here then the output gets too messy.
-  if debugPrint == false:
-    stderr.writeLine("Printing debug buffer...")
-    for x in debugBuffer:
-      stderr.writeLine(x)
+    # Only print debug buffer if debugPrint is disabled
+    # If this isn't here then the output gets too messy.
+    if debugPrint == false:
+      stderr.writeLine("Printing debug buffer...")
+      for x in debugBuffer:
+        stderr.writeLine(x)
 
-  stderr.writeLine(toBePrinted)
-  exit()
-
-func len*(O: object): int =
-  ## A procedure to get the total number of fields in any object
-  result = 0
-  for x in O.fields:
-    inc(result)
+    stderr.writeLine("\nError (" & caller & "): " & str)
+    quit(1)
 
 macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.
@@ -167,20 +164,3 @@ func cleanTrailing*(str: string, charset: set[char] = whitespace): string =
     dec(endnum)
 
   return str[0 .. endnum]
-
-func `$`*(obj: User): string =
-  ## Turns a User object into a human-readable string
-  result.add("(")
-  for key,val in obj[].fieldPairs:
-    result.add("\"" & key & "\": \"" & $val & "\",")
-  result = result[0 .. len(result) - 2]
-  result.add(")")
-
-func `$`*(obj: Post): string =
-  ## Turns a Post object into a human-readable string
-  result.add("(")
-  for key,val in obj[].fieldPairs:
-    result.add("\"" & key & "\": \"" & $val & "\",")
-  result = result[0 .. len(result) - 2]
-  result.add(")")
-

@@ -214,9 +214,6 @@ proc parseInternal*(input:string): string =
   for key,oldvalue in cmdtable.pairs:
     var value = oldvalue.cleanString(badCharSet)
 
-    if value.startsWith("$"):
-
-
 
 
   return result
