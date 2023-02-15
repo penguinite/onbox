@@ -82,8 +82,8 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], loc
 
 func `$`*(obj: Post): string =
   ## Turns a Post object into a human-readable string
-  result.add("(")
+  result.add("[")
   for key,val in obj[].fieldPairs:
     result.add("\"" & key & "\": \"" & $val & "\",")
   result = result[0 .. len(result) - 2]
-  result.add(")")
+  result.add("]")

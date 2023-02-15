@@ -15,10 +15,6 @@ proc randomString*(endlen: int = 18): string =
       add(result, $rand(10))
     else:
       add(result, char(rand(int('A') .. int('z'))))
-      
-proc randomInt*(limit: int = 10): int =
-  ## I am too lazy to import std/random to test.nim
-  return rand(limit)
 
 proc hash*(password: string, salt:string, iter: int = 160000,outlen: int = 32): string =
   ## We use PBKDF2-HMAC-SHA512 by default

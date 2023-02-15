@@ -6,30 +6,13 @@
 # would be a disaster.
 
 # From Pothole
-import assets, db
+import assets, db, potcode
 
 # From Nimble/other sources
-import jester
+import prologue
 
-router main:
-  get "/":
-    resp "Ok"
+proc index*(ctx: Context) {.async.} =
+  resp "<h1>Hello, Prologue!</h1>"
 
-  get "/users/@user":
-    var user = @"user"
-    
-    # Assume the client has requested a user by handle
-    # Let's do some basic validation first
-    if not userHandleExists(user):
-      resp(Http404, "No user found.",)
-    
-    resp(user)
-
-  get "/css/style.css":
-    resp(fetchStatic("style.css"))
-
-  get "/favicon.ico":
-    resp(Http200,"")
-      
-
-var potholeRouter* = main
+proc indexEXP*(ctx: Context = nil) {.async.} =
+  echo(parseInternal(fetchStatic("index.html")))

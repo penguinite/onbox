@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>{{ERROR_SUM}}</title>
+		<title>{{ -ErrorSummary }}</title>
 	</head>
 	<body style="text-align:center;">
     	<h1>Error {{ -ErrorSummary }}</h1>
@@ -11,6 +11,6 @@
         <hr>
 		{{:Has = +web/show_version}}
 		<p>Pothole version {{ $Version }}</p>
-		{{end}}
+		{:End = ^;}}
 	</body>
 </html>

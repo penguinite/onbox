@@ -40,8 +40,8 @@
 
 				<!-- Show any pictues -->
 				{{ :Has = Attachments; }}
-					{{ :ForEach(i) = Attachment; }}
-						<img alt="{{ :get = i(alt) }}" src="{{ :get = i(src) }}">
+					{{ :ForEach(i) = Attachments; }}
+						<img alt="{{ (i.alt) }}" src="{{ (i.src) }}">
 					{{ :End }}
 				{{ :End }}
 

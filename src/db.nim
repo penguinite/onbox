@@ -24,7 +24,7 @@ when defined(dbEngine):
   const dbEngine {.strdefine.}: string = ""
 else:
   when defined(release):
-    const dbEngine = "postgres"
+    const dbEngine = "sqlite" # The postgres database backend is in development.
   else:
     const dbEngine = "sqlite"
 
@@ -40,6 +40,11 @@ when dbEngine == "skeleton":
   import db/skeleton
 when dbEngine == "mem":
   import db/mem
+
+# These warnings would overwhelm the build output.
+# And they are also meaningless since it's impossible
+# to import more than a single backend.
+{.warning[UnreachableCode]: off.} 
 
 proc init*(): bool =
   ## Initializes a database using values from the config file
@@ -205,7 +210,7 @@ proc getPostsByUserHandle*(handle:string, limit: int = 15): seq[Post] =
   when dbEngine == "mem":
     return mem.getPostsByUserHandle(handle,limit)
 
-proc getPostsByUserId*(id:string, limit: int = 15): seq[Post] =
+proc getPostsByUserId*(id:string, limit: int = 10): seq[Post] =
   ## A procedure to get any user's posts from the db using the users id
   when dbEngine == "sqlite":
     return sqlite.getPostsByUserId(id,limit)
@@ -215,4 +220,36 @@ proc getPostsByUserId*(id:string, limit: int = 15): seq[Post] =
     return skeleton.getPostsByUserId(id,limit)
   when dbEngine == "mem":
     return mem.getPostsByUserId(id,limit)
-  
+
+proc getAdmins*(limit: int = 5): seq[string] =
+  ## A procedure that returns the usernames of all administrators.
+  when dbEngine == "sqlite":
+    return sqlite.getAdmins(limit)
+  when dbEngine == "postgres":
+    return postgres.getAdmins(limit)
+  when dbEngine == "skeleton":
+    return skeleton.getAdmins(limit)
+  when dbEngine == "mem":
+    return mem.getAdmins(limit)
+
+proc getTotalUsers*(): int =
+  ## A procedure to get the total number of local users.
+  when dbEngine == "sqlite":
+    return sqlite.getTotalUsers()
+  when dbEngine == "postgres":
+    return postgres.getTotalUsers()
+  when dbEngine == "skeleton":
+    return skeleton.getTotalUsers()
+  when dbEngine == "mem":
+    return mem.getTotalUsers()
+
+proc getTotalPosts*(): int =
+  ## A procedure to get the total number of local posts.
+  when dbEngine == "sqlite":
+    return sqlite.getTotalPosts()
+  when dbEngine == "postgres":
+    return postgres.getTotalPosts()
+  when dbEngine == "skeleton":
+    return skeleton.getTotalPosts()
+  when dbEngine == "mem":
+    return mem.getTotalPosts()

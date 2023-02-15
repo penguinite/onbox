@@ -94,8 +94,8 @@ proc unescape*(olduser: User): User =
 
 func `$`*(obj: User): string =
   ## Turns a User object into a human-readable string
-  result.add("(")
+  result.add("[")
   for key,val in obj[].fieldPairs:
     result.add("\"" & key & "\": \"" & $val & "\",")
   result = result[0 .. len(result) - 2]
-  result.add(")")
+  result.add("]")

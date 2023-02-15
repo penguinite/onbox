@@ -5,9 +5,9 @@ SRCDIR=src
 BUILDDIR=build
 CC=nim
 CP=cp -rv
-CPRODFLAGS=--app:console -d:release --opt:speed --threads:on --threadAnalysis:off --stackTrace:on -d:usePostgres
+CPRODFLAGS=--app:console -d:release --opt:speed --threads:on --stackTrace:on -d:usePostgres
 CSAFEFLAGS=$(CPRODFLAGS) -d:safe # Experimenting with Memory safety in Nim, do not use. Read https://forum.nim-lang.org/t/1961 for more info
-CDEBFLAGS=--app:console -d:debug --threads:on --threadAnalysis:off --opt:speed --stackTrace:on -d:useSqlite
+CDEBFLAGS=--app:console -d:debug --threads:on --opt:speed --stackTrace:on -d:useSqlite
 
 build: clean
 	$(CC) c $(CPRODFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim

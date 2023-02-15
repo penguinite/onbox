@@ -21,6 +21,7 @@ const usersCols: Table[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL"
 "bio":"VARCHAR(65535)", # The user's biography 
 "password":"VARCHAR(65535)", # The user's hashed & salted password (Empty for remote users obv)
 "salt":"VARCHAR(65535)", # The user's salt (Empty for remote users obv)
+"admin":"BOOLEAN NOT NULL", # A boolean indicating whether or not this is user is an Admin.
 "is_frozen":"BOOLEAN NOT NULL"}.toTable # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
 
 const postsCols: Table[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The post Id
@@ -123,6 +124,18 @@ proc addUser*(olduser: User): User =
 
   new(result); result[] = user
   return result
+
+proc getAdmins*(limit: int = 10): seq[string] = 
+  ## A procedure that returns the usernames of all administrators.
+  var sqlStatement = "SELECT handle FROM users WHERE admin = true;"
+  
+proc getTotalUsers*(): int =
+  ## A procedure to get the total number of local users.
+  var sqlStatement = "SELECT handle FROM users WHERE local = true;"
+
+proc getTotalPosts*(): int =
+  ## A procedure to get the total number of local posts.
+  var sqlStatement = "SELECT local FROM posts WHERE local = true;"
 
 #! Everything below this line was imported as-is from db.nim before db.nim was erased forever
 # TODO: Optimize the below code.

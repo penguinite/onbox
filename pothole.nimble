@@ -20,7 +20,6 @@ when defined(debug):
   switch("app","console")
   switch("define","debug")
   switch("threads","on")
-  switch("threadAnalysis","off")
   switch("opt","speed")
   switch("stackTrace","on")
 else:
@@ -29,7 +28,6 @@ else:
   switch("define","release")
   switch("opt","speed")
   switch("threads","on")
-  switch("threadAnalysis","off")    
   switch("stackTrace","on")
 
 task clean, "Removes build folder if it exists":
@@ -41,8 +39,6 @@ before build:
     rmdir(buildDir)
   mkDir(buildDir)
 
-  
-
 after build:
   cpFile("LICENSE",buildDir & "/LICENSE")
   cpFile(rootDir & "/pothole.conf",buildDir & "/pothole.conf")
@@ -51,5 +47,5 @@ after build:
 # Dependencies
 
 requires "nim >= 1.6.10"
-requires "jester >= 0.5.0"
+requires "prologue >= 0.6.4"
 requires "nimcrypto >= 0.5.4"

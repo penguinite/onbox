@@ -29,15 +29,16 @@ from std/macros import newIdentNode, newDotExpr, strVal
 ## Here are all of the fields in a user objects, with an explanation:
 type 
   User* = ref object
-    id*: string # An OID that represents the actual user (Db: blob primary key)
-    handle*: string # A string containing the user's actual username (Db: varchar unique not null)
-    name*: string # A string containing the user's display name (Db: varchar)
-    local*: bool # A boolean indicating if this user is from this instance (Db: boolean)
-    email*: string # A string containing the user's email (Db: varchar)
-    bio*: string # A string containing the user's biography (Db: varchar)
-    password*: string # A string to store a hashed + salted password (Db: varchar not null)
-    salt*: string # The actual salt with which to hash the password. (Db: varchar not null)
-    is_frozen*: bool #  A boolean indicating if the user is frozen/banned. (Db: )
+    id*: string # An OID that represents the actual user
+    handle*: string # A string containing the user's actual username 
+    name*: string # A string containing the user's display name
+    local*: bool # A boolean indicating if this user is from this instance 
+    email*: string # A string containing the user's email
+    bio*: string # A string containing the user's biography
+    password*: string # A string to store a hashed + salted password 
+    salt*: string # The actual salt with which to hash the password. 
+    admin*: bool # A boolean indicating if the user is an admin.
+    is_frozen*: bool #  A boolean indicating if the user is frozen/banned. (Can't log in, posts don't federate and cannot be followed.)
 
 # ActivityPub Object/Post
 type 
@@ -52,8 +53,7 @@ type
     updated*: string # A timestamp of when then Post was last edited
     local*:bool # A boolean indicating whether or not the post came from the local server or external servers
 
-{.cast(gcsafe).}:
-  var debugBuffer: seq[string]; # A sequence to store debug strings in.
+var debugBuffer: seq[string]; # A sequence to store debug strings in.
 
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
@@ -88,38 +88,37 @@ const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 proc exit*() {.noconv.} =
   quit(1)
 
-{.cast(gcsafe).}:
-  proc debug*(str, caller: string) =
-    ## Adds a string to the debug buffer and optionally
-    ## prints it if debugPrint is set to true.
+
+proc debug*(str, caller: string) =
+  ## Adds a string to the debug buffer and optionally
+  ## prints it if debugPrint is set to true.
    
-    # Delete an item from the debug buffer if it gets too big
-    if len(debugBuffer) > maxDebugItems - 1:
-      debugBuffer.del(0)
+  # Delete an item from the debug buffer if it gets too big
+  if len(debugBuffer) > maxDebugItems - 1:
+    debugBuffer.del(0)
 
     # Actually add it to the debug buffer
-    var toBeAdded = "(" & caller & "): " & str
-    debugBuffer.add(toBeAdded)
+  var toBeAdded = "(" & caller & "): " & str
+  debugBuffer.add(toBeAdded)
 
-    # Optionally print it. (If debugPrint is set to true)
-    if debugPrint:
-      stderr.writeLine(toBeAdded)
+  # Optionally print it. (If debugPrint is set to true)
+  if debugPrint:
+    stdout.writeLine(toBeAdded)
 
-{.cast(gcsafe).}:
-  proc error*(str,caller: string) =
-    ## Exits the program, writes a stacktrace and maybe print the debug buffer.
-    stderr.writeLine("Printing stacktrace...")
-    writeStackTrace()
+proc error*(str,caller: string) =
+  ## Exits the program, writes a stacktrace and maybe print the debug buffer.
+  stderr.writeLine("Printing stacktrace...")
+  writeStackTrace()
 
-    # Only print debug buffer if debugPrint is disabled
-    # If this isn't here then the output gets too messy.
-    if debugPrint == false:
-      stderr.writeLine("Printing debug buffer...")
-      for x in debugBuffer:
-        stderr.writeLine(x)
+  # Only print debug buffer if debugPrint is disabled
+  # If this isn't here then the output gets too messy.
+  if debugPrint == false:
+    stderr.writeLine("Printing debug buffer...")
+    for x in debugBuffer:
+      stderr.writeLine(x)
 
-    stderr.writeLine("\nError (" & caller & "): " & str)
-    quit(1)
+  stderr.writeLine("\nError (" & caller & "): " & str)
+  quit(1)
 
 macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.

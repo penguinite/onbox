@@ -70,4 +70,15 @@ proc getPostsByUserHandle*(handle:string, limit: int = 15): seq[Post] =
 proc getPostsByUserId*(id:string, limit: int = 15): seq[Post] =
   ## A procedure to get any user's posts from the db using the users id
   return @[Post()]
-  
+
+proc getAdmins*(limit: int = 5): seq[string] =
+  ## A procedure that returns the usernames of all administrators.
+  return @[]
+
+proc getTotalUsers*(): int =
+  ## A procedure to get the total number of local users.
+  return 0
+
+proc getTotalPosts*(): int =
+  ## A procedure to get the total number of local posts.
+  return 0

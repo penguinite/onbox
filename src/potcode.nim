@@ -11,10 +11,12 @@
 
 ## This module is very much W.I.P
 
-import tables
-import lib
+# From pothole
+import lib, conf, db
 
-import strutils except isEmptyOrWhitespace
+# From standard library
+import std/tables
+import std/strutils except isEmptyOrWhitespace
 
 # Basically whitespace from lib.nim but with '{' and '}' added in.
 const badCharSet*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f',';', '{', '}'}
@@ -75,9 +77,39 @@ func parsePostBlock(cmd: string, previousState: bool = false, blocks: seq[string
   
   # At this point, it's safe to return false.
   return false
-  
 
+# A list of possible instance values with the type string (or anything that isn't sequence)
+var instanceScopeStr: seq[string] = @[
+  "name","summary","description","uri","version","email","users","posts","maxchars"
+]
+
+# A list of possible instance values with the type of sequence
+var instanceScopeSeqs: seq[string] = @[
+  "rules"
+]
+
+# These will be filled out later.
+var userScopeStr: seq[string] = @[]
+var userScopeSeqs: seq[string] = @[]
+var postScopeStr: seq[string] = @[]
+var postScopeSeqs: seq[string] = @[]
+
+proc isSeq(obj: string): bool =
+  ## A function to check if a object is a sequence.
+  ## You can use this to check for a string too. just check for the opposite result.
+  if obj in instanceScopeSeqs:
+    return true
+  if obj in userScopeSeqs:
+    return true
+  if obj in postScopeSeqs:
+    return true
+  return false
+
+
+#! This has been set aside for a long time so
+# TODO: Review the existing code and finish this feature.
 proc parse*(input: string, user: User, post: seq[Post], context: string, extra: string = ""): string =
+  
   ## Generic parse procedure for Potcode.
   # Params explained:
   # input: A string containing the file to parse. (The actual file's contents)
@@ -85,7 +117,7 @@ proc parse*(input: string, user: User, post: seq[Post], context: string, extra: 
   # seq[Post]: a sequence of Post objects that can be found in the database.
   # context: What we are trying to parse, and what purpose does it serve. Are we parsing a user profile or a user's favorite posts? list.html,  error.html or some other file??? user for user.html, error for error.html, list for list.html and post for post.html
   
-  var cmdtable: Table[int,string] = initTable[int, string]() # This stores all commands and their identifiers.
+  var cmdtable: OrderedTable[int,string] = initOrderedTable[int, string]() # This stores all commands and their identifiers.
   var commandsInPostBlock: seq[int] = @[] # This stores the identifiers (integer ids) of the commands that are in the post block
   var parsingPostBlock: bool = false; # A boolean indicating whether or not we are parsing commands for a post block.
   
@@ -153,11 +185,69 @@ proc parse*(input: string, user: User, post: seq[Post], context: string, extra: 
 
   return result
 
+#! This comment marks the parseInternal region. Procedures here are custom to the 
+#! parseInternal procedure
+
+proc getInstance(obj: string): string = 
+  ## This is an implementation of the get() function.
+  ## it parses things like {{ $Version }}
+  ## This returns things related to the Instance scope.
+  case obj:
+    of "name":
+      return conf.get("instance","name")
+    of "summary":
+      return conf.get("instance","description").split(".")[0]
+    of "description":
+      return conf.get("instance","description")
+    of "uri":
+      return conf.get("instance","uri")
+    of "version":
+      if conf.exists("web","show_version"):
+        if conf.get("web","show_version") == "true":
+          return lib.version
+    of "email":
+      if conf.exists("instance","email"):
+        return conf.get("instance","email")
+    of "users":
+      return $db.getTotalUsers()
+    of "posts":
+      return $db.getTotalPosts()
+    of "maxchars":
+      if conf.exists("instance","max_chars"):
+        return conf.get("instance","max_chars")
+    else:
+      return ""
+  
+  # Return nothing as a last resort
+  return ""
+
+proc getInstanceSeq(obj: string): seq[string] =
+  ## Similar to getInstance, but this is used for sequences
+  case obj:
+    of "rules":
+      if conf.exists("instance","rules"):
+        return conf.split(get("instance","rules"))
+    of "admins":
+      return db.getAdmins()
+    else:
+      return @[]
+  
+  # Return nothing as a last resort
+  return @[]
+
+proc hasInternal(obj: string): bool = 
+  ## This is an implemention of the Has() function
+  ## But this should only be used for Internal pages.
+  # TODO: Finish this
+
+proc endInternal(blocks: seq[int], obj: string = ""): bool =
+  return true # TODO: Finish this
+
 proc parseInternal*(input:string): string =
   ## This is a watered down version of the parse() command that does not require User or Post objects
   ## It can be used to parse relatively simple pages, such as error pages and non-user pages (Instance rules fx.)
   
-  var cmdtable: Table[int,string] = initTable[int, string]() # This stores all commands and their identifiers.
+  var cmdtable: OrderedTable[int,string] = initOrderedTable[int, string]() # This stores all commands and their identifiers.
   
   var parsingCmd: bool = false; # A boolean indicating whether or not we are currently parsing a command.
   var newcmd = "" # A string to store the command currently being parsed
@@ -211,9 +301,32 @@ proc parseInternal*(input:string): string =
     # Add whatever we have to the end result
     result.add(ch)
 
+  var blocks: seq[int] = @[]; # A sequence for storing blocks.
   for key,oldvalue in cmdtable.pairs:
     var value = oldvalue.cleanString(badCharSet)
+    echo("(Key: \"" & $key & "\", Value: \"" & value & "\")")
+    if value.startsWith(":"):
+      var trimSeq = trimFunction(value)
+      # Let's do basic command checking
+      case trimSeq[0]:
+        of "has":
+          if hasInternal(trimSeq[1]):
+            blocks.add(key)
+          else:
+            continue
+        of "end":
 
+          var result: bool;
+          if len(trimSeq) > 1:
+            result = endInternal(blocks,trimSeq[1])
+          else:
+            result = endInternal(blocks) # The most recent block should be assumed.
+          
+          if result:
+            discard blocks.pop()
 
+        else:
+          result = result.replace("$((" & $key & "))","! Unknown function " & value)
+  
 
-  return result
+  return ""
