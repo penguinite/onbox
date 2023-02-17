@@ -91,7 +91,7 @@ func load*(input: string): Table[string, string] =
       if len(key) > 0:
         if val.startsWith('\"'):
           val = val[1 .. len(val) - 1]
-        if val.startsWith('\"'):
+        if val.endsWith('\"'):
           val = val[0 .. len(val) - 2]
         result[section & ":" & key] = val
         key = ""
