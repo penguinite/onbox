@@ -75,7 +75,8 @@ const localInvalidHandle*: set[char] = {'@',':','.'}
 const version*: string = "0.0.2"
 
 # How many items can be in debugBuffer before deleting some to save memory
-const maxDebugItems: int = 40;
+# 40 is safe bet but when things fuck up we will regret not allocating more items to the buffer.
+const maxDebugItems: int = 80;
 
 when defined(dontPrintDebug):
   const debugPrint: bool = false; # A boolean indicating whether or not to print strings as they come.
