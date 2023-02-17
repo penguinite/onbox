@@ -23,6 +23,35 @@ const badCharSet*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f',';', '{', '}'}
 
 #const advancedCommands = @["foreach","displaygenactivity","end","howmany","shorten","externaluser","has","isupdated","isreply","isexternal","start","setpostlimit","version"]
 
+func numOfDigits(key: int): int =
+  result = 0
+  for x in $key:
+    inc(result)
+
+func replace(str: string, key: int, val: string): string =
+  var i = -1;
+  var digits = numOfDigits(key);
+  var doneX: int = 0;
+  result = ""
+  for ch in str:
+    inc(i)
+    if doneX != 0:
+      inc(doneX)
+      if doneX < digits + 4:
+        continue
+    else:
+      if ch == '$':
+        if $(ch & str[i + 1] & str[i + 2]) == "$((":
+          # We have a candidate!
+          if str[i + 3..i + 2 + digits] == $key:
+            # We have a winner!
+            inc(doneX)
+            result.add(val)
+            continue
+
+    result.add(ch) # Add whatever we have, to the result.
+  return result
+
 func trimFunction(oldcmd: string): seq[string] =
   ## Trim a function into separate parts...
   ## This will return a sequence where the first item is the actual command
@@ -32,7 +61,7 @@ func trimFunction(oldcmd: string): seq[string] =
   ## Example:
   ## trimFunction(":Start = Post;") -> @["start","post"]
   
-  var cmd = toLower(oldcmd.cleanString(badCharSet))
+  var cmd = oldcmd.cleanString(badCharSet)
 
   if not cmd.startsWith(":"):
     return @[]
@@ -238,7 +267,7 @@ proc getInstanceSeq(obj: string): seq[string] =
 proc hasInternal(obj: string): bool = 
   ## This is an implemention of the Has() function
   ## But this should only be used for Internal pages.
-  # TODO: Finish this
+  if 
 
 proc endInternal(blocks: seq[int], obj: string = ""): bool =
   return true # TODO: Finish this
@@ -268,8 +297,8 @@ proc parseInternal*(input:string): string =
 
         if input[i + 1] == '}':
           parsingCmd = false # Disable parsingCmd mode.
-          cmdtable[len(cmdtable)] = newcmd # Add command
-          result.add("$((" & $len(cmdtable) & "))") # Add marker that we can easily replace in the end.
+          cmdtable[len(cmdtable) + 1] = newcmd # Add command
+          result.add("$((" & $(len(cmdtable)) & "))") # Add marker that we can easily replace in the end.
           newcmd = "" # Empty this
           
       else:
@@ -303,7 +332,7 @@ proc parseInternal*(input:string): string =
 
   var blocks: seq[int] = @[]; # A sequence for storing blocks.
   for key,oldvalue in cmdtable.pairs:
-    var value = oldvalue.cleanString(badCharSet)
+    var value = toLower(oldvalue.cleanString(badCharSet))
     echo("(Key: \"" & $key & "\", Value: \"" & value & "\")")
     if value.startsWith(":"):
       var trimSeq = trimFunction(value)
@@ -315,18 +344,27 @@ proc parseInternal*(input:string): string =
           else:
             continue
         of "end":
-
-          var result: bool;
+          var temp: bool = false;
           if len(trimSeq) > 1:
-            result = endInternal(blocks,trimSeq[1])
+            temp = endInternal(blocks,trimSeq[1])
           else:
-            result = endInternal(blocks) # The most recent block should be assumed.
+            temp = endInternal(blocks) # The most recent block should be assumed.
           
-          if result:
+          if temp:
             discard blocks.pop()
 
         else:
           result = result.replace("$((" & $key & "))","! Unknown function " & value)
+    else:
+      #[if value[0] == '$':
+        value = value[1 .. len(value) - 1]
+      if isSeq(value):
+        result = result.replace(key, getInstanceSeq(value)[0])
+      else:
+        result = result.replace(key, getInstance(value))
+        echo(getInstance(value))
+        echo(result)]#
+        continue
   
 
-  return ""
+  return result
