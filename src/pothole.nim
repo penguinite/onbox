@@ -10,6 +10,3 @@ if conf.setup(configfile) == false:
   error("Failed to load configuration file!", "main.startup")
 
 discard indexEXP()
-
-when defined(addFakeStuff):
-  import test

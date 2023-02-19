@@ -21,8 +21,6 @@ import std/strutils except isEmptyOrWhitespace
 # Basically whitespace from lib.nim but with '{' and '}' added in.
 const badCharSet*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f',';', '{', '}'}
 
-#const advancedCommands = @["foreach","displaygenactivity","end","howmany","shorten","externaluser","has","isupdated","isreply","isexternal","start","setpostlimit","version"]
-
 func numOfDigits(key: int): int =
   result = 0
   for x in $key:
@@ -37,7 +35,7 @@ func replace(str: string, key: int, val: string): string =
     inc(i)
     if doneX != 0:
       inc(doneX)
-      if doneX < digits + 4:
+      if doneX < digits + 6:
         continue
     else:
       if ch == '$':
@@ -75,38 +73,6 @@ func trimFunction(oldcmd: string): seq[string] =
 
   return result
 
-func parsePostLimit(cmd: string): int =
-  var newcmd = trimFunction(cmd)
-
-  if len(newcmd) > 1:
-    return parseInt(newcmd[1])
-  else:
-    return 15 # Return default limit
-
-func parsePostBlock(cmd: string, previousState: bool = false, blocks: seq[string] = @[]): bool =
-  ## This command basically parses a command and checks if it ends or starts the Post block.
-  ## This way, we can store the Post block in a separate variable that we will handle and generate repeatedly.
-  
-  var newcmd = trimFunction(cmd)
-  var len = len(newcmd) - 1
-
-  debugecho(newcmd)
-
-  if len(newcmd) == 0:
-    return false # Invalid command?
-
-
-  if newcmd[0] == "start":
-    # Start command detected
-    discard # TODO: Finish this
-
-  if newcmd[0] == "end":
-    # End command detected
-    discard # TODO: Finish this
-  
-  # At this point, it's safe to return false.
-  return false
-
 # A list of possible instance values with the type string (or anything that isn't sequence)
 var instanceScopeStr: seq[string] = @[
   "name","summary","description","uri","version","email","users","posts","maxchars"
@@ -117,102 +83,12 @@ var instanceScopeSeqs: seq[string] = @[
   "rules"
 ]
 
-# These will be filled out later.
-var userScopeStr: seq[string] = @[]
-var userScopeSeqs: seq[string] = @[]
-var postScopeStr: seq[string] = @[]
-var postScopeSeqs: seq[string] = @[]
-
 proc isSeq(obj: string): bool =
   ## A function to check if a object is a sequence.
   ## You can use this to check for a string too. just check for the opposite result.
   if obj in instanceScopeSeqs:
     return true
-  if obj in userScopeSeqs:
-    return true
-  if obj in postScopeSeqs:
-    return true
   return false
-
-
-#! This has been set aside for a long time so
-# TODO: Review the existing code and finish this feature.
-proc parse*(input: string, user: User, post: seq[Post], context: string, extra: string = ""): string =
-  
-  ## Generic parse procedure for Potcode.
-  # Params explained:
-  # input: A string containing the file to parse. (The actual file's contents)
-  # user: A User object of the user we are trying to parse for.
-  # seq[Post]: a sequence of Post objects that can be found in the database.
-  # context: What we are trying to parse, and what purpose does it serve. Are we parsing a user profile or a user's favorite posts? list.html,  error.html or some other file??? user for user.html, error for error.html, list for list.html and post for post.html
-  
-  var cmdtable: OrderedTable[int,string] = initOrderedTable[int, string]() # This stores all commands and their identifiers.
-  var commandsInPostBlock: seq[int] = @[] # This stores the identifiers (integer ids) of the commands that are in the post block
-  var parsingPostBlock: bool = false; # A boolean indicating whether or not we are parsing commands for a post block.
-  
-  var parsingCmd: bool = false; # A boolean indicating whether or not we are currently parsing a command.
-  var newcmd = "" # A string to store the command currently being parsed
-  var i = -1; # We have to set it to -1 because when the loop starts it will automatically plus it once to bring it 0.
-              # And also, sequences in nim (including strings, which are just sequences of bytes) begin with 0.
-
-  # Loop over every character
-  for ch in input:
-    inc(i)
-
-    # If we are currently in the middle of parsing a command then
-    # just check if its '}' and if it is then do the same +1 check
-    # we did previously with '{'
-    # and end the command if its true.
-    if parsingCmd == true:
-
-      if ch == '}':
-        if len(input) < i + 1:
-          continue # End of file/string
-
-        if input[i + 1] == '}':
-          parsingCmd = false # Disable parsingCmd mode.
-          cmdtable[len(cmdtable)] = newcmd # Add command
-
-          # So, before we do anything else
-          # Let's check if we are in a post block
-          # Post blocks are special, in that, they are generated. So we need to store a separate string and table
-          parsingPostBlock = parsePostBlock(newcmd, parsingPostBlock)
-          if parsingPostBlock == true:
-            commandsInPostBlock.add(len(cmdtable)) # Add command identifier to this list so we can parse it later.
-          else:
-            result.add("$((" & $len(cmdtable) & "))") # Add marker that we can easily replace in the end.
-          newcmd = "" # Empty this
-          
-      else:
-        newcmd.add(ch)
-      continue
-
-
-    # Here we check for '{', and if the next character
-    # is also a '{', if that's the case then we enable
-    # parsingCmd
-    if ch == '{':
-      
-      if len(input) < i + 1:
-        continue # End of file/string
-
-      if input[i + 1] == '{':
-        parsingCmd = true
-        continue # We have a cmd!
-    
-
-    # One last check so we dont get any ugly '}' chars
-    if ch == '}':
-      if not len(input) > i - 1:
-        continue
-
-      if input[i - 1] == '}':
-        continue
-
-    # Add whatever we have to the end result
-    result.add(ch)
-
-  return result
 
 #! This comment marks the parseInternal region. Procedures here are custom to the 
 #! parseInternal procedure
@@ -221,7 +97,10 @@ proc getInstance(obj: string): string =
   ## This is an implementation of the get() function.
   ## it parses things like {{ $Version }}
   ## This returns things related to the Instance scope.
-  case obj:
+  var cmd = obj
+  if obj[0] == '$':
+    cmd = obj[1 .. len(obj) - 1]
+  case cmd:
     of "name":
       return conf.get("instance","name")
     of "summary":
@@ -252,7 +131,10 @@ proc getInstance(obj: string): string =
 
 proc getInstanceSeq(obj: string): seq[string] =
   ## Similar to getInstance, but this is used for sequences
-  case obj:
+  var cmd = obj
+  if obj[0] == '$':
+    cmd = obj[1 .. len(obj) - 1]
+  case cmd:
     of "rules":
       if conf.exists("instance","rules"):
         return conf.split(get("instance","rules"))
@@ -267,104 +149,83 @@ proc getInstanceSeq(obj: string): seq[string] =
 proc hasInternal(obj: string): bool = 
   ## This is an implemention of the Has() function
   ## But this should only be used for Internal pages.
-  if 
+  if isSeq(obj):
+    if len(getInstanceSeq(obj)) < 0:
+      return false
+  else:
+    if isEmptyOrWhitespace(getInstance(obj)):
+      return false
+  return true
 
-proc endInternal(blocks: seq[int], obj: string = ""): bool =
-  return true # TODO: Finish this
+func endInternal(blocks: OrderedTable[int, int], blockint: int): bool =
+  ## This is an implemention of the End() function
+  ## But this should only be used for Internal pages.
+  if len(blocks) > 0:
+    if blocks.hasKey(blockint):
+      return true
+    else:
+      return false
+  else:
+    return false
+  return true
 
 proc parseInternal*(input:string): string =
   ## This is a watered down version of the parse() command that does not require User or Post objects
   ## It can be used to parse relatively simple pages, such as error pages and non-user pages (Instance rules fx.)
   
-  var cmdtable: OrderedTable[int,string] = initOrderedTable[int, string]() # This stores all commands and their identifiers.
-  
-  var parsingCmd: bool = false; # A boolean indicating whether or not we are currently parsing a command.
-  var newcmd = "" # A string to store the command currently being parsed
-  var i = -1; # We have to set it to -1 because when the loop starts it will automatically plus it once to bring it 0. And also, sequences in nim (including strings, which are just sequences of bytes) begin with 0.
+  var strings: seq[string] = @[] # A sequence that holds *all* strings.
+  var table = initOrderedTable[int, string] # This holds all the context clues for the third stage of the parser.
+  var parsingFlag = false; # A flag indicating whether we are currently parsing a command.
+  var parsingFlagPrev = false; # A flag that stores the previous state of parsingFlag.
+  var newcmd = ""; # A string for storing the command we are building.
+  var newstr = ""; # A string for storing everything else.
+  var i: int; # A variable for storing where we are currently in the string.
 
-  # Loop over every character
-  for ch in input:
-    inc(i)
+  for line in input.splitLines:
+    i = -1;
+    if "{{" in line and "}}" in line:
+      for ch in line:
 
-    # If we are currently in the middle of parsing a command then
-    # just check if its '}' and if it is then do the same +1 check
-    # we did previously with '{'
-    # and end the command if its true.
-    if parsingCmd == true:
-      if ch == '}':
-        if len(input) < i + 1:
-          continue # End of file/string
+        if not parsingFlag and parsingFlagPrev:
+          continue # Skip next char after done parsing
+        if parsingFlag and not parsingFlagPrev:
+          continue # Skip first char after parsing
 
-        if input[i + 1] == '}':
-          parsingCmd = false # Disable parsingCmd mode.
-          cmdtable[len(cmdtable) + 1] = newcmd # Add command
-          result.add("$((" & $(len(cmdtable)) & "))") # Add marker that we can easily replace in the end.
-          newcmd = "" # Empty this
-          
-      else:
-        newcmd.add(ch)
-      continue
+        inc(i)
+        if ch == '}':
+          if line[i + 1] == '}':
+            if len(newcmd) > 0:
+              strings.add(cleanString(newcmd))
 
-
-    # Here we check for '{', and if the next character
-    # is also a '{', if that's the case then we enable
-    # parsingCmd
-    if ch == '{':
-      
-      if len(input) < i + 1:
-        continue # End of file/string
-
-      if input[i + 1] == '{':
-        parsingCmd = true
-        continue # We have a cmd!
-    
-
-    # One last check so we dont get any ugly '}' chars
-    if ch == '}':
-      if not len(input) > i - 1:
-        continue
-
-      if input[i - 1] == '}':
-        continue
-
-    # Add whatever we have to the end result
-    result.add(ch)
-
-  var blocks: seq[int] = @[]; # A sequence for storing blocks.
-  for key,oldvalue in cmdtable.pairs:
-    var value = toLower(oldvalue.cleanString(badCharSet))
-    echo("(Key: \"" & $key & "\", Value: \"" & value & "\")")
-    if value.startsWith(":"):
-      var trimSeq = trimFunction(value)
-      # Let's do basic command checking
-      case trimSeq[0]:
-        of "has":
-          if hasInternal(trimSeq[1]):
-            blocks.add(key)
-          else:
+            newcmd = ""
+            parsingFlag = false
+            parsingFlagPrev = true
             continue
-        of "end":
-          var temp: bool = false;
-          if len(trimSeq) > 1:
-            temp = endInternal(blocks,trimSeq[1])
-          else:
-            temp = endInternal(blocks) # The most recent block should be assumed.
-          
-          if temp:
-            discard blocks.pop()
 
+        if ch == '{':
+          if line[i + 1] == '{':
+            # Command starts here
+            # Let's first push newstr to strings.
+            if len(newstr) > 0:
+              strings.add(cleanString(newstr))
+              newstr = ""
+
+            parsingFlagPrev = false
+            parsingFlag = true
+            continue
+
+        if parsingFlag:
+          newcmd.add(ch)
+          continue
         else:
-          result = result.replace("$((" & $key & "))","! Unknown function " & value)
+          newstr.add(ch)
+      
+      # Push newstr to strings at the end
+      if len(newstr) > 0:
+        strings.add(cleanString(newstr))
+        newstr = ""
     else:
-      #[if value[0] == '$':
-        value = value[1 .. len(value) - 1]
-      if isSeq(value):
-        result = result.replace(key, getInstanceSeq(value)[0])
-      else:
-        result = result.replace(key, getInstance(value))
-        echo(getInstance(value))
-        echo(result)]#
-        continue
-  
+      strings.add(cleanString(line))
+  echo(strings)
 
-  return result
+  return ""

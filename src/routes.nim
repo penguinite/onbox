@@ -6,7 +6,7 @@
 # would be a disaster.
 
 # From Pothole
-import assets, db, potcode
+import assets, potcode
 
 # From Nimble/other sources
 import prologue
