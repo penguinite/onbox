@@ -3,7 +3,8 @@
 #
 # db/sqlite.nim:
 ## A database engine backend for sqlite3
-## Note, that this "backend" uses db_sqlite but it's purpose is also to produce sqlite3 compatible queries
+## Currently, I am testing Pothole with this database backend only.
+
 
 # From pothole
 import ../conf,../lib,../user,../crypto,../post
@@ -71,9 +72,7 @@ proc init*(): bool =
   var i = -1;
   for row in db.getAllRows(sql"PRAGMA table_info('posts');"):
     inc(i)
-    var postsColName = postsCols[row[1]]
-    if row[1] == postsColName: # TODO: This is incomplete
-      echo "Success"
+    echo row
 
 
   echo "Database is done initializing!"
@@ -136,6 +135,8 @@ proc getTotalUsers*(): int =
 proc getTotalPosts*(): int =
   ## A procedure to get the total number of local posts.
   var sqlStatement = "SELECT local FROM posts WHERE local = true;"
+
+
 
 #! Everything below this line was imported as-is from db.nim before db.nim was erased forever
 # TODO: Optimize the below code.

@@ -9,6 +9,9 @@
 ## 
 ## Ie. it's called "Potcode" for a reason... It's for Pothole :P
 
+{.experimental: "codeReordering".}
+
+
 ## This module is very much W.I.P
 
 # From pothole
@@ -226,6 +229,7 @@ proc parseInternal*(input:string): string =
         newstr = ""
     else:
       strings.add(cleanString(line))
-  echo(strings)
+  
+  
 
   return ""

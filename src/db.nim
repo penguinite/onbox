@@ -20,6 +20,8 @@
 
 from lib import User, Post
 
+{.experimental: "codeReordering".}
+
 when defined(dbEngine):
   const dbEngine {.strdefine.}: string = ""
 else:
