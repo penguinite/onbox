@@ -58,7 +58,6 @@ var debugBuffer: seq[string]; # A sequence to store debug strings in.
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
 const requiredConfigOptions*: seq[string] = @[
-  "db:type",
   "instance:name",
   "instance:description",
   "instance:uri"
