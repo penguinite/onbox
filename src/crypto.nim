@@ -16,6 +16,9 @@ proc randomString*(endlen: int = 18): string =
     else:
       add(result, char(rand(int('A') .. int('z'))))
 
+proc randomInt*(limit: int = 15): int =
+  return rand(limit)
+
 proc hash*(password: string, salt:string, iter: int = 160000,outlen: int = 32): string =
   ## We use PBKDF2-HMAC-SHA512 by default
   ## This procedure is a wrapper for nimcrypto's PBKDF2 implementation

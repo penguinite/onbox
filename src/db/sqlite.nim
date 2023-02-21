@@ -71,7 +71,6 @@ proc init*(): bool =
   var missingCols: seq[string] = @[];
   var i = -1;
   for row in db.getAllRows(sql"PRAGMA table_info('posts');"):
-    inc(i)
     echo row
 
 

@@ -116,6 +116,15 @@ proc setup*(filename: string): bool =
     var file = open(filename)
     config = load(readAll(file))
     file.close() # Close the file at the end
+    # Now... We have to check if our required configuration
+    # options are actually there
+    for x in lib.requiredConfigOptions:
+      if config.hasKey(x):
+        continue
+      else:
+        var list = x.split(":")
+        debug("Missing key " & list[1] & " in section " & list[0], "main.startup")
+        return false
     return true
   except:
     return false

@@ -6,11 +6,6 @@
 
 import lib, user, post, crypto
 
-from std/random import rand
-
-proc randomInt(limit: int = 15): int =
-  return rand(limit)
-
 const fakeNames = @["Jeremy", "Jane Doe", "pyro", "Tavish Finnegan DeGroo", "Mikhail", "Dell Conagher", "Ludwig Humboldt", "Mundy", "spy"]
 const fakeHandles = @["scout","soldier","pyro","demoman","heavy","engineer", "medic", "sniper", "spy"]
 const fakeBios = @["All the ladies love me!", "GOD BLESS AMERICA", "Apparently, this user prefers to keep an air of mystery about them.", "God bless Scotland!", "Craving sandvich.", "I solve practical problems and I have 11 PhDs.", "Professional doctor who previously had a medical license.", "Me", "Scout is a virgin"]
@@ -25,7 +20,7 @@ proc getFakeUsers*(): seq[User] =
     result.add(user)
   return result
 
-const fakeStatuses = @["Hello World!", "To be weak is to be strong but unconventional", "I like to keep an air of mystery around me", "Here's a cute picture of a cat! (I don't know how to use this app, I am sorry if the picture does not appear)", "Cannabis abyss and Pot hole mean the same thing.", "Woke up, had some coffee, ran over a child during my commute to work, escaped masterfully.\n\n How was your day?"]
+const fakeStatuses = @["Hello World!", "To be weak is to be strong but unconventional", "I like to keep an air of mystery around me", "Here's a cute picture of a cat! (I don't know how to use this app, I am sorry if the picture does not appear)", "Cannabis abyss and Pot hole mean the same thing.", "Woke up, had some coffee, ran over a child during my commute to work, escaped masterfully.\n\nHow was your day?","\"It's GNU/Linux\"\n\"It's just Linux\"\n\nThey don't know that it's...\nwhatever the fuck you want to call it\nlife is meaningless, we're all gonna die","The FBI looking at me googling \"How to destroy children\": 😨\nThe FBI looking at me after clarifying im programming in C: 😇"]
 
 proc getFakePosts*(): seq[Post] =
   # Creates 10 fake Posts.
@@ -33,5 +28,11 @@ proc getFakePosts*(): seq[Post] =
   for x in fakeStatuses:
     var post = newPost(fakeHandles[randomInt(len(fakeHandles) - 1)], "", x, @[], true)
     result.add(post)
-
   return result
+
+proc showFakePosts*() =
+  for x in fakeStatuses:
+    var post = newPost(fakeHandles[randomInt(len(fakeHandles) - 1)], "", x, @[], true)
+    echo "---"
+    echo("Author: " & post.sender)
+    echo(post.content)

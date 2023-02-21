@@ -7,7 +7,10 @@
 ## 
 ## Things like object definitions, string-handling functions
 ## and debugging functions fit well here but functions that are
-## less commonly used or needed should be put elsewhere (Fx. the escape functions for the User & Post objects are rarely used so they are in separate modules.)
+## less commonly used or needed should be put elsewhere 
+## 
+## (Fx. the escape functions for the User and Post objects
+##  are rarely used so they are in separate modules.)
 ## 
 ## This module is very huge. Please try to put your stuff somewhere else.
 
@@ -38,20 +41,21 @@ type
     password*: string # A string to store a hashed + salted password 
     salt*: string # The actual salt with which to hash the password. 
     admin*: bool # A boolean indicating if the user is an admin.
-    is_frozen*: bool #  A boolean indicating if the user is frozen/banned. (Can't log in, posts don't federate and cannot be followed.)
+    is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
 
 # ActivityPub Object/Post
 type 
   Post* = ref object
-    id*: string # A unique id. (If its an internal post then just leave out the domain name, if it's external then add the full link)
+    id*: string # A unique id.
     contexts*: seq[string] # A sequence of the contexts that this post has.
     recipients*: seq[string] # A sequence of recipient's handles.
-    sender*: string # aka attributedTo, basically the person replying. (AP: Actor)
+    sender*: string # Basically, the person sending the message
     replyto*: string # Resource/Post person was replying to,  
     content*: string # The actual content of the post
     written*: string # A timestamp of when the Post was created
     updated*: string # A timestamp of when then Post was last edited
-    local*:bool # A boolean indicating whether or not the post came from the local server or external servers
+    local*:bool # A boolean indicating whether or not the post \
+                # came from the local server or external servers
 
 var debugBuffer: seq[string]; # A sequence to store debug strings in.
 
@@ -63,10 +67,13 @@ const requiredConfigOptions*: seq[string] = @[
   "instance:uri"
 ]
 
-# A set of unsafe characters, this filters anything that doesn't make a valid email.
-const unsafeHandleChars*: set[char] = {'!',' ','"','#','$','%','&','\'','(',')','*','+',',',';','<','=','>','?','[','\\',']','^','`','{','}','|','~'}
+# A set of characters that you cannot use at all.
+# this filters anything that doesn't make a valid email.
+const unsafeHandleChars*: set[char] = {'!',' ','"',
+'#','$','%','&','\'','(',')','*','+',',',';','<',
+'=','>','?','[','\\',']','^','`','{','}','|','~'}
 
-# A set of charatcer that you cannot use
+# A set of characters that you cannot use
 # when registering a local user.
 const localInvalidHandle*: set[char] = {'@',':','.'}
 
@@ -74,13 +81,13 @@ const localInvalidHandle*: set[char] = {'@',':','.'}
 const version*: string = "0.0.2"
 
 # How many items can be in debugBuffer before deleting some to save memory
-# 40 is safe bet but when things fuck up we will regret not allocating more items to the buffer.
+# 80 is fine.
 const maxDebugItems: int = 80;
 
 when defined(dontPrintDebug):
-  const debugPrint: bool = false; # A boolean indicating whether or not to print strings as they come.
+  const debugPrint: bool = false; # Set to true to print debugs as they come.
 else:
-  const debugPrint: bool = true; # A boolean indicating whether or not to print strings as they come.
+  const debugPrint: bool = true; 
 
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}

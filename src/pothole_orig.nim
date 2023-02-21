@@ -28,15 +28,6 @@ echo("Config file used: ", configfile)
 if conf.setup(configfile) == false:
   error("Failed to load configuration file!", "main.startup")
 
-# Now... We have to check if our required configuration
-# options are actually there
-for x in lib.requiredConfigOptions:
-  var list = x.split(":")
-  if exists(list[0],list[1]):
-    continue
-  else:
-    error("Missing key " & list[1] & " in section " & list[0], "main.startup")
-
 # Initialize the database
 echo("Initializing database")
 if not db.init(): # Wrap over specific database engine
