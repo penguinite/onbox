@@ -40,12 +40,14 @@ clean:
 	if [ -d "blogs/" ]; then \
 		rm -rf "blogs"; \
 	fi
-	mkdir "$(BUILDDIR)"
 
 # This copies stuff for debug & release builds.
 # Like the config file and the LICENSE.
 copystuff: clean
 	echo "Copying files to build dir..."
+	if [ ! -d "$(BUILDDIR)" ]; then \
+		mkdir "$(BUILDDIR)"; \
+	fi
 	cp pothole.conf $(BUILDDIR)/pothole.conf
 	cp LICENSE $(BUILDDIR)/LICENSE
 
@@ -70,8 +72,7 @@ safe: copystuff clean
 # Danger settings... Don't use this at all.
 danger: copystuff clean
 	$(CC) c $(DANGERFLAGS) -o:$(BUILDDIR)/pothole $(SRCDIR)/pothole.nim
-
-
+	
 ## Test targets
 # Compiles a binary with debug settings and runs it.
 test_debug: debug test
