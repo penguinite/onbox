@@ -26,13 +26,13 @@ proc getFakePosts*(): seq[Post] =
   # Creates 10 fake Posts.
   result = @[]
   for x in fakeStatuses:
-    var post = newPost(fakeHandles[randomInt(len(fakeHandles) - 1)], "", x, @[], true)
+    var post = newPost(fakeHandles[rand(len(fakeHandles) - 1)], "", x, @[], true)
     result.add(post)
   return result
 
 proc showFakePosts*() =
   for x in fakeStatuses:
-    var post = newPost(fakeHandles[randomInt(len(fakeHandles) - 1)], "", x, @[], true)
+    var post = newPost(fakeHandles[rand(len(fakeHandles) - 1)], "", x, @[], true)
     echo "---"
     echo("Author: " & post.sender)
     echo(post.content)
