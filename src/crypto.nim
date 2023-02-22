@@ -5,19 +5,33 @@
 
 import nimcrypto
 import nimcrypto/pbkdf2
-import std/[base64, random]
+import std/[base64, sysrand, strutils]
 
-proc randomString*(endlen: int = 18): string =
+#! std/sysrand has not been evaluated or auditted. But the previous std/random method does *not* produce 
+#! unpredictable bytes. So this option is not bad compared to using std/random for ID generation and salt generation.
+
+proc randomString*(limit: int = 18): string =
   ## A function to generate a random string.
   ## Used for salt & id generation and debugging (creating fake passwords)
-  for i in 0 .. endlen:
-    if rand(5) == 1:
-      add(result, $rand(10))
-    else:
-      add(result, char(rand(int('A') .. int('z'))))
+  for bit in urandom(limit):
+    result.add(char(bit))
 
-proc randomInt*(limit: int = 15): int =
-  return rand(limit)
+  return result
+    
+proc randomInt*(limit: int = 18): int =
+  var tmp: string; # This string stores the int so that we get literal digits.
+  for bit in urandom(limit):
+    tmp.add($int(bit))
+      
+  return parseInt(tmp[0..limit - 1])
+
+
+proc rand*(dig: int = 5): int =
+  var num = randomInt(len($dig))
+  if num > dig:
+    num = dig
+  
+  return num
 
 proc hash*(password: string, salt:string, iter: int = 160000,outlen: int = 32): string =
   ## We use PBKDF2-HMAC-SHA512 by default
