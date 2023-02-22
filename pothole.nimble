@@ -33,6 +33,12 @@ else:
 task clean, "Removes build folder if it exists":
   if dirExists(buildDir):
     rmdir(buildDir)
+  if dirExists("static/"):
+    rmdir("static/")
+  if dirExists("uploads/"):
+    rmdir("uploads/")
+  if dirExists("blogs/"):
+    rmdir("blogs/")
 
 before build:
   if dirExists(buildDir):
