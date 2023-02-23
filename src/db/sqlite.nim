@@ -14,7 +14,7 @@ import std/[db_sqlite, strutils, tables]
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 # For this module to work, both database schemas and user object definitions must be similar
-const usersCols: Table[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The user ID
+const usersCols: OrderedTable[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The user ID
 "handle":"VARCHAR(65535) UNIQUE NOT NULL", # The user's actual username (Fx. alice@alice.wonderland)
 "name":"VARCHAR(65535)", # The user's display name (Fx. Alice)
 "local":"BOOLEAN NOT NULL", # A boolean indicating whether the user originates from the local server or another one.
@@ -23,18 +23,20 @@ const usersCols: Table[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL"
 "password":"VARCHAR(65535)", # The user's hashed & salted password (Empty for remote users obv)
 "salt":"VARCHAR(65535)", # The user's salt (Empty for remote users obv)
 "admin":"BOOLEAN NOT NULL", # A boolean indicating whether or not this is user is an Admin.
-"is_frozen":"BOOLEAN NOT NULL"}.toTable # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
+"is_frozen":"BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
 
-const postsCols: Table[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The post Id
+const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The post Id
 "contexts":"VARCHAR(65535)", # What JSON-LD contexts the post uses
 "recipients":"VARCHAR(65535)", # A comma-separated list of recipients since sqlite3 does not support arrays by default
 "sender":"VARCHAR(65535) NOT NULL", # A string containing the sender handle
 "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
-"local": "BOOLEAN NOT NULL"}.toTable # A boolean indicating whether the post originated from this server or other servers.
+"local": "BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether the post originated from this server or other servers.
 
 {.gcsafe.}:
   var db:DbConn; 
+
+func 
 
 proc init*(): bool =
   ## This procedure initializes a database using values from the config file.
@@ -78,10 +80,8 @@ proc init*(): bool =
     @["6", "email", "VARCHAR(225)", "0", "", "0"]
     @["7", "bio", "VARCHAR(65535)", "0", "", "0"]
     @["8", "is_frozen", "BOOLEAN", "1", "", "0"]  ]#
-  var missingCols: seq[string] = @[];
-  var i = -1;
+  
   for row in db.getAllRows(sql"PRAGMA table_info('users');"):
-    echo row
 
   echo "Database is done initializing!"
 

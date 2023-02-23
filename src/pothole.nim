@@ -1,4 +1,4 @@
-import conf, os, lib, crypto#db
+import conf, os, lib, db 
 
 var configfile: string = "pothole.conf"
 if existsEnv("POTHOLE_CONFIG"):
@@ -11,7 +11,4 @@ if conf.setup(configfile) == false:
 
 #discard indexEXP()
 
-#discard db.init()
-
-for i in 0..1000:
-  echo(randomInt(5)))
+discard db.init()
