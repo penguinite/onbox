@@ -14,6 +14,7 @@ Folder that contains all the source code.
 10. routes.nim: Routes for the app, it also contains the logic for registering and logging in
 11. test.nim: This module adds fake posts and users, it is primarily used in testing and it is completely absent from production builds.
 12. user.nim: Functions related to the User object.
+13. potholectl.nim: A CLI program that provides low-level access to Pothole's internals.
 
 Probably coming soon:
 

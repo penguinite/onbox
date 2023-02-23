@@ -51,7 +51,7 @@ copystuff: clean
 	cp pothole.conf $(BUILDDIR)/pothole.conf
 	cp LICENSE $(BUILDDIR)/LICENSE
 
-# Test whatever binary we have.
+# Run whatever binary we have.
 test:
 	echo "Testing built Pothole..."
 	cd "$(BUILDDIR)"; ./pothole;
@@ -89,4 +89,19 @@ test_safe: safe test
 # Compiles a binary with -d:danger and runs it.
 # Note: Don't use this for production builds.
 test_danger: danger test 
-	
+
+# Run whaetever control program we have.
+testctl:
+	echo "Testing control program"
+	cd "$(BUILDDIR)"; ./potholectl;
+
+## Control command section
+debugctl: copystuff clean
+	$(CC) c $(DEBFLAGS) -o:$(BUILDDIR)/potholectl $(SRCDIR)/potholectl.nim 
+
+releasectl: copystuff clean
+	$(CC) c $(PRODFLAGS) -o:$(BUILDDIR)/potholectl $(SRCDIR)/potholectl.nim 
+
+testctl_debug: debugctl testctl
+
+testctl_release: releasectl testctl
