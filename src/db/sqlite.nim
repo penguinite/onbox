@@ -33,10 +33,8 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
 "local": "BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether the post originated from this server or other servers.
 
-{.gcsafe.}:
+{.cast(gcsafe).}:
   var db:DbConn; 
-
-func 
 
 proc init*(): bool =
   ## This procedure initializes a database using values from the config file.
@@ -81,7 +79,37 @@ proc init*(): bool =
     @["7", "bio", "VARCHAR(65535)", "0", "", "0"]
     @["8", "is_frozen", "BOOLEAN", "1", "", "0"]  ]#
   
+  # I think getAllRows() returns a random order so we won't look 
+  # at the order that these come in.
+  var cols: seq[string] = @[]
   for row in db.getAllRows(sql"PRAGMA table_info('users');"):
+    cols.add(row[1])
+
+  var missing: seq[string] = @[]
+  for key in usersCols.keys:
+    if key in cols:
+      continue
+    else:
+      missing.add(key)
+  
+  if len(missing) > 0:
+    debug "Major difference between built-in schema and currently-used schema\nDid you forget to migrate?", "sqlite.init"
+    error "Missing columns from users schema:\n" & $missing, "sqlite.init"
+  
+  cols = @[]
+  for row in db.getAllRows(sql"PRAGMA table_info('posts');"):
+    cols.add(row[1])
+
+  missing = @[]
+  for key in postsCols.keys:
+    if key in cols:
+      continue
+    else:
+      missing.add(key)
+  
+  if len(missing) > 0:
+    debug "Major difference between built-in schema and currently-used schema\nDid you forget to migrate?", "sqlite.init"
+    error "Missing columns from posts schema:\n" & $missing, "sqlite.init"
 
   echo "Database is done initializing!"
 
