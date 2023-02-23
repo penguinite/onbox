@@ -10,26 +10,15 @@
 import lib
 
 # From Pothole (ctl folder)
-import ctl/[dialog, db]
+import ctl/[shared, db]
 
 # From standard library
-import std/[os, parseopt]
+import std/[os, parseopt, strutils]
 
 # Leave if no parameters were provided
 if paramCount() < 1:
   echo "Type -h or --help for help"
   lib.exit()
-
-const helpDialog = @[
-  "Potholectl " & lib.version,
-  "Copyright (c) Leo Gavilieau 2023",
-  "Licensed under the GNU Affero GPL License under version 3 or later.",
-  "Available commands: ",
-  "",
-  "Universal arguments arguments: ",
-  "-h,--help\t\t;; Displays help prompt for a command and exits",
-  "-v,--version\t\t;; Displays a version prompt and exits"
-]
 
 #! Functions and procedures are declared here or somewhere in the ctl/ folder
 
@@ -44,18 +33,15 @@ var args: seq[string] = @[] # Args are stored here.
 # or ./pothole conf parse pothole.conf
 for kind, key, val in p.getopt():
   case kind
-  of cmdArgument,cmdLongOption, cmdShortOption:
-    if len(subsystem) < 0:
-      subsystem = key
-      continue
-    if len(command) < 0:
-      command = key
-      continue
+  of cmdArgument:
+    if isSubsystem(key) and len(subsystem) < 1:
+      subsystem = toLowerAscii(key)
+    if isCommand(subsystem, key) and len(subsystem) > 0:
+      command = toLowerAscii(key)
+  of cmdLongOption, cmdShortOption:
     args.add(key)
   of cmdEnd: break
 
 case subsystem
 of "db":
-  db.processCmd(subsystem, key, args)
-else:
-  error("Unrecognizable arguments (Subsystem: " & subsystem & ", Cmd: " & command & "\nArgs: " & $args, "potholectl.startup")
+  db.processCmd(command, args)
