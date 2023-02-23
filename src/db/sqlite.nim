@@ -68,11 +68,20 @@ proc init*(): bool =
   # At this stage we will check individual columns and if they exist
   # So that we can individually update the database as we change stuff
   # The first row looks like this: @["0", "id", "BLOB", "1", "", "1"]
+  #[
+    @["0", "id", "BLOB", "1", "", "1"]
+    @["1", "handle", "VARCHAR(65535)", "1", "", "0"]
+    @["2", "local", "BOOLEAN", "1", "", "0"]
+    @["3", "password", "VARCHAR(65535)", "0", "", "0"]
+    @["4", "salt", "VARCHAR(65535)", "0", "", "0"]
+    @["5", "name", "VARCHAR(65535)", "0", "", "0"]
+    @["6", "email", "VARCHAR(225)", "0", "", "0"]
+    @["7", "bio", "VARCHAR(65535)", "0", "", "0"]
+    @["8", "is_frozen", "BOOLEAN", "1", "", "0"]  ]#
   var missingCols: seq[string] = @[];
   var i = -1;
-  for row in db.getAllRows(sql"PRAGMA table_info('posts');"):
+  for row in db.getAllRows(sql"PRAGMA table_info('users');"):
     echo row
-
 
   echo "Database is done initializing!"
 
