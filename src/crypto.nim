@@ -31,9 +31,6 @@ from std/strutils import parseInt
   like that, but I am okay with these risks so I will continue using nimcrypto and std/sysrand
 ]#
 
-# echo(int('A') .. int('z')) = 65 .. 122
-# But 37 .. 126 is fine
-
 const asciiLetters: seq[char] = @[
   '%','&','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']','^','_','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','|','}','~'
 ] # This sequence has 89 entries (-1 is 88)
@@ -55,7 +52,8 @@ proc rand*(dig: int = 5): int =
   var num = randomInt(len($dig))
   if num > dig:
     num = dig
-  
+  if num < 0:
+    num = 0
   return num
 
 proc randchar*(): char =
