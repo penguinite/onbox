@@ -66,7 +66,6 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], loc
   post.recipients = recipients
   post.local = local
   post.content = content
-  post.contexts = contexts
 
   if isEmptyOrWhitespace(replyto):
     post.replyto = ""

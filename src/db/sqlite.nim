@@ -26,7 +26,6 @@ const usersCols: OrderedTable[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NO
 "is_frozen":"BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
 
 const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The post Id
-"contexts":"VARCHAR(65535)", # What JSON-LD contexts the post uses
 "recipients":"VARCHAR(65535)", # A comma-separated list of recipients since sqlite3 does not support arrays by default
 "sender":"VARCHAR(65535) NOT NULL", # A string containing the sender handle
 "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)

@@ -47,7 +47,6 @@ type
 type 
   Post* = ref object
     id*: string # A unique id.
-    contexts*: seq[string] # A sequence of the contexts that this post has.
     recipients*: seq[string] # A sequence of recipient's handles.
     sender*: string # Basically, the person sending the message
     replyto*: string # Resource/Post person was replying to,  
