@@ -27,6 +27,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     # But the user insists that we initialize it again.
     # What a strange world we live in... :)
     # Let's uninitialize first...
-    discard db.uninit()
+    if not db.uninit():
+      error "Database uninitialization failed!","ctl/db.processCmd(init)"
     if not db.init(noSchemaCheck=true):
       error "Database initialization failed!","ctl/db.processCmd(init)"

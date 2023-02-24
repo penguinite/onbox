@@ -110,8 +110,11 @@ proc init*(noSchemaCheck:bool = false): bool =
 proc uninit*(): bool =
   ## Uninitialize the database.
   ## Or close it basically...
-  if not db.close():
-    error "Failed to close database!", "db/sqlite.uninit()"
+  try:
+    db.close()  
+    return true
+  except:
+    return false
 
 proc addUser*(olduser: User): User =
   ## This takes a User object and puts it in the database
@@ -163,16 +166,25 @@ proc addUser*(olduser: User): User =
 proc getAdmins*(limit: int = 10): seq[string] = 
   ## A procedure that returns the usernames of all administrators.
   var sqlStatement = "SELECT handle FROM users WHERE admin = true;"
+  for row in db.getAllRows(sql(sqlStatement)):
+    result.add(row[0])
+  return result
   
 proc getTotalUsers*(): int =
   ## A procedure to get the total number of local users.
   var sqlStatement = "SELECT handle FROM users WHERE local = true;"
+  result = 0
+  for x in db.getAllRows(sql(sqlStatement)):
+    inc(result)
+  return result
 
 proc getTotalPosts*(): int =
   ## A procedure to get the total number of local posts.
   var sqlStatement = "SELECT local FROM posts WHERE local = true;"
-
-
+  result = 0
+  for x in db.getAllRows(sql(sqlStatement)):
+    inc(result)
+  return result
 
 #! Everything below this line was imported as-is from db.nim before db.nim was erased forever
 # TODO: Optimize the below code.
@@ -180,45 +192,39 @@ proc getTotalPosts*(): int =
 func constructUserFromRow*(row: Row): User =
   ## This procedure takes a database row (from either getUserById() or getUserByHandle())
   ## and turns it into an actual User object that can be returned and processed.
-  var user = User()
+  var user = User()[] # Dereference early on for readability
+  var i: int = -1;
 
-  # This looks ugly, I know, I had to wrap it with
-  # two specific functions but we don't have to re-write this
-  # even if we add new things to the User object. EXCEPT!
-  # if we introduce new data types to the User object
-  var i: int = 0;
-
-  for key,value in user[].fieldPairs:
+  for key,value in user.fieldPairs:
     inc(i)
     # If its string, add it surrounding quotes
     # Otherwise add it whole
-    when user[].get(key) is bool:
-      user[].get(key) = parseBool(row[i - 1])
-    when user[].get(key) is string:
-      user[].get(key) = row[i - 1]
+    when user.get(key) is bool:
+      user.get(key) = parseBool(row[i])
+    when user.get(key) is string:
+      user.get(key) = row[i]
 
-  return user.unescape()
+  new(result); result[] = user # Re-reference it at the end.
+  return result.unescape()
 
 proc userIdExists*(id:string): bool =
   ## A procedure to check if a user exists by id
   var row = db.getRow(sql"SELECT id FROM users WHERE id = ?;", id)
   if row == @[""]:
-    return false
-  else:
-    return true
+    return false # User does not exist
+  return true # User exists
 
 proc userHandleExists*(handle:string): bool =
   ## A procedure to check if a user exists by handle
   var row = db.getRow(sql"SELECT handle FROM users WHERE handle = ?;", escape(safeifyHandle(toLowerAscii(handle))))
   if row == @[""]:
-    return false
-  else:
-    return true
+    return false # User does not exist
+  return true # User exists
 
 proc getUserById*(id: string): User =
   ## Retrieve a user from the database using their id
   if not userIdExists(id):
-    debug("Someone tried to access a non-existent user with id: " & id, "db.getUserById")
+    debug("Something tried to access a non-existent user with id: " & id, "db.getUserById")
     return
   var row = db.getRow(sql"SELECT * FROM users WHERE id = ?;", id)
   return constructUserFromRow(row)
@@ -226,12 +232,12 @@ proc getUserById*(id: string): User =
 proc getUserByHandle*(handle: string): User =
   ## Retrieve a user from the database using their handle
   if not userHandleExists(handle):
-    debug("Someone tried to access a non-existent user with the handle: " & handle, "db.getUserById")
+    debug("Something tried to access a non-existent user with the handle: " & handle, "db.getUserById")
     return
   var row = db.getRow(sql"SELECT * FROM users WHERE handle = ?;", escape(safeifyHandle(toLowerAscii(handle))))
   return constructUserFromRow(row)
 
-proc update*(table, condition, column, value: string, ): bool =
+proc update(table, condition, column, value: string, ): bool =
   ## A procedure to update any value, in any column in any table.
   ## This procedure should be wrapped, you can use updateUserByHandle() or
   ## updateUserById() instead of using this directly.
@@ -270,7 +276,6 @@ proc addPost*(post: Post): Post =
   if db.getRow(sql"SELECT local FROM posts WHERE id = ?;", newpost.id) != @[""]:
     return
       
-  
   debug("Inserting user with Id " & newpost.id & "", "db.addPost")
 
   # Let's loop over the newuser field pairs and
@@ -336,7 +341,7 @@ proc updatePostById*(id, column, value: string): bool =
 proc constructPostFromRow*(row: Row): Post =
   ## A procedure that takes a database Row (From the Posts table)
   ## And turns it into a Post object ready for display, parsing and so on.
-  var post = Post()
+  var post = Post()[]
 
   # This looks ugly, I know, I had to wrap it with
   # two specific functions but we don't have to re-write this
@@ -344,20 +349,19 @@ proc constructPostFromRow*(row: Row): Post =
   # if we introduce new data types to the User object
   var i: int = 0;
 
-  for key,value in post[].fieldPairs:
+  for key,value in post.fieldPairs:
     inc(i)
     # If its string, add it surrounding quotes
     # Otherwise add it whole
-    when post[].get(key) is bool:
-      post[].get(key) = parseBool(row[i - 1])
+    when post.get(key) is bool:
+      post.get(key) = parseBool(row[i - 1])
+    when post.get(key) is string:
+      post.get(key) = row[i - 1]
+    when post.get(key) is seq[string]:
+      post.get(key) = row[i - 1].split(",")
 
-    when post[].get(key) is string:
-      post[].get(key) = row[i - 1]
-
-    when post[].get(key) is seq[string]:
-      post[].get(key) = row[i - 1].split(",")
-
-  return post.unescape()
+  new(result); result[] = post
+  return result.unescape()
 
 proc getPostById*(id: string): Post =
   ## A procedure to get a post object from the db using its id
@@ -374,16 +378,22 @@ proc getPostsByUserHandle*(handle:string, limit: int = 15): seq[Post] =
 
   var sqlStatement = db.prepare("SELECT * FROM posts WHERE sender = " & escape(safeifyHandle(toLowerAscii(handle))) & ";")
 
-  result = @[] # Clear this... It's already cleared but I wanna make sure...
   for row in db.fastRows(sqlStatement):
     if limit != 0:
       if len(result) > limit:
         break
     result.add(row.constructPostFromRow())
-  
-  return result  
 
 proc getPostsByUserId*(id:string, limit: int = 15): seq[Post] =
   ## A procedure to get any user's posts from the db using the users id
-  return getPostsByUserHandle(getHandleFromId(id),limit)
+  if not userIdExists(id):
+    return
+
+  var sqlStatement = db.prepare("SELECT * FROM posts WHERE sender = " & escape(getHandleFromId(id)))
+
+  for row in db.fastRows(sqlStatement):
+    if limit != 0:
+      if len(result) > limit:
+        break
+    result.add(row.constructPostFromRow)
   
