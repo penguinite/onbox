@@ -246,11 +246,28 @@ proc update(table, condition, column, value: string, ): bool =
 
 proc updateUserByHandle*(handle, column, value: string): bool =
   ## A procedure to update the user by their handle
-  var handle2 = escape(safeifyHandle(toLowerAscii(handle)))
-  return update("users","handle = " & handle2,column,value)
+  # Check that the user handle exists
+  if not userHandleExists(handle):
+    return false
+
+  # Check if it's a valid column to update
+  if not usersCols.hasKey(column):
+    return false
+  
+  # Then update!
+  return update("users","handle = " & escape(safeifyHandle(toLowerAscii(handle))),column,value)
 
 proc updateUserById*(id, column, value: string): bool = 
   ## A procedure to update the user by their ID
+  # Check that the user id exists
+  if not userIdExists(id):
+    return false
+
+  # Check if it's a valid column to update
+  if not usersCols.hasKey(column):
+    return false
+
+  # Then update!
   return update("users","id = " & id,column, value)
 
 proc getIdFromHandle*(handle: string): string =
@@ -270,6 +287,14 @@ proc getHandleFromId*(id: string): string =
 proc addPost*(post: Post): Post =
   ## A function add a post into the database
   ## This will be escaped by post.escape()
+  
+  #[
+    Note: in other parts of the code, I have
+    avoided the dereferencing call since it looks ugly.
+    But since we will be parsing lots of posts, I say we keep this unchanged.
+    We need the memory for other things such as Potcode parsing.
+    And this section is not that ugly anyways.
+  ]#
   var newpost: Post = post.escape()
 
   # Someone has tried to add a post twice. We just won't add it.
