@@ -4,10 +4,17 @@
 # ctl/shared.nim:
 ## Shared procedures for potholectl.
 
+# From ctl/ folder in Pothole
 import help
 
-from ../lib import exit
-from std/tables import `[]`
+# From elsewhere in Pothole
+import ../lib, ../db, ../conf
+
+# From standard library
+import std/[tables,os]
+
+const subsystems* = @["db"]
+const commands* = @["db:init"]
 
 proc helpPrompt*(subsystem, command: string = "") =
   ## A program that writes the entirety of the help prompt.
@@ -23,16 +30,22 @@ proc helpPrompt*(subsystem, command: string = "") =
       echo(x)
   lib.exit()
 
-proc checkArgs*(args: seq[string], short, long: string): bool =
-  for x in args:
-    if short == x:
+proc checkArgs*(args: Table[string, string], short, long: string): bool =
+  for key in args.keys:
+    if short == key:
       return true
-    if long == x:
+    if long == key:
       return true
   return false
 
-const subsystems* = @["db"]
-const commands* = @["db:init"]
+proc getArg*(args: Table[string, string], short, long: string): string =
+  for key,val in args.pairs:
+    if short == key:
+      return val
+    if long == key:
+      return val
+  return ""
+
 
 proc isSubsystem*(sys: string): bool =
   if sys in subsystems:
@@ -47,3 +60,18 @@ proc isCommand*(sys, cmd: string): bool =
 proc versionPrompt*() =
   echo help.prefix
   lib.exit()
+
+proc initDb*() = 
+  echo("Initializing database")
+  if not db.init(noSchemaCheck=true):
+    error "Database initialization failed", "ctl/shared.initDb"
+
+proc initConf*() =
+  var configfile: string = "pothole.conf"
+  if existsEnv("POTHOLE_CONFIG"):
+    configfile = getEnv("POTHOLE_CONFIG")
+
+  echo("Config file used: ", configfile)
+
+  if conf.setup(configfile) == false:
+    error("Failed to load configuration file!", "ctl/shared.initConf")

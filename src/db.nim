@@ -48,16 +48,27 @@ when dbEngine == "mem":
 # to import more than a single backend.
 {.warning[UnreachableCode]: off.} 
 
-proc init*(): bool =
+proc init*(noSchemaCheck:bool = false): bool =
   ## Initializes a database using values from the config file
   when dbEngine == "sqlite":
-    return sqlite.init()
+    return sqlite.init(noSchemaCheck)
   when dbEngine == "postgres":
-    return postgres.init()
+    return postgres.init(noSchemaCheck)
   when dbEngine == "skeleton":
-    return skeleton.init()
+    return skeleton.init(noSchemaCheck)
   when dbEngine == "mem":
-    return mem.init()
+    return mem.init(noSchemaCheck)
+
+proc uninit*(): bool =
+  when dbEngine == "sqlite":
+    return sqlite.uninit()
+  when dbEngine == "postgres":
+    return postgres.uninit()
+  when dbEngine == "skeleton":
+    return skeleton.uninit()
+  when dbEngine == "mem":
+    return mem.uninit()
+  
 
 proc addUser*(user: User): User =
   when dbEngine == "sqlite":

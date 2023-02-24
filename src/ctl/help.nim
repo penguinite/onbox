@@ -42,7 +42,7 @@ helpTable["db"] = @[
 
 helpTable["db:init"] = @[
   prefix,
-  "\nThis command initializes a database using values from the\nconfig file",
+  "\nThis command initializes a database using values from the\nconfig file, this is not needed since potholectl automatically initializes\nthe database with no schema checking.",
   "\nAvailable arguments:",
   genArg("c","config","Specify a config file to use")
 ]

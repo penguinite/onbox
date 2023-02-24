@@ -7,8 +7,13 @@
 
 import ../lib
 
-proc init*(): bool =
+proc init*(noSchemaCheck:bool = false): bool =
   ## Do any initialization work.
+  return true
+
+proc uninit*(): bool =
+  ## Uninitialize the database.
+  ## Or close it basically...
   return true
 
 proc addUser*(user: User): User = 

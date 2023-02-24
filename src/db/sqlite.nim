@@ -36,7 +36,7 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 {.cast(gcsafe).}:
   var db:DbConn; 
 
-proc init*(): bool =
+proc init*(noSchemaCheck:bool = false): bool =
   ## This procedure initializes a database using values from the config file.
   if not exists("db","filename"):
     error "Config file is missing essential option for sqlite db engine; db:filename","db/sqlite.init"
@@ -65,19 +65,13 @@ proc init*(): bool =
   if not db.tryExec(sql(sqlStatement)):
     error "Failed to create posts table!", "db/sqlite.init"
 
+  if noSchemaCheck:
+    debug "Schema check skipped...","db/sqlite.init"
+    echo "Database is done initializing!"
+    return true 
+
   # At this stage we will check individual columns and if they exist
   # So that we can individually update the database as we change stuff
-  # The first row looks like this: @["0", "id", "BLOB", "1", "", "1"]
-  #[
-    @["0", "id", "BLOB", "1", "", "1"]
-    @["1", "handle", "VARCHAR(65535)", "1", "", "0"]
-    @["2", "local", "BOOLEAN", "1", "", "0"]
-    @["3", "password", "VARCHAR(65535)", "0", "", "0"]
-    @["4", "salt", "VARCHAR(65535)", "0", "", "0"]
-    @["5", "name", "VARCHAR(65535)", "0", "", "0"]
-    @["6", "email", "VARCHAR(225)", "0", "", "0"]
-    @["7", "bio", "VARCHAR(65535)", "0", "", "0"]
-    @["8", "is_frozen", "BOOLEAN", "1", "", "0"]  ]#
   
   # I think getAllRows() returns a random order so we won't look 
   # at the order that these come in.
@@ -93,8 +87,8 @@ proc init*(): bool =
       missing.add(key)
   
   if len(missing) > 0:
-    debug "Major difference between built-in schema and currently-used schema\nDid you forget to migrate?", "sqlite.init"
-    error "Missing columns from users schema:\n" & $missing, "sqlite.init"
+    debug "Major difference between built-in schema and currently-used schema\nDid you forget to migrate?", "db/sqlite.init"
+    error "Missing columns from users schema:\n" & $missing, "db/sqlite.init"
   
   cols = @[]
   for row in db.getAllRows(sql"PRAGMA table_info('posts');"):
@@ -108,10 +102,16 @@ proc init*(): bool =
       missing.add(key)
   
   if len(missing) > 0:
-    debug "Major difference between built-in schema and currently-used schema\nDid you forget to migrate?", "sqlite.init"
-    error "Missing columns from posts schema:\n" & $missing, "sqlite.init"
+    debug "Major difference between built-in schema and currently-used schema\nDid you forget to migrate?", "db/sqlite.init"
+    error "Missing columns from posts schema:\n" & $missing, "db/sqlite.init"
 
   echo "Database is done initializing!"
+
+proc uninit*(): bool =
+  ## Uninitialize the database.
+  ## Or close it basically...
+  if not db.close():
+    error "Failed to close database!", "db/sqlite.uninit()"
 
 proc addUser*(olduser: User): User =
   ## This takes a User object and puts it in the database
