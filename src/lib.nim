@@ -143,6 +143,9 @@ func cleanString*(str: string, charset: set[char] = whitespace): string =
   ## A procedure to clean a string of whitespace characters.
   var startnum = 0;
   var endnum = len(str) - 1;
+
+  if len(str) < 1:
+    return "" # Return nothing, since there is nothing to clean anyway
   
   while str[startnum] in charset:
     inc(startnum)
