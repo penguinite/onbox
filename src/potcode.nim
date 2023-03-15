@@ -9,9 +9,6 @@
 ## 
 ## Ie. it's called "Potcode" for a reason... It's for Pothole :P
 
-{.experimental: "codeReordering".}
-
-
 ## This module is very much W.I.P
 
 # From pothole
@@ -28,38 +25,6 @@ func numOfDigits(key: int): int =
   result = 0
   for x in $key:
     inc(result)
-
-func replace(str: string, key: int, val: string): string =
-  ## This function searches for the first occurence of key
-  ## in str and it replaces it with val.
-  ## This is way faster than the strutils/replace function
-  ## which replaces all occurences.
-  # This was useful in the previous version of the parser
-  # But now that we parse line by line and sentence by sentence.
-  # I think it's best that we
-  # TODO: Deprecate this function
-  var i = -1;
-  var digits = numOfDigits(key);
-  var doneX: int = 0;
-  result = ""
-  for ch in str:
-    inc(i)
-    if doneX != 0:
-      inc(doneX)
-      if doneX < digits + 6:
-        continue
-    else:
-      if ch == '$':
-        if $(ch & str[i + 1] & str[i + 2]) == "$((":
-          # We have a candidate!
-          if str[i + 3..i + 2 + digits] == $key:
-            # We have a winner!
-            inc(doneX)
-            result.add(val)
-            continue
-
-    result.add(ch) # Add whatever we have, to the result.
-  return result
 
 func trimFunction*(oldcmd: string): seq[string] =
   ## Trim a function into separate parts...
@@ -261,6 +226,8 @@ proc parseInternal*(input:string): string =
     else:
       sequence.add(cleanString(line))
   
+  # Second stage parsing.
+
   var maxNestLevel = 3; # Maximum nesting level. Configured in [web]/potcode_max_nests
   if conf.exists("web","potcode_max_nests"):
     maxNestLevel = parseInt(conf.get("web","potcode_max_nests"));
