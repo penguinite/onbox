@@ -1,4 +1,4 @@
-# Copyright © Leo Gavilieau 2022-2023
+ll# Copyright © Leo Gavilieau 2022-2023
 # Licensed under AGPL version 3 or later.
 # parser.nim  ;;  A procedure to parse Potcode.
 
@@ -239,7 +239,22 @@ proc parseInternal*(input:string): string =
     blocks: seq[int] = @[] # This stores all the blocks we currently made.
     i = -1; # Good old i as a counter variable.
 
+  # This looks ugly but the GC has forced my hand.
+  # TODO: Re-purpose this into general parsing code. Oh and also finish this
+  proc parseItem(parsingBlock,parsingLoop,nestLevel,maxNestLevel,i: var int, blocks: var seq[int], stuff: var string): string =
+    return stuff
+
   for item in sequence:
     inc(i)
+    result = parseItem(
+      parsingBlock,
+      parsingLoop,
+      nestLevel,
+      maxNestLevel,
+      i,
+      blocks,
+      result
+    )
+
   
   return result
