@@ -6,7 +6,7 @@ description   = "A lightweight ActivityPub backend."
 license       = "AGPL-3.0-or-later"
 srcDir        = "src"
 binDir        = "build"
-bin           = @["pothole"]
+bin           = @["pothole","potholectl"]
 backend       = "c"
 
 var
@@ -48,7 +48,6 @@ before build:
 after build:
   cpFile("LICENSE",buildDir & "/LICENSE")
   cpFile(rootDir & "/pothole.conf",buildDir & "/pothole.conf")
-
 
 # Dependencies
 
