@@ -2,11 +2,11 @@
 
 A lightweight ActivityPub backend written in Nim. Pothole allows you to control your digital life!
 
-*Note:* This is the main branch, where active development on Pothole is done. You are most likely looking for the `stable` branch, which is better suited for server environments, you can find it [here](https://git.vern.cc/pothole/pothole/src/branch/stable).
+*Note:* This is the main branch, where active development on Pothole is done. You are most likely looking for the `stable` branch, which is better suited for server environments, you can find it [here](https://codeberg.org/pothole/pothole/src/branch/stable).
 
 ## What is it?
 
-Pothole is an ActivityPub backend written in Nim, it's designed to be simple & fast. It has unique features such as allowing user-profiles to be written with custom HTML & CSS (in a language we call [Potcode](https://git.vern.cc/pothole/docs/src/branch/master/dev/POTCODE.md)), Pothole is more reminiscent of Tumblr in this sense, Pothole is basically decentralized, fast Tumblr.
+Pothole is an ActivityPub backend written in Nim, it's designed to be simple & fast. It has unique features such as allowing user-profiles to be written with custom HTML & CSS (in a language we call [Potcode](https://codeberg.org/pothole/docs/src/branch/master/dev/POTCODE.md)), Pothole is more reminiscent of Tumblr in this sense, Pothole is basically decentralized, fast Tumblr.
 
 Pothole primarily implements ActivityPub, but Pothole is also compatible with Mastodon and Akkoma, it also implements the Mastodon API with some custom extensions. So it should work with all of your clients and bots with little to no changes needed. 
 
@@ -14,7 +14,7 @@ Pothole primarily implements ActivityPub, but Pothole is also compatible with Ma
 
 No. You are better off using [Akkoma](https://akkoma.social/) for a stable backend or [GoToSocial](https://gotosocial.org/) for a light-as-air backend.
 
-Development is slow because creating anything remotely like this is incredibly difficult, I am trying to emphasize speed & safety over shiny features, and that means I keep planning ahead for new things and that's why this is taking so long. Pothole is still in early-development, it is still in it's design phase! Though [progress on multiple fronts has been made](https://git.vern.cc/pothole/pothole/activity/monthly)
+Development is slow because creating anything remotely like this is incredibly difficult, I am trying to emphasize speed & safety over shiny features, and that means I keep planning ahead for new things and that's why this is taking so long. Pothole is still in early-development, it is still in it's design phase! Though [progress on multiple fronts has been made](https://codeberg.org/pothole/pothole/activity/monthly)
 
 ### But I still want to use it
 
