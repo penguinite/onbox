@@ -1,4 +1,4 @@
-ll# Copyright © Leo Gavilieau 2022-2023
+# Copyright © Leo Gavilieau 2022-2023
 # Licensed under AGPL version 3 or later.
 # parser.nim  ;;  A procedure to parse Potcode.
 
@@ -187,9 +187,9 @@ proc parseItem(items: seq[string]): string =
 
   for item in items:
     inc(i)
-    if "{{" in item:
-    else:
-      if parsingBlock:
+    #if "{{" in item:
+    #else:
+      #if parsingBlock:
 
   
   return result
