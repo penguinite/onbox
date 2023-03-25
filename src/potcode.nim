@@ -170,13 +170,37 @@ func endInternal(blocks: OrderedTable[int, int], blockint: int): bool =
     return false
   return true
 
+proc parseItem(items: seq[string]): string =
+  ## This function actually parses the sequence of commands.
+  ## It's been put here because I want to try and fix the GC mess.
+  
+  var maxNestLevel = 3; # Maximum nesting level. Configured in [web]/potcode_max_nests
+  if conf.exists("web","potcode_max_nests"):
+    maxNestLevel = parseInt(conf.get("web","potcode_max_nests"));
+
+  var
+    hasReturnedFalse = false # So
+    parsingLoop = 0 # 0 means we aren't parsing a loop, anything else is the id of the command that started the loop
+    nestLevel = 0 # This number stores how much we have nested so far.
+    blocks: seq[int] = @[] # This stores all the blocks we currently made.
+    i = -1; # Good old i as a counter variable.
+
+  for item in items:
+    inc(i)
+    if "{{" in item:
+    else:
+      if parsingBlock:
+
+  
+  return result
+
 proc parseInternal*(input:string): string =
   ## This is a watered down version of the parse() command that does not require User or Post objects
   ## It can be used to parse relatively simple pages, such as error pages and non-user pages (Instance rules fx.)
   var sequence: seq[string] = @[] # A sequence that holds *all* strings.
   for line in input.splitLines:
     if isEmptyOrWhitespace(line):
-      continue # Skip since line is mostly empty anyway.
+      continue # Skip since line is empty anyway.
 
     if line.contains("{{"):
       # Switch to character by character parsing
@@ -187,74 +211,30 @@ proc parseInternal*(input:string): string =
         inc(i)
         # Instead of storing even more booleans
         # We just check the length of command.
-        # If it's higher than zero then it means we
+        # If it's higher than two then it means we
         # are parsing something
-        if len(command) > 0:
-          if ch == '}': # Check for end of command.
-            # We're at the end
-            if not isEmptyOrWhitespace(command):
-              sequence.add(command) # Only add command if it has something.
-            command = "" # Otherwise just clear this out...
+        if len(command) > 2:
+          if ch == '}' and command[i - 1] == '}':
+            sequence.add(command[0..^2])
+            command = ""
           else:
             command.add(ch)
           continue
-
-        if ch == '}' and len(command) == 0 and len(noncommand) == 0:
-          # We can conclude that a command has *just* been added to the
-          # sequence var
-          continue # Skip this then, we don't need extra "}" chars in our sequence
-
-        if ch == '{':
-          if len(line) < i:
-            continue # End of input
-
-          if line[i] == '{':
-            # Start command.
-
-            if not isEmptyOrWhitespace(noncommand): # Check that the noncommand isn't empty
-              sequence.add(cleanString(noncommand)) # Push noncommand to sequence
-            noncommand = ""
-            command = "{" # Add anything to trigger the len(command) > 0 check
-            continue
-
-        if len(command) == 0:
-          noncommand.add(ch)
+          
+        # I know this looks ugly.
+        if ch == '{' and len(line) > i + 1 and line[i + 1] == '{':
+          if not isEmptyOrWhitespace(noncommand):
+            sequence.add(noncommand)
+          noncommand = ""
+          command.add("{{") # Add two chars so we trigger the above check.
           continue
-      # Push noncommand to sequence at the end.
-      if len(noncommand) > 0:
-        sequence.add(cleanString(noncommand))
+      
+        noncommand.add(ch)
     else:
-      sequence.add(cleanString(line))
+      if not isEmptyOrWhitespace(line):
+        sequence.add(line)
   
   # Second stage parsing.
 
-  var maxNestLevel = 3; # Maximum nesting level. Configured in [web]/potcode_max_nests
-  if conf.exists("web","potcode_max_nests"):
-    maxNestLevel = parseInt(conf.get("web","potcode_max_nests"));
 
-  var
-    parsingBlock = 0 # 0 means we aren't parsing a block, anything else is the id of the command that started the block
-    parsingLoop = 0 # 0 means we aren't parsing a loop, anything else is the id of the command that started the loop
-    nestLevel = 0 # This number stores how much we have nested so far.
-    blocks: seq[int] = @[] # This stores all the blocks we currently made.
-    i = -1; # Good old i as a counter variable.
-
-  # This looks ugly but the GC has forced my hand.
-  # TODO: Re-purpose this into general parsing code. Oh and also finish this
-  proc parseItem(parsingBlock,parsingLoop,nestLevel,maxNestLevel,i: var int, blocks: var seq[int], stuff: var string): string =
-    return stuff
-
-  for item in sequence:
-    inc(i)
-    result = parseItem(
-      parsingBlock,
-      parsingLoop,
-      nestLevel,
-      maxNestLevel,
-      i,
-      blocks,
-      result
-    )
-
-  
   return result
