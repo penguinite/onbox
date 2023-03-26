@@ -1,15 +1,13 @@
-# Copyright © Leo Gavilieau 2022-2023
-# Licensed under AGPL version 3 or later.
-# parser.nim  ;;  A procedure to parse Potcode.
+# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# potcode.nim:
+## Functions for parsing Potcode.
 
-## This module provides an easy to use interface
-## for the reference implementation of the Potcode parser.
-## This module heavily depends on Pothole modules (user, db, post, lib, conf)
-## Heavy modifications would be needed to port this somewhere else.
-## 
-## Ie. it's called "Potcode" for a reason... It's for Pothole :P
-
-## This module is very much W.I.P
+#! This module is very much W.I.P
 
 # From pothole
 import lib, conf, db
@@ -20,11 +18,6 @@ import std/strutils except isEmptyOrWhitespace
 
 # Basically whitespace from lib.nim but with '{' and '}' added in.
 const badCharSet*: set[char] = {'\t', '\v', '\r', '\l', '\f',';', '{', '}'}
-
-func numOfDigits(key: int): int =
-  result = 0
-  for x in $key:
-    inc(result)
 
 func trimFunction*(oldcmd: string): seq[string] =
   ## Trim a function into separate parts...
@@ -72,7 +65,6 @@ func trimFunction*(oldcmd: string): seq[string] =
   store = ""
     
   return result
-
 
 # A list of possible instance values with the type of sequence
 var instanceScopeSeqs: seq[string] = @[

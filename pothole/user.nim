@@ -1,5 +1,8 @@
 # Copyright © Leo Gavilieau 2022-2023
-# Licensed under AGPL version 3 or later
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0 or later. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 # user.nim:
 ## Various procedures for handling User objects.
@@ -29,7 +32,7 @@ proc newUser*(handle,password: string, local:bool = false): User =
   if local == true:
 
     if len(safeifyHandle(handle)) < 0:
-      error("Handle has only invalid characters.","user.newUser()")
+      error("Handle has only invalid characters.\nThis is probably a bug you should report.","user.newUser()")
 
     newuser.handle = safeifyHandle(handle)
     newuser.local = true

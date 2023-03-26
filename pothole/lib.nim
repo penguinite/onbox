@@ -1,5 +1,9 @@
-# Copyright © Leo Gavilieau 2022-2023
-# Licensed under AGPL version 3 or later.
+# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0 or later. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
 # lib.nim:
 ## This module contains shared data across Pothole.
 ## It also contains useful procedures and functions that are

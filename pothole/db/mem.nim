@@ -1,9 +1,13 @@
 # Copyright © Leo Gavilieau 2022-2023
-# Licensed under AGPL version 3 or later.
 #
-# db/skeleton.nim:
-## A template for any future database backends.
-## Try to keep your database engine as close to this as possible.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0 or later. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# db/mem.nim:
+## A database backend that uses the host's memory
+## This is not recommended for production builds.
+## Please do not use this
 
 import ../lib
 

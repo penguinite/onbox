@@ -1,4 +1,4 @@
-# Pothole
+# libpothole
 
 A lightweight ActivityPub backend written in Nim. Pothole allows you to control your digital life!
 

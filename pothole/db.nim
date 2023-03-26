@@ -1,5 +1,8 @@
-# Copyright © Leo Gavilieau 2022-2023
-# Licensed under the AGPL version 3 or later.
+# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0 or later. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 # db.nim: 
 ## A compile-time wrapper for your actual database backend.

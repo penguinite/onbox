@@ -1,9 +1,14 @@
-# Copyright © Leo Gavilieau 2022-2023
-# Licensed under AGPL version 3 or later.
+# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0 or later. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
 # conf.nim:
 ## This modules provides access to a custom written configuration file parser.
 ## And it also provides access to several helper functions for retrieving and parsing
 ## data from a shared config table.
+
 
 import std/[tables, os]
 import std/strutils except isEmptyOrWhitespace
@@ -92,7 +97,7 @@ func load*(input: string): Table[string, string] =
         if val.startsWith('\"'):
           val = val[1 .. len(val) - 1]
         if val.endsWith('\"'):
-          val = val[0 .. len(val) - 2]
+          val = val[0..^2]
         result[section & ":" & key] = val
         key = ""
         val = ""
