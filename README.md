@@ -37,6 +37,8 @@ We don't want this useful piece of software to be locked inside of a single homo
 
 Oh and it also means we can easily test this out.
 
+I know it seems a bit confusing but you, as a user, don't really have to worry about this change/separation. You can still call the entirety of this and the server program "Pothole", it doesn't really matter and people will in 99% of cases know what you are talking about.
+
 ## Copyright
 
 Copyright © Leo Gavilieau 2022-2023
