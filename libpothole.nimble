@@ -3,12 +3,8 @@
 version       = "0.0.2"
 author        = "xmoo"
 description   = "Essential libraries for the Pothole server."
-license       = "MPL-2.0+"
+license       = "GPL-3.0-or-later"
 srcDir        = "pothole"
-
-# Dependencies
-
-requires "nim >= 1.6.10"
 
 # Dependencies
 
