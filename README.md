@@ -35,6 +35,8 @@ Well it's primarily to help foster a unique ecosystem of servers. If you want to
 
 We don't want this useful piece of software to be locked inside of a single homogenous server application, we want to allow developers to use this library if they want to.
 
+Oh and it also means we can easily test this out.
+
 ## Copyright
 
 Copyright © Leo Gavilieau 2022-2023
