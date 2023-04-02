@@ -1,36 +1,39 @@
 # libpothole
 
-A lightweight ActivityPub backend written in Nim. Pothole allows you to control your digital life!
+Essential libraries for the Pothole server/backend.
 
 *Note:* This is the main branch, where active development on Pothole is done. You are most likely looking for the `stable` branch, which is better suited for server environments, you can find it [here](https://codeberg.org/pothole/pothole/src/branch/stable).
 
-## What is it?
+**Note:** Pothole and thus libpothole is very much a work-in-progress software project. Lots of implementation details are being figured out just now and are thus likely to change over time. In other words, this is pre-alpha or even *research* stage. 
 
-Pothole is an ActivityPub backend written in Nim, it's designed to be simple & fast. It has unique features such as allowing user-profiles to be written with custom HTML & CSS (in a language we call [Potcode](https://codeberg.org/pothole/docs/src/branch/master/dev/POTCODE.md)), Pothole is more reminiscent of Tumblr in this sense, Pothole is basically decentralized, fast Tumblr.
+## What is Pothole?
 
-Pothole primarily implements ActivityPub, but Pothole is also compatible with Mastodon and Akkoma, it also implements the Mastodon API with some custom extensions. So it should work with all of your clients and bots with little to no changes needed. 
+Pothole is a social media backend written in Nim, it's designed to be simple & fast. It has unique features such as allowing user-profiles to be written with custom HTML & CSS (Pothole's features can be embedded using a language we call [Potcode](https://codeberg.org/pothole/docs/src/branch/master/dev/POTCODE.md)), Pothole is more reminiscent of Tumblr in this sense since it allows you to fully customize your profile.
 
-## Does it work?
+Pothole federates to other servers using the ActivityPub protocol which means you can communicate to users on Mastodon, Akkoma, Misskey or whatever website that implements it. Pothole is also compatible with Mastodon's API interface, so your clients, frontends and bots should work with little to no changes.
 
-No. You are better off using [Akkoma](https://akkoma.social/) for a stable backend or [GoToSocial](https://gotosocial.org/) for a light-as-air backend.
+## What is *this* then?
 
-Development is slow because creating anything remotely like this is incredibly difficult, I am trying to emphasize speed & safety over shiny features, and that means I keep planning ahead for new things and that's why this is taking so long. Pothole is still in early-development, it is still in it's design phase! Though [progress on multiple fronts has been made](https://codeberg.org/pothole/pothole/activity/monthly)
+This is libpothole, it basically contains all the nifty logic for storing, processing and handling data such as Users, Posts and generic Activities. The main pothole server relies on this as a dependency since this library is the brains of the operation and without it Pothole would simply not work.
 
-### But I still want to use it
+## How do I use this library?
 
-Well then head on to the compilation section, but don't expect it to fully work out-of-the-box, configuration and setup is required. This will be documented someday.
+Library documentation is an on-going effort that is yet to be complete. But you can simply browse the source code and read what each function does. We try to keep the code as readable as possible.
+The `README.md` file inside of the `pothole/` folder tells you what each module is for.
 
-## Compilation
+When it comes to importing a module into your app, you should have this library installed and you should use this snippet:
 
-Pothole is written in Nim, so you'll need the [nim compiler](https://nim-lang.org/), your favorite C compiler (`gcc` is recommended) and Nimble.
+```
+import pothole/MODULE # Replace module with your module obviously...
+import pothole/conf # For configuration file parsing etc.
+import pothole/[conf, lib, strutils] # Imports multiple modules at the same time.
+```
 
-Simply run `nimble build` to build Pothole, by default it will build with sane options and be optimized for speed rather than size.
+## Why are they separate?
 
-It will also install any and all dependencies for you!
+Well it's primarily to help foster a unique ecosystem of servers. If you want to build your own ActivityPub server then you can use this as a base and code anything you want in addition! And it's also done to separate `potholectl` from the main server repository since those programs are very different from each other and should not be in the same place at all.
 
-### Makefile-based compiling
-
-The makefile is there for developer use as it includes common targets with developmental settings. You can build with release settings using `make all`
+We don't want this useful piece of software to be locked inside of a single homogenous server application, we want to allow developers to use this library if they want to.
 
 ## Copyright
 
