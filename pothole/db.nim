@@ -38,11 +38,13 @@ when defined(dbEngine):
   const dbEngine {.strdefine.}: string = ""
 else:
   when defined(release):
-    const dbEngine = "sqlite" # The postgres database backend is in development.
+    const dbEngine = "sqlite" # The postgres database backend is not very good.
   else:
     const dbEngine = "sqlite"
 
-{.warning: "Using " & dbEngine & " as database engine.".}
+{.hint: "Using " & dbEngine & " as database engine.".}
+
+# TODO: Look into using templates to improve code quality.
 
 # Add your database backends here.
 # This is the really ugly part. The rest is fine.

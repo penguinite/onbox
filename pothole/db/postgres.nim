@@ -17,6 +17,8 @@
 ## A database backend for Postgresql
 ## This backend is very much early in development and it is actually untested
 
+# TODO: Finish this.
+
 import ../lib
 
 proc init*(noSchemaCheck:bool = true): bool =

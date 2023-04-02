@@ -14,14 +14,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # db/mem.nim:
-## A database backend that uses the host's memory
-## This is not recommended for production builds.
-## Please do not use this
+## A database backend that uses the host's memory as storage.
+## Please do not use this at all unless you are 100% sure this is want you want.
+## TODO: Finish working on this.
 
 import ../lib
 
 proc init*(noSchemaCheck:bool = false): bool =
   ## Do any initialization work.
+  # There probably won't be any initialization work anyway.
   return true
 
 proc uninit*(): bool =

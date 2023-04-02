@@ -18,6 +18,7 @@
 ## And it also provides access to several helper functions for retrieving and parsing
 ## data from a shared config table.
 
+# TODO: Rewrite the load() function so its more readable.
 
 import std/[tables, os]
 import std/strutils except isEmptyOrWhitespace

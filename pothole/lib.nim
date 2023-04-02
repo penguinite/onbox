@@ -90,7 +90,12 @@ const unsafeHandleChars*: set[char] = {'!',' ','"',
 const localInvalidHandle*: set[char] = {'@',':','.'}
 
 # App version
-const version*: string = "0.0.2"
+when defined(localVersion):
+  static:
+    echo("Hello world!")  
+    const version*: string = "0.0.2"
+else:
+  const version*: string = "0.0.2"
 
 # How many items can be in debugBuffer before deleting some to save memory
 # 80 is fine.
@@ -143,45 +148,3 @@ macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.
   ## Like so: user.get("local") == user.local
   newDotExpr(obj, newIdentNode(fld.strVal))
-
-func isEmptyOrWhitespace*(str: string): bool =
-  ## A faster implementation of strutils.isEmptyOrWhitespace
-  ## This is basically the same thing.
-  for x in str:
-    if x notin whitespace:
-      return false
-  return true
-
-func cleanString*(str: string, charset: set[char] = whitespace): string =
-  ## A procedure to clean a string of whitespace characters.
-  var startnum = 0;
-  var endnum = len(str) - 1;
-
-  if len(str) < 1:
-    return "" # Return nothing, since there is nothing to clean anyway
-  
-  while str[startnum] in charset:
-    inc(startnum)
-
-  while endnum >= 0 and str[endnum] in charset:
-    dec(endnum)
-
-  return str[startnum .. endnum]
-
-func cleanLeading*(str: string, charset: set[char] = whitespace): string =
-  ## A procedure to clean the beginning of a string.
-  var startnum = 0;
-  
-  while str[startnum] in charset:
-    inc(startnum)
-
-  return str[startnum .. len(str) - 1]
-
-func cleanTrailing*(str: string, charset: set[char] = whitespace): string =
-  ## A procedure to clean the end of a string.
-  var endnum = len(str) - 1;
-
-  while endnum >= 0 and str[endnum] in charset:
-    dec(endnum)
-
-  return str[0 .. endnum]
