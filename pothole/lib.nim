@@ -83,8 +83,6 @@ macro get*(obj: object, fld: string): untyped =
   ## Like so: user.get("local") == user.local
   newDotExpr(obj, newIdentNode(fld.strVal))
 
-from std/strutils import Whitespace
-
 func isEmptyOrWhitespace*(str: string, charset: set[char] = whitespace): bool =
   ## A faster implementation of strutils.isEmptyOrWhitespace
   ## This is basically the same thing.
