@@ -45,7 +45,7 @@ from std/macros import newIdentNode, newDotExpr, strVal
 ## Here are all of the fields in a user objects, with an explanation:
 type 
   User* = ref object
-    id*: string # An OID that represents the actual user
+    id*: string # An unique that represents the actual user
     handle*: string # A string containing the user's actual username 
     name*: string # A string containing the user's display name
     local*: bool # A boolean indicating if this user is from this instance 
@@ -148,3 +148,47 @@ macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.
   ## Like so: user.get("local") == user.local
   newDotExpr(obj, newIdentNode(fld.strVal))
+
+from std/strutils import Whitespace
+
+func isEmptyOrWhitespace*(str: string, charset: set[char] = whitespace): bool =
+  ## A faster implementation of strutils.isEmptyOrWhitespace
+  ## This is basically the same thing.
+  for x in str:
+    if x notin charset:
+      return false
+  return true
+
+func cleanString*(str: string, charset: set[char] = whitespace): string =
+  ## A procedure to clean a string of whitespace characters.
+  var startnum = 0;
+  var endnum = len(str) - 1;
+
+  if len(str) < 1:
+    return "" # Return nothing, since there is nothing to clean anyway
+  
+  while str[startnum] in charset:
+    inc(startnum)
+
+  while endnum >= 0 and str[endnum] in charset:
+    dec(endnum)
+
+  return str[startnum .. endnum]
+
+func cleanLeading*(str: string, charset: set[char] = whitespace): string =
+  ## A procedure to clean the beginning of a string.
+  var startnum = 0;
+  
+  while str[startnum] in charset:
+    inc(startnum)
+
+  return str[startnum .. len(str) - 1]
+
+func cleanTrailing*(str: string, charset: set[char] = whitespace): string =
+  ## A procedure to clean the end of a string.
+  var endnum = len(str) - 1;
+
+  while endnum >= 0 and str[endnum] in charset:
+    dec(endnum)
+
+  return str[0 .. endnum]
