@@ -15,7 +15,7 @@
 #
 # user.nim:
 ## Various procedures for handling User objects.
-## The actual data types are stored in lib.nim
+## The data type has been moved here.
 ## And database-related procedures are stored in db.nim
 
 # From Pothole
@@ -23,6 +23,30 @@ import lib, crypto
 
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace
+
+# A set of characters that you cannot use at all.
+# this filters anything that doesn't make a valid email.
+const unsafeHandleChars*: set[char] = {'!',' ','"',
+'#','$','%','&','\'','(',')','*','+',',',';','<',
+'=','>','?','[','\\',']','^','`','{','}','|','~'}
+
+# A set of characters that you cannot use
+# when registering a local user.
+const localInvalidHandle*: set[char] = {'@',':','.'}
+
+# User data type.
+type 
+  User* = ref object
+    id*: string # An unique that represents the actual user
+    handle*: string # A string containing the user's actual username 
+    name*: string # A string containing the user's display name
+    local*: bool # A boolean indicating if this user is from this instance 
+    email*: string # A string containing the user's email
+    bio*: string # A string containing the user's biography
+    password*: string # A string to store a hashed + salted password 
+    salt*: string # The actual salt with which to hash the password. 
+    admin*: bool # A boolean indicating if the user is an admin.
+    is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
 
 proc safeifyHandle*(handle: string): string =
   ## Checks a string against lib.unsafeHandleChars

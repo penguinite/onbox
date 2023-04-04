@@ -15,7 +15,7 @@
 #
 # post.nim:
 ## Various functions for handling posts.
-## The actual data types are stored in lib.nim
+## The data type is also stored here.
 ## Database-related functions are stored in db.nim
 
 # From Pothole
@@ -24,6 +24,19 @@ import lib, crypto
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace
 import std/times
+
+# ActivityPub Object/Post
+type 
+  Post* = ref object
+    id*: string # A unique id.
+    recipients*: seq[string] # A sequence of recipient's handles.
+    sender*: string # Basically, the person sending the message
+    replyto*: string # Resource/Post person was replying to,  
+    content*: string # The actual content of the post
+    written*: string # A timestamp of when the Post was created
+    updated*: string # A timestamp of when then Post was last edited
+    local*:bool # A boolean indicating whether or not the post \
+                # came from the local server or external servers
 
 proc escape*(olduser: Post): Post =
   ## A procedure to escape a Post object

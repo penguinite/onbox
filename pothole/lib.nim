@@ -14,80 +14,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # lib.nim:
-## This module contains shared data across Pothole.
+## This module contains shared data across the whole library.
 ## It also contains useful procedures and functions that are
-## used across the app.
-## 
-## Things like object definitions, string-handling functions
-## and debugging functions fit well here but functions that are
-## less commonly used or needed should be put elsewhere 
-## 
-## (Fx. the escape functions for the User and Post objects
-##  are rarely used so they are in separate modules.)
-## 
-## This module is very huge. Please try to put your stuff somewhere else.
-
+## used across the entire library.
+##
+## This module pre-
 # For macro definition
 from std/macros import newIdentNode, newDotExpr, strVal
 
-# User data type, which represents actual users in the database.
-# Confusingly, "name" means display name and "handle" means
-# actual username. It's too late to change this now sadly.
-#
-# NOTE: If you are going to extend this  type then please
-# edit the database schema in the exact order of User.
-#
-# EXTRA NOTE: If you are going to add a new datatype,
-# maybe int for the number of followers, then please
-# edit escape() and unescape() from data.nim and also edit
-# addUser() and constructUserFromRow() from db.nim
-# so they won't error out!
-## Here are all of the fields in a user objects, with an explanation:
-type 
-  User* = ref object
-    id*: string # An unique that represents the actual user
-    handle*: string # A string containing the user's actual username 
-    name*: string # A string containing the user's display name
-    local*: bool # A boolean indicating if this user is from this instance 
-    email*: string # A string containing the user's email
-    bio*: string # A string containing the user's biography
-    password*: string # A string to store a hashed + salted password 
-    salt*: string # The actual salt with which to hash the password. 
-    admin*: bool # A boolean indicating if the user is an admin.
-    is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
-
-# ActivityPub Object/Post
-type 
-  Post* = ref object
-    id*: string # A unique id.
-    recipients*: seq[string] # A sequence of recipient's handles.
-    sender*: string # Basically, the person sending the message
-    replyto*: string # Resource/Post person was replying to,  
-    content*: string # The actual content of the post
-    written*: string # A timestamp of when the Post was created
-    updated*: string # A timestamp of when then Post was last edited
-    local*:bool # A boolean indicating whether or not the post \
-                # came from the local server or external servers
-
 var debugBuffer: seq[string]; # A sequence to store debug strings in.
-
-# Required configuration file options to check for.
-# Split by ":" and use the first item as a section and the other as a key
-const requiredConfigOptions*: seq[string] = @[
-  "instance:name",
-  "instance:description",
-  "instance:uri"
-]
-
-# A set of characters that you cannot use at all.
-# this filters anything that doesn't make a valid email.
-const unsafeHandleChars*: set[char] = {'!',' ','"',
-'#','$','%','&','\'','(',')','*','+',',',';','<',
-'=','>','?','[','\\',']','^','`','{','}','|','~'}
-
-# A set of characters that you cannot use
-# when registering a local user.
-const localInvalidHandle*: set[char] = {'@',':','.'}
 
 # App version
 when defined(localVersion):
@@ -111,7 +46,6 @@ const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
 proc exit*() {.noconv.} =
   quit(1)
-
 
 proc debug*(str, caller: string) =
   ## Adds a string to the debug buffer and optionally

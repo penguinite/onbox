@@ -26,6 +26,14 @@ import lib
 
 var config: Table[string, string] = initTable[string, string]()
 
+# Required configuration file options to check for.
+# Split by ":" and use the first item as a section and the other as a key
+const requiredConfigOptions*: seq[string] = @[
+  "instance:name",
+  "instance:description",
+  "instance:uri"
+]
+
 func split*(obj: string): seq[string] =
   ## A function to convert a string to a
   ## sequence of strings.
@@ -133,7 +141,7 @@ proc setup*(filename: string): bool =
     file.close() # Close the file at the end
     # Now... We have to check if our required configuration
     # options are actually there
-    for x in lib.requiredConfigOptions:
+    for x in requiredConfigOptions:
       if config.hasKey(x):
         continue
       else:
