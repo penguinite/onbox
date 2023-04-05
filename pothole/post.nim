@@ -14,9 +14,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # post.nim:
-## Various functions for handling posts.
-## The data type is also stored here.
-## Database-related functions are stored in db.nim
+## This module contains various functions and procedures for handling Post objects.
+## The Post object type has been moved here after commit 9f3077d
+## Database-related procedures are in db.nim
 
 # From Pothole
 import lib, crypto

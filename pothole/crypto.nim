@@ -31,7 +31,7 @@ from std/strutils import parseInt
 #[
   Previously this file used std/random's rand() function to generate a number and then that would
   be fed to a char function to create a string. This function was used to create strings for
-  Post ids, User ids and password salts. But the std/random number generator is not cryptographically
+  Post ids, User ids and password salts. But the std/random RNG is not cryptographically
   secure, it is possible to get the same output by simply running the program again.
 
   I feel like I don't need to tell you why that's a bad thing, the whole point of the salt is that it is
@@ -59,8 +59,9 @@ proc randomInt*(limit: int = 18): int =
 
 proc rand*(dig: int = 5): int =
   ## A replacement function for rand() that is actually cryptographically secure.
-  ## The final integer will always be 0 to dig (soo a number in the range of 0
-  ## and 5 if your dig is 5)
+  ## The final integer will always be 0 to X (where X is the argument to the number)
+  runnableExamples:
+    assert rand(5) < 6; # This is true since rand(5) returns a number between 0 and 5.
   var num = randomInt(len($dig))
   if num > dig:
     num = dig
@@ -73,9 +74,7 @@ proc randchar*(): char =
   ## This should be unpredictable, it does not use std/random's rand()
   ## But it uses our replacement rand() function that is also secure.
   var bit = int(urandom(1)[0])
-  if bit > maxLetters:
-    bit = rand(maxLetters)
-  if bit < 0:
+  if bit > maxLetters or bit < 0:
     bit = rand(maxLetters)
   return asciiLetters[bit]
 

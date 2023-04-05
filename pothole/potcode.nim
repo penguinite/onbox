@@ -14,7 +14,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # potcode.nim:
-## Functions for parsing Potcode.
+## This module contains functions for parsing Potcode.
+## *Note: You must initialize the database and the configuration file parser before using any function or you might create undefined behaviours*
 
 #! This module is very much W.I.P
 

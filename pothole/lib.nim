@@ -18,7 +18,10 @@
 ## It also contains useful procedures and functions that are
 ## used across the entire library.
 ##
-## This module pre-
+## This module pre-9f3077d used to store the User and Post definitions
+## But these have been moved, and this module has been re-purposed.
+## The User and Post definitions are now stored in pothole/user and pothole/post respectively.
+
 # For macro definition
 from std/macros import newIdentNode, newDotExpr, strVal
 

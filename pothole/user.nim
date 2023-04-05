@@ -14,9 +14,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # user.nim:
-## Various procedures for handling User objects.
-## The data type has been moved here.
-## And database-related procedures are stored in db.nim
+## This module contains various functions and procedures for handling User objects.
+## The User object type has been moved here after commit 9f3077d
+## Database-related procedures are in db.nim
 
 # From Pothole
 import lib, crypto
