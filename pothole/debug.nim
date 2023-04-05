@@ -18,7 +18,7 @@
 ## fake users and fake posts. You will not need this, and you should 
 ## not depend on this in your app at all!
 
-import lib, user, post, crypto
+import user, post, crypto
 
 const fakeNames = @["Jeremy", "Jane Doe", "pyro", "Tavish Finnegan DeGroo", "Mikhail", "Dell Conagher", "Ludwig Humboldt", "Mundy", "spy"]
 const fakeHandles = @["scout","soldier","pyro","demoman","heavy","engineer", "medic", "sniper", "spy"]

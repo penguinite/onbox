@@ -21,7 +21,7 @@
 # TODO: Rewrite the load() function so its more readable.
 
 import std/[tables, os]
-import std/strutils except isEmptyOrWhitespace
+from std/strutils import split, startsWith, endsWith, splitLines
 import lib
 
 var config: Table[string, string] = initTable[string, string]()
