@@ -18,7 +18,8 @@
 ## Currently, I am testing Pothole with this database backend only.
 
 # From pothole
-import ../conf,../lib,../user,../crypto,../post
+from ../conf import get, split, exists
+import ../lib, ../user, ../post, ../crypto
 
 # From standard library
 import std/[db_sqlite, strutils, tables]
@@ -43,13 +44,14 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
 "local": "BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether the post originated from this server or other servers.
 
+#! Some parts of this codebase depend on conf, post and user.
+# TODO: Make sqlite Independent Again!
+
 {.cast(gcsafe).}:
   var db:DbConn; 
 
-proc init*(noSchemaCheck:bool = false): bool =
+proc init*(file: string = conf.get("db","filename"), noSchemaCheck:bool = false): bool =
   ## This procedure initializes a database using values from the config file.
-  if not exists("db","filename"):
-    error "Config file is missing essential option for sqlite db engine; db:filename","db/sqlite.init"
     
   var dbfilename = conf.get("db","filename")
   debug "Opening database at " & dbfilename, "db/sqlite.init"
@@ -78,7 +80,7 @@ proc init*(noSchemaCheck:bool = false): bool =
   if noSchemaCheck:
     debug "Schema check skipped...","db/sqlite.init"
     echo "Database is done initializing!"
-    return true 
+    return true # Return early since all thats left is the schema check
 
   # At this stage we will check individual columns and if they exist
   # So that we can individually update the database as we change stuff
@@ -196,12 +198,17 @@ proc getTotalPosts*(): int =
     inc(result)
   return result
 
-#! Everything below this line was imported as-is from db.nim before db.nim was erased forever
+#! Everything below this line was imported as-is from the old db.nim before db.nim was erased forever
 # TODO: Optimize the below code.
 
 func constructUserFromRow*(row: Row): User =
-  ## This procedure takes a database row (from either getUserById() or getUserByHandle())
-  ## and turns it into an actual User object that can be returned and processed.
+  ## This procedure takes a database row turns it into an 
+  ## actual User object that can be returned and processed.
+  ## getUserById() and getUserByHandle() both use this function to convert a database row to a user.
+  ## 
+  ## In most cases, you should not bother using this but the function is available for you to use
+  ## (fx. when doing database operations directly yourself)
+  ## If you are going to use this then make sure to include a compile-time check for users who do not use sqlite.
   var user = User()[] # Dereference early on for readability
   var i: int = -1;
 

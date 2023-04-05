@@ -19,7 +19,8 @@
 
 # TODO: Finish this.
 
-import ../lib
+import ../user
+import ../post
 
 proc init*(noSchemaCheck:bool = true): bool =
   ## Do any initialization work.

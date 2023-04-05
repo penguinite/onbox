@@ -13,15 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-# db/skeleton.nim:
-## A template for any future database backends.
-## Try to keep your database engine as close to this as possible.
-## This database backend does absolutely nothing and you should never *ever* use it...
+# db/mem.nim:
+## A database backend that uses the host's memory as storage.
+## Please do not use this at all unless you are 100% sure this is want you want.
+## TODO: Finish working on this.
 
-import ../lib
+from ../post import Post
+from ../user import User
 
 proc init*(noSchemaCheck:bool = false): bool =
   ## Do any initialization work.
+  # There probably won't be any initialization work anyway.
   return true
 
 proc uninit*(): bool =
