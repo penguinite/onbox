@@ -21,15 +21,19 @@ This is libpothole, it basically contains all the nifty logic for storing, proce
 Library documentation is an on-going effort that is yet to be complete. But you can simply browse the source code and read what each function does. We try to keep the code as readable as possible.
 The `README.md` file inside of the `pothole/` folder tells you what each module is for.
 
+You can generate documentation by running `nimble docs`, this will generate HTML documentation in a separate directory named `htmldocs`
+
 When it comes to importing a module into your app, you should have this library installed and you should use this snippet:
 
 ```
 import pothole/MODULE # Replace module with your module obviously...
 import pothole/conf # For configuration file parsing etc.
-import pothole/[conf, lib, strutils] # Imports multiple modules at the same time.
+import pothole/[conf, user, post] # Imports multiple modules at the same time.
 ```
 
-## Why are they separate?
+There is a `libpothole.nim` module but we do not recommend importing it as you might not use all of the functions inside of it and you will simply slow your build process.
+
+## Why is Pothole and libpothole separate?
 
 Well it's primarily to help foster a unique ecosystem of servers. If you want to build your own ActivityPub server then you can use this as a base and code anything you want in addition! And it's also done to separate `potholectl` from the main server repository since those programs are very different from each other and should not be in the same place at all.
 
@@ -38,6 +42,10 @@ We don't want this useful piece of software to be locked inside of a single homo
 Oh and it also means we can easily test this out.
 
 I know it seems a bit confusing but you, as a user, don't really have to worry about this change/separation. You can still call the entirety of this and the server program "Pothole", it doesn't really matter and people will in 99% of cases know what you are talking about.
+
+## What is the release cycle?
+
+Well, this library follows the same versioning and release cycle as the regular Pothole server program. The version should always be bumped unless there is no measurable difference between the current codebase and the previous one.
 
 ## Copyright
 

@@ -14,17 +14,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # libpothole.nim:
-## This module is primarily used for documentation building via this cmd:
-## nim doc --project libpothole.nim
-## or the `docs` target in the Makefile.
+## This module is primarily used for documentation building via the 
+## `docs` task in the nimble file.
 
-{.warning: "This module leads to severe breakage! Do not use at all!".}
+{.warning: "This module is extremely large! Do not use it at all!".}
 
 # These warnings would overwhelm the build output.
-# And they are also meaningless since it's impossible
-# since this module is not intended to be used.
+# And they are also meaningless since this module is not intended to be used.
 {.warning[UnreachableCode]: off.} 
 {.warning[UnusedImport]: off.}
 
-#import pothole/db/[sqlite, mem, postgres] # Not needed for documentation.
 import pothole/[conf,crypto,db,debug,lib,post,potcode,user]
