@@ -51,4 +51,5 @@ Well, this library follows the same versioning and release cycle as the regular 
 
 Copyright © Leo Gavilieau 2022-2023
 
-Licensed under the GNU General Public License version 3 or later.
+All code is licensed under the GNU General Public License version 3 or later. (File: `LICENSES/GPL.txt`)
+All generated documentation is licensed under the Creative Common Attribution-ShareAlike 4.0 International license (File: `LICENSES/CC.txt`)
