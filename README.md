@@ -45,7 +45,7 @@ I know it seems a bit confusing but you, as a user, don't really have to worry a
 
 ## What is the release cycle?
 
-Well, this library follows the same versioning and release cycle as the regular Pothole server program. The version should always be bumped unless there is no measurable difference between the current codebase and the previous one.
+Well, this library follows the same versioning and release cycle as the regular Pothole server program. The version should always be bumped unless there is no measurable difference between the current codebase and the previous one. This is to reduce confusion.
 
 ## Copyright
 

@@ -50,12 +50,10 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 {.cast(gcsafe).}:
   var db:DbConn; 
 
-proc init*(file: string = conf.get("db","filename"), noSchemaCheck:bool = false): bool =
+proc init*(file: string = "", noSchemaCheck:bool = false): bool =
   ## This procedure initializes a database using values from the config file.
-    
-  var dbfilename = conf.get("db","filename")
-  debug "Opening database at " & dbfilename, "db/sqlite.init"
-  db = open(dbfilename,"","","")
+  debug "Opening database at " & file, "db/sqlite.init"
+  db = open(file,"","","")
   
   # Let's create both tables by looping over the postCols and userCols tables
   var sqlStatement = "CREATE TABLE IF NOT EXISTS users (";
