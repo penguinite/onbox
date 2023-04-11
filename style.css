@@ -1,0 +1,148 @@
+:root {
+  --bg:#041429;
+  --border: #2C2D2F;
+  --txt: #C1C1C1;
+  --link: #7D6B91;
+  --linkAlt: #D9561E;
+  --red: #fc4e5d;
+  --orange: #cc6e01;
+  --yelorange: #d2952e;
+  --yellow: #ddc96d;
+  --green: #00ad5e;
+  --cyan: #0ef2c8;
+  --blue: #4099d4;
+  --magenta: #c357ad;
+  --violet: #847cc7;
+  --purple: #8767e6;
+  --grey: #767d8f;
+  --col1Width:20%;
+  --col2Width:73%; }
+
+@media screen and (max-width: 609px) {
+  :root {
+    --col1Width:100%;
+    --col2Width:100%; } }
+body {
+  background-color: var(--bg);
+  font-family: "Lato", "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
+  line-height: 1.4;
+  font-size: 1.05rem;
+  color: var(--txt); }
+
+code, pre {
+  font-family: monospace;
+  font-size: 0.8rem; }
+
+a {
+  color: var(--link);
+  text-decoration: none; }
+  a:hover {
+    color: var(--linkAlt);
+    font-style: italic; }
+
+h1.title {
+  text-align: center;
+  font-size: 2.5rem; }
+
+#main {
+  position: relative;
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: 1350px;
+  margin: 0 auto; }
+  #main .index {
+    box-sizing: border-box;
+    padding: 0;
+    float: left;
+    width: var(--col1Width); }
+    #main .index ul {
+      padding: 0; }
+  #main .content {
+    box-sizing: border-box;
+    padding: 0;
+    float: right;
+    width: var(--col2Width); }
+  #main #footer {
+    clear: both;
+    text-align: center;
+    padding-top: 5em; }
+    #main #footer p {
+      margin: 5px 0 5px 0; }
+  #main h1 {
+    font-size: 1.75rem; }
+
+#burrito {
+  min-width: 500px;
+  max-width: var(--col2Width); }
+
+ul {
+  list-style: none;
+  margin-top: 3%;
+  margin-bottom: 3%; }
+
+li > a.reference {
+  margin-left: 1.5rem; }
+
+dl.item > div {
+  margin: 2rem 0 2rem 0; }
+
+pre.keyword, code.keyword {
+  color: var(--red);
+  font-weight: bold; }
+pre.comment, code.comment {
+  color: var(--grey); }
+pre.literal.string, code.literal.string {
+  color: var(--green); }
+pre.name.builtin, code.name.builtin {
+  color: var(--violet); }
+pre.deleted, code.deleted {
+  background-color: var(--yelorange); }
+pre.inserted, code.inserted {
+  background-color: var(--green); }
+
+pre span.problematic {
+  color: var(--red); }
+pre span.DecNumber, pre span.BinNumber, pre span.HexNumber, pre span.OctNumber, pre span.FloatNumber {
+  color: var(--blue); }
+pre span.Identifier {
+  color: var(--orange); }
+pre span.Keyword {
+  color: var(--green); }
+pre span.StringLit, pre span.LongStringLit, pre span.CharLit {
+  color: var(--red); }
+pre span.EscapeSequence {
+  color: var(--orange); }
+pre span.Operator {
+  color: var(--blue); }
+pre span.Punctuation {
+  color: var(--txt); }
+pre span.Comment, pre span.LongComment {
+  font-style: italic;
+  color: var(--violet); }
+pre span.RegularExpression, pre span.TagStart, pre span.TagEnd {
+  color: var(--magenta); }
+pre span.Key, pre span.Value, pre span.RawData, pre span.Assembler, pre span.PreProcessor, pre span.Directive {
+  color: var(--purple); }
+pre span.option {
+  color: var(--green);
+  font-weight: bold;
+  font-family: monospace; }
+pre span.Prompt {
+  color: var(--red);
+  font-weight: bold; }
+pre span.program {
+  font-weight: bold;
+  color: var(--violet);
+  text-decoration: underline;
+  text-decoration-color: var(--grey); }
+pre span.ProgramOutput {
+  font-weight: bold;
+  color: var(--grey); }
+pre span.Command, pre span.Rule, pre span.Hyperlink, pre span.Label, pre span.Reference, pre span.Other {
+  color: var(--txt); }
+
+dt pre > span.Keywork ~ span.Identifier, dt pre > span.Identifier ~ span.Identifier, dt pre > span.Operator ~ span.Identifier, dt pre > span.Other ~ span.Identifier {
+  color: var(--blue); }
+
+dd > a.srclink {
+  display: block; }
