@@ -1,0 +1,169 @@
+// Use white color: c5ecd7
+
+// Font stacks!
+$casual-fonts: "Lato", "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
+
+// Ok
+@mixin flexible-column {
+    box-sizing: border-box;
+    padding:0;
+}
+
+// Ok so here comes the tricky part.
+// We calculate the amount of space to give
+// columns depending on the viewport's width.
+:root {
+    // Assume dark mode by default
+    --bg:#041429;
+    --border: #2C2D2F;
+    --txt: #C1C1C1;
+    --link: #7D6B91;
+    --linkAlt: #D9561E;
+
+    --red: #fc4e5d;
+    --orange: #cc6e01;
+    --yelorange: #d2952e;
+    --yellow: #ddc96d;
+    --green: #00ad5e;
+    --cyan: #0ef2c8;
+    --blue: #4099d4; 
+    --magenta: #c357ad;
+    --violet: #847cc7;
+    --purple: #8767e6;
+    --grey: #767d8f;
+    
+    --col1Width:20%;
+    --col2Width:73%;
+}
+@media screen and (max-width: 609px) {
+    :root {
+        --col1Width:100%;
+        --col2Width:100%;
+    }
+}
+
+
+
+body {
+    background-color: var(--bg);
+    font-family: $casual-fonts;
+    line-height: 1.4;
+    font-size: 1.05rem;
+    color: var(--txt);
+}
+
+code,pre { 
+    font-family: monospace;
+    font-size: 0.8rem;
+}
+
+a {
+    color: var(--link);
+    text-decoration: none;
+    &:hover {
+        color: var(--linkAlt);
+        font-style: italic;
+    }
+}
+
+h1.title {
+    text-align: center;
+    font-size: 2.5rem;
+}
+
+// Configure main to be the basic container
+#main {
+    position: relative;
+    box-sizing: border-box;
+    width: 100vw;
+    max-width: 1350px;
+    margin: 0 auto;
+    // Configure #index to be the left container
+    .index {
+        @include flexible-column();
+        float: left;
+        width: var(--col1Width);
+        ul {
+            padding:0;
+        }
+    }
+    .content {
+        @include flexible-column();
+        float:right;
+        width: var(--col2Width);
+    }
+    #footer {
+        clear:both;
+        text-align: center;
+        p { margin: 5px 0 5px 0; }
+        padding-top: 5em;
+    }
+    h1 {
+        font-size: 1.75rem;
+    }
+}
+
+// Burrito holds the text inside the content div
+// So it doesnt get too big.
+#burrito {
+    min-width: 500px;
+    max-width: var(--col2Width);
+}
+
+// Configure the lists used in the index
+ul {
+    list-style: none;
+    margin-top: 3%;
+    margin-bottom: 3%;
+}
+
+li > a.reference {
+    margin-left: 1.5rem;
+}
+
+// Configure how the procedures (among other things) are shown
+dl.item > div {
+    margin: 2rem 0 2rem 0;
+}
+
+// Finally adjust the color of the procedures
+pre, code {
+    &.keyword { color: var(--red); font-weight: bold; }
+    &.comment { color: var(--grey); }
+    &.literal.string { color: var(--green); }
+    &.name.builtin { color: var(--violet); }
+    &.deleted { background-color: var(--yelorange); }
+    &.inserted { background-color: var(--green); }
+}
+
+pre span {
+    &.problematic { color: var(--red); }
+    &.DecNumber, &.BinNumber, &.HexNumber, &.OctNumber, &.FloatNumber { color: var(--blue); }
+    &.Identifier { color: var(--orange); }
+    &.Keyword { color: var(--green); }
+    &.StringLit,  &.LongStringLit, &.CharLit { color: var(--red); }
+    &.EscapeSequence { color: var(--orange); }
+    &.Operator { color: var(--blue); }
+    &.Punctuation { color: var(--txt); }
+    &.Comment, &.LongComment { font-style:italic; color: var(--violet); }
+    &.RegularExpression, &.TagStart, &.TagEnd { color: var(--magenta); }
+    &.Key, &.Value, &.RawData, &.Assembler, &.PreProcessor, &.Directive { color: var(--purple); }
+    &.option { color: var(--green); font-weight:bold; font-family: monospace; }
+    &.Prompt { color: var(--red); font-weight: bold; }
+    &.program { font-weight: bold; color: var(--violet); text-decoration: underline; text-decoration-color: var(--grey);}
+    &.ProgramOutput { font-weight: bold; color: var(--grey); }
+    &.Command, &.Rule, &.Hyperlink, &.Label, &.Reference, &.Other { color: var(--txt); }
+}
+
+dt pre > span {
+    &.Keywork ~ span.Identifier,
+    &.Identifier ~ span.Identifier,
+    &.Operator ~ span.Identifier,
+    &.Other ~ span.Identifier {
+        color: var(--blue);
+    }
+}
+
+dd > a.srclink {
+    display: block;
+}

@@ -6,3 +6,4 @@ blogs/
 uploads/
 experiments/parse
 nimbledeps/
+.sass-cache/
