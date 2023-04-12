@@ -15,11 +15,20 @@
 #
 # db.nim:
 ## This module only provides a couple of compile-time code to switch between
-## Postgres and sqlite. The functions between those two modules are exactly
-## the same so you do not have to worry for the most part.
+## Postgres and sqlite. The functions between those two modules are mostly the same
+## so you do not have to worry about it for the most part.
+## 
+## Though, you should check the dbEngine constant. You can simply import this
+## module and use check what database engine dbEngine is pointing to at compile
+## time
+## 
+## Do not write code under the assumption that only one database engine will be
+## used unless you have configured all your build systems to explicitly use only
+## one database.
+
 
 when defined(dbEngine):
-  const dbEngine* {.strdefine.}: string = ""
+  const dbEngine* {.strdefine.}: string = "" ## The dbEngine constant is used to signify what database engine the user wants at compile-time.
 else:
   when defined(docs):
     const dbEngine* = "docs"
@@ -34,13 +43,27 @@ when dbEngine == "sqlite":
   import db/sqlite
   export sqlite
 
-when dbEngine == "docs": # For documentation.
+when dbEngine == "docs": # For documentation only.
   type
     User = ref object
     Post = ref object
 
   proc init*(noSchemaCheck:bool = true): bool =
-    ## Do any initialization work.
+    ## This procedure initializes a database. It checks for any inconsistencies and makes sure everything is ready for the main program.
+    ## *Note: This module is defined differently in the postgres and sqlite modules, make sure to check the documentation in those modules too!*
+    runnableExamples "--run:off":
+      # For sqlite
+      when dbEngine == "sqlite":
+        var database_file = "__eat_flaming_death.db"
+        discard db.init(database_file) # Optionally add true at the end to skip the schema check
+      # For postgres
+      when dbEngine == "postgres":
+        var
+          host = "__eat_flaming_death:5432"
+          database_name = "pothole"
+          database_user = "ph"
+          password = "very_secure_password"
+        discard db.init(host, database_name, database_user, password) # Optionally add true at the end to skip the schema check
     return true
 
   proc uninit*(): bool =

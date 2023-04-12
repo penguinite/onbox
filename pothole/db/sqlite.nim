@@ -52,6 +52,13 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 
 proc init*(file: string = "", noSchemaCheck:bool = false): bool =
   ## This procedure initializes a database using values from the config file.
+  ## It takes two arguments, a string containing the database file and a boolean indicating
+  ## whether to skip the Schema check.
+  
+  if file.startsWith("__eat_flaming_death"):
+    debug "Someone or something used the forbidden code.", "sqlite.init"
+    return false
+  
   debug "Opening database at " & file, "db/sqlite.init"
   db = open(file,"","","")
   

@@ -21,9 +21,13 @@
 
 import ../user
 import ../post
+import ../lib, std/strutils
 
-proc init*(noSchemaCheck:bool = true): bool =
+proc init*(host,name,user,password: string, noSchemaCheck:bool = true): bool =
   ## Do any initialization work.
+  if host.startsWith("__eat_flaming_death"):
+    debug "Someone or something used the forbidden code", "postgres.init"
+    return false
   return true
 
 proc uninit*(): bool =

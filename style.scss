@@ -1,13 +1,22 @@
-// Use white color: c5ecd7
+// Stylesheet for Pothole's API reference.
+// This tries to mimic nim doc's default CSS as closely as possible.
+// For the homepage, we will use the same colors but with a different layout.
 
 // Font stacks!
 $casual-fonts: "Lato", "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
+$code-fonts: "Source Code Pro", Monaco, Menlo, Consolas, "Courier New", monospace;
 
-// Ok
 @mixin flexible-column {
     box-sizing: border-box;
-    padding:0;
 }
+
+/* Saving these old colors: 
+    --yelorange: #d2952e;
+    --yellow: #ddc96d;
+    --teal: #5a9357;
+    --cyan: #0ef2c8;
+    
+*/
 
 // Ok so here comes the tricky part.
 // We calculate the amount of space to give
@@ -15,34 +24,61 @@ $casual-fonts: "Lato", "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans
 :root {
     // Assume dark mode by default
     --bg:#041429;
+    --bg2: #0a264b;
     --border: #2C2D2F;
     --txt: #C1C1C1;
-    --link: #7D6B91;
-    --linkAlt: #D9561E;
+    --grey: #767d8f;
+    --white: #d9f1f0;
 
     --red: #fc4e5d;
     --orange: #cc6e01;
-    --yelorange: #d2952e;
-    --yellow: #ddc96d;
     --green: #00ad5e;
-    --cyan: #0ef2c8;
     --blue: #4099d4; 
     --magenta: #c357ad;
     --violet: #847cc7;
     --purple: #8767e6;
-    --grey: #767d8f;
-    
+
+    // Light mode color pallete
+    @media (prefers-color-scheme: light) {
+        --bg:#C1C1C1;
+        --bg2:#aeaeae;
+        --txt:#041429;
+        --border:#041429;
+        --grey: #d9f1f0;
+        --white: #636465;
+                
+        // Colors
+        --red: #730724;
+        --green: #233302;
+        --orange: #bb491b;
+        --blue: #08338b;
+        --violet: #390e6d;
+        --magenta: #761b5a;
+        --purple: #4517b6;
+    }
+
+    // Responsiveness
     --col1Width:20%;
     --col2Width:73%;
-}
-@media screen and (max-width: 609px) {
-    :root {
+    --burritoWidth:70%;
+    @media screen and (max-width: 915px) {
+        --burritoWidth: 85%;
+    }
+    @media screen and (max-width: 805px) {
+        --burritoWidth: 95%;
+    }
+    @media screen and (max-width: 850px) {
+        --col2Width: 95%;
+    }
+    @media screen and (max-width: 609px) {
         --col1Width:100%;
-        --col2Width:100%;
+        --col2Width:98%;
     }
 }
 
-
+#burrito {
+    max-width: var(--burritoWidth);
+}
 
 body {
     background-color: var(--bg);
@@ -50,18 +86,19 @@ body {
     line-height: 1.4;
     font-size: 1.05rem;
     color: var(--txt);
+    word-wrap: break-word;
 }
 
-code,pre { 
-    font-family: monospace;
-    font-size: 0.8rem;
+code,pre {
+    font-family: $code-fonts;
+    font-size: 0.85rem;
 }
 
 a {
-    color: var(--link);
+    color: var(--violet);
     text-decoration: none;
     &:hover {
-        color: var(--linkAlt);
+        color: var(--orange);
         font-style: italic;
     }
 }
@@ -86,11 +123,21 @@ h1.title {
         ul {
             padding:0;
         }
+        @media screen and (max-width: 850px) {
+            visibility: hidden !important;
+            display: none !important;
+            height: 0 !important;
+            width: 0 !important;
+        }
     }
     .content {
         @include flexible-column();
         float:right;
         width: var(--col2Width);
+        @media screen and (max-width: 850px) {
+            margin: auto !important;
+            float:initial;
+        }
     }
     #footer {
         clear:both;
@@ -103,21 +150,14 @@ h1.title {
     }
 }
 
-// Burrito holds the text inside the content div
-// So it doesnt get too big.
-#burrito {
-    min-width: 500px;
-    max-width: var(--col2Width);
-}
-
 // Configure the lists used in the index
-ul {
+#index ul {
     list-style: none;
     margin-top: 3%;
     margin-bottom: 3%;
 }
 
-li > a.reference {
+#index li > a.reference {
     margin-left: 1.5rem;
 }
 
@@ -126,13 +166,14 @@ dl.item > div {
     margin: 2rem 0 2rem 0;
 }
 
-// Finally adjust the color of the procedures
+// Finally adjust the color of the code examples
 pre, code {
+    &.ln { color: var(--grey); }
     &.keyword { color: var(--red); font-weight: bold; }
     &.comment { color: var(--grey); }
     &.literal.string { color: var(--green); }
     &.name.builtin { color: var(--violet); }
-    &.deleted { background-color: var(--yelorange); }
+    &.deleted { background-color: var(--orange); }
     &.inserted { background-color: var(--green); }
 }
 
@@ -144,7 +185,7 @@ pre span {
     &.StringLit,  &.LongStringLit, &.CharLit { color: var(--red); }
     &.EscapeSequence { color: var(--orange); }
     &.Operator { color: var(--blue); }
-    &.Punctuation { color: var(--txt); }
+    &.Punctuation { color: var(--white); }
     &.Comment, &.LongComment { font-style:italic; color: var(--violet); }
     &.RegularExpression, &.TagStart, &.TagEnd { color: var(--magenta); }
     &.Key, &.Value, &.RawData, &.Assembler, &.PreProcessor, &.Directive { color: var(--purple); }
@@ -152,7 +193,8 @@ pre span {
     &.Prompt { color: var(--red); font-weight: bold; }
     &.program { font-weight: bold; color: var(--violet); text-decoration: underline; text-decoration-color: var(--grey);}
     &.ProgramOutput { font-weight: bold; color: var(--grey); }
-    &.Command, &.Rule, &.Hyperlink, &.Label, &.Reference, &.Other { color: var(--txt); }
+    &.Command, &.Rule, &.Hyperlink, &.Label, &.Reference { color: var(--white); }
+    // &.Other
 }
 
 dt pre > span {
@@ -166,4 +208,22 @@ dt pre > span {
 
 dd > a.srclink {
     display: block;
+}
+
+// Now actually configure the code boxes
+pre {
+    @include flexible-column();
+    display: inline-block;
+    white-space: pre !important;
+    background-color: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    overflow-x:visible;
+    padding: 0.2rem 0.5rem 0.3rem 0.5rem;
+    max-width: 100%;
+}
+
+// Some additional positioning stylesheet
+.content > div.section {
+    max-width: var(--burritoWidth) !important;
 }
