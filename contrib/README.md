@@ -1,9 +1,22 @@
 # Contrib
 
-Welcome to our code trashbin. This is code that has been thrown out but that we want to somewhat save later.
+Hello! This is the contrib folder where anything that is slightly useful is stored. By slightly useful, we mean patches, APIs, code or some other thing that might be useful to some people but it's either unmaintained, low-quality code or both.
 
-Maybe its some useful code that simply is not needed now. Idk, have a look for yourself
+This folder has been given a very light review at most but it is unmaintained. You are encouraged to read, test and build the code before you use it in any production system.
 
-Don't expect this code to be high-quality, well, a lot of it is ugly and low-quality which is why it has been thrown out.
+Here are examples of what you can store here:
+1. Patches that cannot be accepted into the main codebase for various reasons.
+2. Old themes, logos or images.
+3. An entirely new feature that is simply too big to be accepted into the codebase.
 
-You can put anything you want here, this is the `contrib` folder after all. [More info here](https://drewdevault.com/2020/06/06/Add-a-contrib-directory.html)
+But of course, these are not rules that are set in stone. You can put whatever you want here. Just please do not file bugs for things stored in this folder.
+
+For legal reasons, if you *do* actually end up storing something here then please add your copyright disclaimer inside of the file (if its source code) or add your name and email to the COPYRIGHT file along with a path to the file and folder that you added like so:
+
+```
+Path: /path/to/your/stuff
+Description: A small description. Dont go overboard.
+Copyright: © Your Name <your@email.example> Current Year
+```
+
+[More info here](https://drewdevault.com/2020/06/06/Add-a-contrib-directory.html)
