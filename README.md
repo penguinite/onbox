@@ -23,7 +23,7 @@ The `README.md` file inside of the `pothole/` folder tells you what each module 
 
 You can generate documentation by running `nimble docs`, this will generate HTML documentation in a separate directory named `htmldocs`
 
-When it comes to importing a module into your app, you should have this library installed and you should use this snippet:
+When it comes to importing a module into your app, you should have this library installed and you should use these snippets:
 
 ```
 import pothole/MODULE # Replace module with your module obviously...

@@ -22,8 +22,7 @@ var flags = "--project --warnings:off -d:dbEngine=docs --git.url='https://gt.til
 task docs, "Builds proper HTML documentation.":
   exec "nim doc " & flags
   rmFile("htmldocs/libpothole.html")
-  rmFile("htmldocs/nimdoc.out.css")
-  cpFile("style.css","htmldocs/nimdoc.out.css")
+  rmFile("htmldocs/dochack.js")
 
 # Dependencies
 requires "nim >= 1.6.10"
