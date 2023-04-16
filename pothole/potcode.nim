@@ -18,6 +18,11 @@
 ## *Note: You must initialize the database and the configuration file parser before using any function or you might create undefined behaviours*
 
 #! This module is very much W.I.P
+# TODO: Besides just finishing this module, make sure to remove most dependencies.
+#[
+  You can do that by like, removing the conf module and supplying the configTable as an
+  argument, it would reduce magic and it would allow libpothole devs greater flexibility.
+]#
 
 # From pothole
 import lib, conf, db
