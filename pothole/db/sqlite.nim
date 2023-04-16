@@ -18,7 +18,6 @@
 ## Currently, I am testing Pothole with this database backend only.
 
 # From pothole
-from ../conf import get, split, exists
 import ../lib, ../user, ../post, ../crypto
 
 # From standard library
@@ -46,6 +45,7 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 
 #! Some parts of this codebase depend on conf, post and user.
 # TODO: Make sqlite Independent Again!
+# TODO TODO: Also only document the stuff thats different between this module and the postgres module. Nothing else.
 
 {.cast(gcsafe).}:
   var db:DbConn; 

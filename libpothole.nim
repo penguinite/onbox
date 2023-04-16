@@ -23,5 +23,5 @@
 # And they are also meaningless since this module is not intended to be used.
 {.warning[UnreachableCode]: off.} 
 {.warning[UnusedImport]: off.}
-
+import potcode/db/[sqlite, postgres]
 import pothole/[conf,crypto,db,debug,lib,post,potcode,user]
