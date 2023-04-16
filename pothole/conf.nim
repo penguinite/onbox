@@ -21,10 +21,8 @@
 # TODO: Rewrite the load() function so its more readable.
 
 import std/[tables, os]
-from std/strutils import split, startsWith, endsWith, splitLines
+from std/strutils import split, startsWith, endsWith, splitLines, parseBool, parseInt
 import lib
-
-var config: Table[string, string] = initTable[string, string]()
 
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
@@ -35,12 +33,13 @@ const requiredConfigOptions*: seq[string] = @[
 ]
 
 func split*(obj: string): seq[string] =
-  ## A function to convert a string to a
-  ## sequence of strings.
-  var parsingFlag: bool = false # A flag indicating whether or not we are parsing a value right now.
-  var val = "" # A string to store the value being parsed.
+  ## A function to convert a string to a sequence of strings.
+  var 
+    parsingFlag: bool = false
+    val: string = ""
+  
   for ch in obj:
-    if ch == '\"':
+    if ch == '"':
       if parsingFlag:
         parsingFlag = false
         result.add(val)
@@ -48,115 +47,107 @@ func split*(obj: string): seq[string] =
       else:
         parsingFlag = true
       continue
-    
+
     if parsingFlag:
       val.add(ch)
+  
+  return result
 
 func load*(input: string): Table[string, string] =
   ## This module parses the configuration file and returns a config table.
-  result = initTable[string, string]()
-
   var
-    sectionFlag = false # A flag that indicates whether or not we are parsing a section.
-    parsingFlag = false # A flag that indicates whether or not we are parsing a key:value pair
-    arrayFlag = false # A flag indicating whether or not we are parsing an array.
-    prevArrayFlag = false # A flag that stores the previous state of array
+    parsingFlag = false # A flag that indicates whether or not we are parsing something right now
+    parsingX = 0 # A number indicating what thing we are parsing.
     section = "" # A string containing the section that we are parsing
     key = "" # a string containing the key being parsed
     val = "" # A string containing a value being parsed
 
+    #[
+      ParsingX follows this format:
+        0 means we are not parsing anything
+        1 means we are parsing a section
+        2 means we are parsing a key
+        3 means we are parsing a value
+        4 means we are parsing an array
+    ]#
 
   # I actually have no idea how this works.
   # It works but like I can't even explain it...
   # Just don't touch it... Or you'll have to re-write it...
   for line in input.splitLines:
-    if line.startsWith("#"):
-      continue
+    if line.startsWith("#") or line.isEmptyOrWhitespace():
+      continue # Line is either a comment or empty
 
     for ch in line:
-      if ch == '[':
-        if not parsingFlag:
-          section = ""
-          sectionFlag = true  
+      if ch == '[' and parsingX == 0:
+        parsingX = 1
+        section = ""
+        continue
+
+      if parsingX == 1:
+        if ch == ']':
+          parsingX = 0
         else:
-          arrayFlag = true
-          val.add(ch)
+          section.add(ch)
         continue
 
-      if ch == ']':
-        if arrayFlag:
-          arrayFlag = false
-          prevArrayFlag = true
-          val.add(ch)
-          continue
+      if parsingX > 2: # Parsing val
+        if ch == '"':
+          if parsingFlag:
+            parsingFlag = false
+          else:
+            parsingFlag = true
 
-        if sectionFlag:
-          sectionFlag = false
-          continue
-
-      if sectionFlag:
-        section.add(ch)
-        continue
-
-      if ch == '=':
-        if parsingFlag:
-          val.add(ch)
-        else:
-          parsingFlag = true
-        continue
-
-      if not parsingFlag:
-        key.add(ch)
-      else:
+        if ch == '[' and not parsingFlag:
+          parsingX = 4
+        elif ch == ']' and parsingX == 4 and not parsingFlag:
+          parsingX = 3
         val.add(ch)
+        continue
+      else:
+        if ch == '=':
+          parsingX = 3
+        else:
+          key.add(ch)
 
-    if not arrayFlag:
-      if len(key) > 0:
-        if val.startsWith('\"'):
-          val = val[1 .. len(val) - 1]
-        if val.endsWith('\"'):
-          val = val[0..^2]
-        result[section & ":" & key] = val
-        key = ""
-        val = ""
-        parsingFlag = false
+    if not isEmptyOrWhitespace(section) and not isEmptyOrWhitespace(key) and not isEmptyOrWhitespace(val) and parsingX != 4:
+      result[section & ":" & key] = val
+      key = ""
+      val = ""
+      parsingX = 0
 
-    if not arrayFlag and prevArrayFlag:
-      if len(key) > 0:
-        result[section & ":" & key] = val
-        key = ""
-        val = ""
-        parsingFlag = false
-        prevArrayFlag = false
 
-proc setup*(filename: string): bool =
+proc setup*(filename: string): Table[string, string] =
   ## A procedure that readies the config table to be read.
   ## The actual parsing is done in the load() function.
   ## Array splitting is done in split()
-  try:
-    if not fileExists(filename):
-      error "File " & filename & " does not exist.", "conf.setup"
-    var file = open(filename)
-    config = load(readAll(file))
-    file.close() # Close the file at the end
-    # Now... We have to check if our required configuration
-    # options are actually there
-    for x in requiredConfigOptions:
-      if config.hasKey(x):
-        continue
-      else:
-        var list = x.split(":")
-        debug("Missing key " & list[1] & " in section " & list[0], "main.startup")
-        return false
-    return true
-  except:
-    return false
+  if not fileExists(filename):
+    error("File \"" & filename & "\" does not exist.", "conf.setup")
+  
+  result = load(open(filename).readAll()) # Open the config file
+  # Now... We have to check if our required configuration
+  # options are actually there
+  for x in requiredConfigOptions:
+    if not result.hasKey(x):
+      var list = x.split(":")
+      error("Missing key \"" & list[1] & "\" in section \"" & list[0] & "\"", "conf.setup")
+      
+  return result
 
-proc get*(section, key: string, table: Table[string, string] = config): string =
-  return table[section & ":" & key]
-
-proc exists*(section, key: string, table: Table[string, string] = config): bool =
+proc exists*(table: Table[string, string], section, key: string): bool =
   if table.hasKey(section & ":" & key):
     return true
-  else:
-    return false
+  return false # Return nothing
+
+## Functions for fetching specific datatypes
+func getString*(table: Table[string, string], section, key: string): string =
+  return table[section & ":" & key]
+
+func getInt*(table: Table[string, string], section, key: string): int =
+  return parseInt(table[section & ":" & key])
+
+func getBool*(table: Table[string, string], section, key: string): bool =
+  return parseBool(table[section & ":" & key])
+
+func getArray*(table: Table[string, string], section, key: string): seq[string] =
+  return split(table[section & ":" & key])
