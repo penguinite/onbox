@@ -28,12 +28,11 @@ from std/macros import newIdentNode, newDotExpr, strVal
 var debugBuffer: seq[string]; # A sequence to store debug strings in.
 
 # App version
-when defined(localVersion):
-  static:
-    echo("Hello world!")  
-    const version*: string = "0.0.2"
+when defined(phVersion):
+    const phVersion* {.strdefine.}: string = ""
 else:
-  const version*: string = "0.0.2"
+  const phVersion*: string = "0.0.2"
+const version*: string = phVersion
 
 # How many items can be in debugBuffer before deleting some to save memory
 # 80 is fine.
