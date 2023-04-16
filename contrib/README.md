@@ -15,8 +15,19 @@ For legal reasons, if you *do* actually end up storing something here then pleas
 
 ```
 Path: /path/to/your/stuff
-Description: A small description. Dont go overboard.
+Description: A small description. Don't go overboard.
 Copyright: © Your Name <your@email.example> Current Year
 ```
+
+Your work here will also be licensed either under the CC-BY-SA 4.0 International license or the GPL (version 3 or later) depending on if it is source code or not. (GPL if code, CC if not), you can optionally choose to supply a License with an SPDX license identifier like so:
+
+```
+Path: /path/to/your/stuff
+Description: A small description. Don't go overboard.
+Copyright: © Your Name <your@email.example> Current Year
+License: GPL-3.0-or-later
+```
+
+If you are gonna do this then make sure to add the license into a separate file in the `LICENSES/` folder
 
 [More info here](https://drewdevault.com/2020/06/06/Add-a-contrib-directory.html)
