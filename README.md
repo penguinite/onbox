@@ -2,9 +2,7 @@
 
 Essential libraries for the Pothole server/backend.
 
-*Note:* This is the main branch, where active development on Pothole is done. You are most likely looking for the `stable` branch, which is better suited for server environments, you can find it [here](https://codeberg.org/pothole/pothole/src/branch/stable).
-
-**Note:** Pothole and thus libpothole is very much a work-in-progress software project. Lots of implementation details are being figured out just now and are thus likely to change over time. In other words, this is pre-alpha or even *research* stage. 
+*Note:* Pothole and thus libpothole is very much a work-in-progress software project. Lots of implementation details are being figured out just now and are thus likely to change over time. In other words, this is pre-alpha or even *research* stage. 
 
 ## What is Pothole?
 
@@ -26,12 +24,12 @@ You can generate documentation by running `nimble docs`, this will generate HTML
 When it comes to importing a module into your app, you should have this library installed and you should use these snippets:
 
 ```
-import pothole/MODULE # Replace module with your module obviously...
-import pothole/conf # For configuration file parsing etc.
-import pothole/[conf, user, post] # Imports multiple modules at the same time.
+import libpothole/MODULE # Replace module with your module obviously...
+import libpothole/conf # For configuration file parsing etc.
+import libpothole/[conf, user, post] # Imports multiple modules at the same time.
 ```
 
-There is a `libpothole.nim` module but we do not recommend importing it as you might not use all of the functions inside of it and you will simply slow your build process.
+There is a `libpothole.nim` module but we do not recommend importing it as you might not use all of the functions inside of it and you will simply slow your build process. That file is only ever used to build documentation.
 
 ## Why is Pothole and libpothole separate?
 
@@ -45,7 +43,7 @@ I know it seems a bit confusing but you, as a user, don't really have to worry a
 
 ## What is the release cycle?
 
-Well, this library follows the same versioning and release cycle as the regular Pothole server program. The version should always be bumped unless there is no measurable difference between the current codebase and the previous one. This is to reduce confusion.
+Well, this library follows the same versioning and release cycle as the regular Pothole server program. This is to reduce confusion.
 
 ## Copyright
 
