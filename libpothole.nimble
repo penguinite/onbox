@@ -4,7 +4,7 @@ version       = "0.0.2"
 author        = "xmoo"
 description   = "Essential libraries for the Pothole server."
 license       = "GPL-3.0-or-later"
-skipDirs      = @["contrib"]
+srcDir        = "src"
 
 task clean, "Cleans directories":
   if dirExists("htmldocs"):
@@ -18,7 +18,7 @@ before docs:
   if dirExists(".sass-cache"):
     rmDir(".sass-cache")
 
-var flags = "--project --warnings:off -d:dbEngine=docs --git.url='https://gt.tilambda.zone/o/pothole/libpothole.git' --git.commit='v" & version & "' --index:on libpothole.nim"
+var flags = "--project --warnings:off -d:dbEngine=docs --git.url='https://gt.tilambda.zone/o/pothole/libpothole.git' --git.commit='v" & version & "' --index:on src/libpothole.nim"
 task docs, "Builds proper HTML documentation.":
   exec "nim doc " & flags
   rmFile("htmldocs/libpothole.html")
