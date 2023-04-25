@@ -27,3 +27,4 @@ task docs, "Builds proper HTML documentation.":
 # Dependencies
 requires "nim >= 1.6.10"
 requires "nimcrypto >= 0.5.4"
+requires "tiny_sqlite >= 0.2.0"
