@@ -28,11 +28,8 @@ from std/macros import newIdentNode, newDotExpr, strVal
 var debugBuffer: seq[string]; # A sequence to store debug strings in.
 
 # App version
-when defined(phVersion):
-    const phVersion* {.strdefine.}: string = ""
-else:
-  const phVersion*: string = "0.0.2"
-const version*: string = phVersion
+const phVersion* {.strdefine.}: string = "0.0.2"
+const version*: string = phVersion # TODO: Migrate lib.version to lib.phVersion to save some memory or get rid of phVersion all together.
 
 # How many items can be in debugBuffer before deleting some to save memory
 # Add -d:maxDebugItems=NUM and replace NUM with a number to customize this.
