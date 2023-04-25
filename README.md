@@ -4,15 +4,19 @@ Essential libraries for the Pothole server/backend.
 
 *Note:* Pothole and thus libpothole is very much a work-in-progress software project. Lots of implementation details are being figured out just now and are thus likely to change over time. In other words, this is pre-alpha or even *research* stage. 
 
+*Note:* This is the `main` branch which should hopefully be stable enough for all of your server projects. The `staging` branch contains all the latest features and a slight risk at running unclean, insecure code. Pick your poison! (or choose a specific feature branch to test a feature out if you are a developer)
+
 ## What is Pothole?
 
-Pothole is a social media backend written in Nim, it's designed to be simple & fast. It has unique features such as allowing user-profiles to be written with custom HTML & CSS (Pothole's features can be embedded using a language we call [Potcode](https://codeberg.org/pothole/docs/src/branch/master/dev/POTCODE.md)), Pothole is more reminiscent of Tumblr in this sense since it allows you to fully customize your profile.
+Pothole is a social media backend written in Nim, it's designed to be simple & fast. It has unique features such as allowing user-profiles to be written with custom HTML & CSS (Pothole's features can be embedded using a language we call Potcode) Pothole is far more reminiscent of Tumblr in this sense since it allows you to fully customize your profile.
 
 Pothole federates to other servers using the ActivityPub protocol which means you can communicate to users on Mastodon, Akkoma, Misskey or whatever website that implements it. Pothole is also compatible with Mastodon's API interface, so your clients, frontends and bots should work with little to no changes.
 
 ## What is *this* then?
 
 This is libpothole, it basically contains all the nifty logic for storing, processing and handling data such as Users, Posts and generic Activities. The main pothole server relies on this as a dependency since this library is the brains of the operation and without it Pothole would simply not work.
+
+Think of it like a glass of water. Sure, you can drink the water without the glass but you would just make a mess unless you create your own cup (The water is the library and the cup/container is the server program) 
 
 ## How do I use this library?
 
@@ -31,19 +35,21 @@ import libpothole/[conf, user, post] # Imports multiple modules at the same time
 
 There is a `libpothole.nim` module but we do not recommend importing it as you might not use all of the functions inside of it and you will simply slow your build process. That file is only ever used to build documentation.
 
+**Warning:** Don't just use newer versions of libpothole! Always double-check the release notes of any libpothole release for breaking changes such as database migrations, and make sure to inform your users of the same!
+
 ## Why is Pothole and libpothole separate?
 
 Well it's primarily to help foster a unique ecosystem of servers. If you want to build your own ActivityPub server then you can use this as a base and code anything you want in addition! And it's also done to separate `potholectl` from the main server repository since those programs are very different from each other and should not be in the same place at all.
 
-We don't want this useful piece of software to be locked inside of a single homogenous server application, we want to allow developers to use this library if they want to.
-
-Oh and it also means we can easily test this out.
+We don't want this useful piece of software to be locked inside of a single monolithic server application, we want to allow developers to use this library if they want to. Oh and it also means we can easily test this out for any bugs, security issues and so on.
 
 I know it seems a bit confusing but you, as a user, don't really have to worry about this change/separation. You can still call the entirety of this and the server program "Pothole", it doesn't really matter and people will in 99% of cases know what you are talking about.
 
+In short, the decision to separate libpothole from pothole's main server repository means we can focus on re-writing libpothole to have good clean code, instead of returning to the old mess containing un-factorable code and circular dependencies.
+
 ## What is the release cycle?
 
-Well, this library follows the same versioning and release cycle as the regular Pothole server program. This is to reduce confusion.
+Well, this library follows the same versioning and release cycle as the regular Pothole server program. This is to reduce confusion. However, new versions are released as quickly as possible if they address a security issue or a critical bug.
 
 ## Copyright
 
