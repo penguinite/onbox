@@ -35,13 +35,13 @@ else:
 const version*: string = phVersion
 
 # How many items can be in debugBuffer before deleting some to save memory
-# 80 is fine.
-const maxDebugItems: int = 80;
+# Add -d:maxDebugItems=NUM and replace NUM with a number to customize this.
+const maxDebugItems {.intdefine.}: int = 120;
 
-when defined(dontPrintDebug):
-  const debugPrint: bool = false; # Set to true to print debugs as they come.
-else:
-  const debugPrint: bool = true; 
+# This boolean controls whether to print debug strings as they come
+# Irregardless of whether this is set or not, error() will print the entire debugBuffer
+# Add -d:debugPrint=BOOL and replace BOOL with true or false to customize this.
+const debugPrint {.booldefine.}: bool = true
 
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
@@ -62,18 +62,17 @@ proc debug*(str, caller: string) =
   debugBuffer.add(toBeAdded)
 
   # Optionally print it. (If debugPrint is set to true)
-  if debugPrint:
+  when debugPrint == true:
     stdout.writeLine(toBeAdded)
 
 proc error*(str,caller: string) =
   ## Exits the program, writes a stacktrace and maybe print the debug buffer.
-  stderr.writeLine("Printing stacktrace...")
+  stderr.writeLine("\nPrinting stacktrace...")
   writeStackTrace()
 
   # Only print debug buffer if debugPrint is disabled
   # If this isn't here then the output gets too messy.
-  if debugPrint == false:
-    stderr.writeLine("Printing debug buffer...")
+  stderr.writeLine("\nPrinting debug buffer...")
     for x in debugBuffer:
       stderr.writeLine(x)
 
