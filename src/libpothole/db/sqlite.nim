@@ -21,7 +21,7 @@
 # TODO TODO: Also only document the stuff thats different between this module and the postgres module. Nothing else.
 
 # From somewhere in Pothole
-import ../user, ../post, ../lib
+import ../user, ../post, ../lib, ../crypto
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace
@@ -29,6 +29,12 @@ import std/tables
 
 # From somewhere else (nimble etc.)
 import tiny_sqlite
+
+proc has(db:DbConn,statement:string): bool =
+  ## A quick helper function to check if a thing exists.
+  if isNone(db.one(statement)):
+    return false
+  return true
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 # For this module to work, both database schemas and user object definitions must be similar
@@ -142,10 +148,61 @@ proc uninit*(): bool =
   db.close()
 
 proc addUser*(user: User): User = 
+  var caller = "db/sqlite.addUser"
   ## Add a user to the database
+  ## This procedure expects an escaped user to be handed to it.
+  var handle = escape(sanitizeHandle(user.handle))
+  if db.has("SELECT local FROM users WHERE handle = " & handle & ";"):
+    debug "User with handle " & user.handle & " already exists!", caller
+    return # Simply exit
+
+  while (true):
+    if db.has("SELECT local FROM users WHERE id = " & user.id & ";"):
+      user.id = randomString() # User's ID already exists! Generate a new one!
+    else:
+      break 
+
+  # Now we loop over the fields and build an SQL statement as we go.
   # TODO: Look into using macros or templates to automatically generate this code.
   var sqlStatement = "INSERT INTO users("
+
+  for key, value in user[].fieldPairs:
+    sqlStatement.add(key & ",")
+  
+  sqlStatement = sqlStatement[0 .. ^2]
+  sqlStatement.add(") VALUES (")
+
+  for key, value in user[].fieldPairs:
+    when typeof(value) is string:
+      sqlStatement.add(value)
+    when typeof(value) is bool:
+      sqlStatement.add($value)
+    sqlStatement.add(",")
+  
+
+  sqlStatement = sqlStatement[0 .. ^2]
+  sqlStatement.add(");")
+
+  try:
+    db.exec(sqlStatement)
+  except:
+    debug "sqlStatement: " & sqlStatement, caller
+    error "Failed to insert user!", caller
+
   return user
+
+proc getAdmins*(): seq[string] = 
+  ## A procedure that returns the usernames of all administrators.
+  for row in db.all("SELECT handle FROM users WHERE admin = true;"):
+    result.add(row[0].strVal)
+  return result
+  
+proc getTotalLocalUsers*(): int =
+  ## A procedure to get the total number of local users.
+  result = 0
+  for x in db.all("SELECT handle FROM users WHERE local = true;"):
+    inc(result)
+  return result
 
 proc userIdExists*(id:string): bool =
   ## A procedure to check if a user exists by id
@@ -182,6 +239,31 @@ proc getHandleFromId*(id: string): string =
 #! This comment marks the beginning of the Post section.
 # Procedures here are primarily used for posts.
 
+proc constructPostFromRow*(row: ResultRow): Post =
+  ## A procedure that takes a database Row (From the Posts table)
+  ## And turns it into a Post object ready for display, parsing and so on.
+  var post = Post()[]
+
+  # This looks ugly, I know, I had to wrap it with
+  # two specific functions but we don't have to re-write this
+  # even if we add new things to the User object. EXCEPT!
+  # if we introduce new data types to the User object
+  var i: int = 0;
+
+  for key,value in post.fieldPairs:
+    inc(i)
+    # If its string, add it surrounding quotes
+    # Otherwise add it whole
+    when post.get(key) is bool:
+      post.get(key) = parseBool(row[i - 1].strVal)
+    when post.get(key) is string:
+      post.get(key) = row[i - 1].strVal
+    when post.get(key) is seq[string]:
+      post.get(key) = row[i - 1].strVal.split(",")
+
+  new(result); result[] = post
+  return result.unescape()
+
 proc addPost*(post: Post): Post =
   ## A function add a post into the database
   return Post()
@@ -195,27 +277,32 @@ proc updatePostById*(id, column, value: string): bool =
   return true
 
 proc getPostById*(id: string): Post =
-  ## A procedure to get a post object from the db using its id
+  ## A procedure to get a post object using its id
   return Post()
 
 proc getPostsByUserHandle*(handle:string, limit: int = 15): seq[Post] =
-  ## A procedure to get any user's posts from the db using the users handle
+  ## A procedure to get any user's posts using the users handle
   return @[Post()]  
 
 proc getPostsByUserId*(id:string, limit: int = 15): seq[Post] =
-  ## A procedure to get any user's posts from the db using the users id
+  ## A procedure to get any user's posts using the users id
   return @[Post()]
-
-proc getAdmins*(limit: int = 5): seq[string] =
-  ## A procedure that returns the usernames of all administrators.
-  return @[]
-
-proc getTotalUsers*(): int =
-  ## A procedure to get the total number of local users.
-  return 0
 
 proc getTotalPosts*(): int =
   ## A procedure to get the total number of local posts.
   return 0
+
+proc getLocalPosts*(limit: int = 15): seq[Post] =
+  ## A procedure to get posts from local users only.
+  ## Set limit to 0 to disable the limit and get all posts from local users.
+  # This clearly does not work.
   # TODO: Investigate why it does not work.
   var sqlStatement = "SELECT * FROM posts WHERE local = true;"
+  if limit != 0:
+    for row in db.all(sqlStatement):
+      if len(result) > limit:
+        break
+      result.add(constructPostFromRow(row))
+  else:
+    for row in db.all(sqlStatement):
+      result.add(constructPostFromRow(row))
