@@ -43,10 +43,15 @@ from std/strutils import parseInt
   like that, but I am okay with these risks so I will continue using nimcrypto and std/sysrand
 ]#
 
+const trulySafeLetters: seq[char] = @[
+  '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','~','-','_','.',':',';','=','@'
+]
+let maxSafeLetters = len(trulySafeLetters) - 1
+
 const asciiLetters: seq[char] = @[
   '%','&','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']','^','_','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','|','}','~'
 ] # This sequence has 89 entries (-1 is 88)
-let maxLetters = len(asciiLetters) - 1
+let maxASCIILetters = len(asciiLetters) - 1
 
 proc randomInt*(limit: int = 18): int =
   ## A function that generates an integer, limit is how many digits should be
@@ -74,17 +79,31 @@ proc randchar*(): char =
   ## This should be unpredictable, it does not use std/random's rand()
   ## But it uses our replacement rand() function that is also secure.
   var bit = int(urandom(1)[0])
-  if bit > maxLetters or bit < 0:
-    bit = rand(maxLetters)
+  if bit > maxASCIILetters or bit < 0:
+    bit = rand(maxASCIILetters)
   return asciiLetters[bit]
 
 proc randomString*(limit: int = 18): string =
-  ## A function to generate a random string.
-  ## Used for salt & id generation and debugging (creating fake passwords)
+  ## A function to generate a random character.
   for i in 1..limit:
     result.add(randchar())
   return result
-    
+
+proc randsafechar*(): char =
+  ## Generates a random safe character
+  ## This is unpredictable and now safer for use in IDs!
+  var bit = int(urandom(1)[0])
+  if bit > maxSafeLetters or bit < 0:
+    bit = rand(maxSafeLetters)
+  return trulySafeLetters[bit]
+
+proc randomSafeString*(limit: int = 16): string = 
+  ## A function to generate a safe random string.
+  ## Used for salt & id generation and debugging (creating fake passwords)
+  for i in 1..limit:
+    result.add(randsafechar())
+  return result
+
 proc hash*(password: string, salt:string, iter: int = 160000,outlen: int = 32, genSafe: bool = true): string =
   ## We use PBKDF2-HMAC-SHA512 by default with 160000 iterations unless specified.
   ## This procedure is a wrapper for nimcrypto's PBKDF2 implementation
