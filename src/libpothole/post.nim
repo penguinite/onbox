@@ -42,6 +42,8 @@ proc escape*(olduser: Post): Post =
   ## A procedure to escape a Post object
   var post = olduser[] # De-reference at the start
 
+  # TODO: Look into using templates or macros to automatically
+  #       generate the loop that escape Posts
   for key,val in post.fieldPairs:
     when typeof(val) is bool:
       post.get(key) = val
@@ -62,6 +64,8 @@ proc unescape*(oldpost: Post): Post =
   ## A procedure to unescape a Post object
   var post = oldpost[] # De-reference at the start
 
+  # TODO: Look into using templates or macros to automatically
+  #       generate the loop that unescapes Posts
   for key,val in post.fieldPairs:
     when typeof(val) is bool:
       post.get(key) = val

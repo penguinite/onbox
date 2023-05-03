@@ -104,6 +104,10 @@ proc escape*(olduser: User): User =
   if isEmptyOrWhitespace(user.name):
     user.name = user.handle
 
+  # Now we loop over every field and escape it.
+  # TODO: Look into using templates or macros to automatically
+  #       generate the loop that escapes Users
+  #       It could make this code a lot faster.
   for key,val in user.fieldPairs:
     when typeof(val) is bool:
       user.get(key) = val
@@ -118,6 +122,8 @@ proc unescape*(olduser: User): User =
   ## A procedure for unescaping a User object
   var user = olduser[]
 
+  # TODO: Look into using templates or macros to automatically
+  #       generate the loop that unescapes Users
   for key,val in user.fieldPairs:
     when typeof(val) is bool:
       user.get(key) = val

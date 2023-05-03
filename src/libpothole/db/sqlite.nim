@@ -143,6 +143,8 @@ proc uninit*(): bool =
 
 proc addUser*(user: User): User = 
   ## Add a user to the database
+  # TODO: Look into using macros or templates to automatically generate this code.
+  var sqlStatement = "INSERT INTO users("
   return user
 
 proc userIdExists*(id:string): bool =
@@ -176,6 +178,9 @@ proc getIdFromHandle*(handle: string): string =
 proc getHandleFromId*(id: string): string =
   ## A function to convert a  id to a handle.
   return ""
+
+#! This comment marks the beginning of the Post section.
+# Procedures here are primarily used for posts.
 
 proc addPost*(post: Post): Post =
   ## A function add a post into the database
@@ -212,3 +217,5 @@ proc getTotalUsers*(): int =
 proc getTotalPosts*(): int =
   ## A procedure to get the total number of local posts.
   return 0
+  # TODO: Investigate why it does not work.
+  var sqlStatement = "SELECT * FROM posts WHERE local = true;"
