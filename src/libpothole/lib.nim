@@ -70,8 +70,8 @@ proc error*(str,caller: string) =
   # Only print debug buffer if debugPrint is disabled
   # If this isn't here then the output gets too messy.
   stderr.writeLine("\nPrinting debug buffer...")
-    for x in debugBuffer:
-      stderr.writeLine(x)
+  for x in debugBuffer:
+    stderr.writeLine(x)
 
   stderr.writeLine("\nError (" & caller & "): " & str)
   quit(1)
