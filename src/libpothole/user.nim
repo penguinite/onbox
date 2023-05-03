@@ -26,9 +26,12 @@ import std/strutils except isEmptyOrWhitespace
 
 # A set of characters that you cannot use at all.
 # this filters anything that doesn't make a valid email.
-const unsafeHandleChars*: set[char] = {'!',' ','"',
-'#','$','%','&','\'','(',')','*','+',',',';','<',
-'=','>','?','[','\\',']','^','`','{','}','|','~'}
+const unsafeHandleChars*: set[char] = {
+  '!',' ','"', '#','$','%','&','\'',
+  '(',')','*','+',',',';','<', '=','>',
+  '?','[','\\',']','^','`','{','}','|',
+  '~'
+}
 
 # A set of characters that you cannot use
 # when registering a local user.
@@ -48,57 +51,67 @@ type
     admin*: bool # A boolean indicating if the user is an admin.
     is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
 
-proc safeifyHandle*(handle: string): string =
-  ## Checks a string against lib.unsafeHandleChars
+
+proc sanitizeHandle*(handle: string): string =
+  ## Checks a string against user.unsafeHandleChars
   ## This is mostly used for checking for valid emails and handles.
-  for ch in handle:
+  if handle.isEmptyOrWhitespace():
+    return "" 
+
+  var oldhandle = toLowerAscii(handle)
+  result = ""
+  for ch in oldhandle:
     if ch notin unsafeHandleChars:
       result.add(ch)
+
+  return result
 
 proc newUser*(handle,password: string, local:bool = false): User =
   ## A procedure to create a new user with id, passwords salt and everything!
   ## It is highly recommended that you insert your own values
-  
-  var newuser = User()
+  result = User()
 
   # Create password and hash ONLY if user is local
   if local == true:
 
-    if len(safeifyHandle(handle)) < 0:
+    if len(sanitizeHandle(handle)) < 0:
       error("Handle has only invalid characters.\nThis is probably a bug you should report.","user.newUser()")
 
-    newuser.handle = safeifyHandle(handle)
-    newuser.local = true
+    result.handle = sanitizeHandle(handle)
+    result.local = true
   else:
-    newuser.local = false
+    result.local = false
   
   # Every User in our database will have an ID.
-  newuser.id = randomString() # the 16 character default is good enough for IDs
+  result.id = randomSafeString() # the 16 character default is good enough for IDs
   if local: 
-    newuser.salt = randomString(18) # 32 characters is double what NIST recommends for salt lengths.
+    result.salt = randomString(18) # 16 is what NIST recommends. So what if we go slightly above?
     if isEmptyOrWhitespace(password):
-      error("Missing critical field \"Password\"\nProvided: " & handle & ", " & password, "data.newUser")
-
-    newuser.password = hash(password, newuser.salt) # 160000 is what Pleroma/Akkoma uses and it's a little bit higher than what NIST recommends for this key-derivation function.
+      debug("Required field \"Password\" is empty!\nThis is probably a bug you should report to your server maintainer.", "user.newUser")
+      
+    result.password = hash(password, result.salt) # 160000 is what Pleroma/Akkoma uses and it's a little bit higher than what NIST recommends for this key-derivation function.
     
-  newuser.handle = handle
+  result.handle = handle
 
   # A new user is typically not frozen
   # Even for external actors.
-  newuser.is_frozen = false
+  result.is_frozen = false
   
-  return newuser
+  return result
 
-proc escape*(olduser: User): User =
+proc escape*(olduser: User, skipChecks: bool = false): User =
   ## A procedure for escaping a User object
+  ## skipChecks allows you to skip the essential handle and password checks.
+  ## This is only used for potholectl.
   var user = olduser[] # Dereference early on for readability
 
   # We only need handle and password, the rest can be guessed or blank.
-  if isEmptyOrWhitespace(user.handle) or isEmptyOrWhitespace(user.password):
-    error("Missing required fields for adding users\nUser: " & $user,"data.escape(User)")
+  if not skipChecks:
+    if isEmptyOrWhitespace(user.handle) or isEmptyOrWhitespace(user.password):
+      error("Missing required fields for adding users\nUser: " & $user,"user.escape")
 
-  user.handle = safeifyHandle(toLowerAscii(user.handle))
-  user.email = safeifyHandle(toLowerAscii(user.email))
+  user.handle = sanitizeHandle(user.handle)
+  user.email = sanitizeHandle(user.email)
 
   # Use handle as display name if display name doesnt exist or is blank
   if isEmptyOrWhitespace(user.name):
@@ -113,7 +126,7 @@ proc escape*(olduser: User): User =
       user.get(key) = val
 
     when typeof(val) is string:
-      user.get(key) = escape(val,"","")
+      user.get(key) = escape(val)
 
   new(result); result[] = user # Re-reference it at the end.
   return 
