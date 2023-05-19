@@ -47,7 +47,8 @@ type
     email*: string # A string containing the user's email
     bio*: string # A string containing the user's biography
     password*: string # A string to store a hashed + salted password 
-    salt*: string # The actual salt with which to hash the password. 
+    salt*: string # The actual salt with which to hash the password.
+    kdf*: int # Key derivation function version number
     admin*: bool # A boolean indicating if the user is an admin.
     is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
 

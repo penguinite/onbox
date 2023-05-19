@@ -46,6 +46,7 @@ const usersCols: OrderedTable[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NO
 "bio":"VARCHAR(65535)", # The user's biography 
 "password":"VARCHAR(65535)", # The user's hashed & salted password (Empty for remote users obv)
 "salt":"VARCHAR(65535)", # The user's salt (Empty for remote users obv)
+"kdf":"INTEGER NOT NULL", # The version of the key derivation function. See DESIGN.md's "Key derivation function table" for more.
 "admin":"BOOLEAN NOT NULL", # A boolean indicating whether or not this is user is an Admin.
 "is_frozen":"BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
 
