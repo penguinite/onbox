@@ -115,12 +115,22 @@ proc randomSafeString*(limit: int = 16): string =
   return result
 
 
-proc hash*(password: string, salt:string, iter: int = 160000,outlen: int = 32, genSafe: bool = true): string =
-  ## We use PBKDF2-HMAC-SHA512 by default with 160000 iterations unless specified.
+proc pbkdf2_hmac_sha512_hash*(password: string, salt:string, iter: int = 210000, outlen: int = 32, genSafe:bool = true): string =
+  ## We use PBKDF2-HMAC-SHA512 by default with 210000 iterations unless specified.
   ## This procedure is a wrapper for nimcrypto's PBKDF2 implementation
   ## This procedure returns a base64-encoded string. You can specify the safe parameter of 
   ## encode() with the genSafe parameter
-  var newhash: string = "";
-  for x in pbkdf2(sha512, toOpenArray(password,0,len(password) - 1), toOpenArray(salt,0,len(salt) - 1), iter, outlen):
-    newhash.add(encode($x, safe = genSafe))
-  return newhash
+  runnableExamples:
+    var password = "cannabis abyss"
+    var salt = "__eat_flaming_death"
+    # Hash the user's password
+    var hashed_password = hash(password, salt)
+  result = ""
+  for x in pbkdf2(
+      sha512,
+      toOpenArray(password,0,len(password) - 1),
+      toOpenArray(salt,0,len(salt) - 1),
+      iter,
+      outlen):
+    result.add(encode($x, safe = genSafe))
+  return result
