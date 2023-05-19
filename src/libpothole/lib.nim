@@ -43,6 +43,9 @@ const debugPrint {.booldefine.}: bool = true
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
+# Current KDF version
+const kdf* = 1
+
 proc exit*() {.noconv.} =
   quit(1)
 
