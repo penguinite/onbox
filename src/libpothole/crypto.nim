@@ -14,10 +14,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # crypto.nim: 
-## This file provides functions related to randomness or hashing
-## Most notably, it provides hash() which is used for lots of things
-## And randomString() which is used for generating IDs and salts.
-## I am certain that it is cryptographically secure
+## This file provides functions related to cryptography.
+## It provides the hash() function which is used to hash passwords and
+## it also provides lots of functions for generating random numbers, characters
+## and strings.
+## 
+## I am certain that this module is cryptographically secure
 ## But of course, feel free to audit it yourself.
 
 import nimcrypto
@@ -64,13 +66,13 @@ proc randomInt*(limit: int = 18): int =
 
 proc rand*(dig: int = 5): int =
   ## A replacement function for rand() that is actually cryptographically secure.
-  ## The final integer will always be 0 to X (where X is the argument to the number)
+  ## The final integer will always be between 1 to X (where X is the argument to the number)
   runnableExamples:
-    assert rand(5) < 6; # This is true since rand(5) returns a number between 0 and 5.
+    assert rand(5) < 6; # This is true since rand(5) returns a number between 1 and 5.
   var num = randomInt(len($dig))
   if num > dig:
     num = dig
-  if num < 0:
+  if num < 01:
     num = 0
   return num
 
@@ -78,6 +80,8 @@ proc randchar*(): char =
   ## Generates a random character.
   ## This should be unpredictable, it does not use std/random's rand()
   ## But it uses our replacement rand() function that is also secure.
+  runnableExamples:
+    echo("Your magic character is ", randchar())
   var bit = int(urandom(1)[0])
   if bit > maxASCIILetters or bit < 0:
     bit = rand(maxASCIILetters)
@@ -85,6 +89,8 @@ proc randchar*(): char =
 
 proc randomString*(limit: int = 18): string =
   ## A function to generate a random character.
+  runnableExamples:
+    echo("Here's a bunch of random garbage: ", randomString())
   for i in 1..limit:
     result.add(randchar())
   return result
@@ -92,6 +98,8 @@ proc randomString*(limit: int = 18): string =
 proc randsafechar*(): char =
   ## Generates a random safe character
   ## This is unpredictable and now safer for use in IDs!
+  runnableExamples:
+    echo("Your (safe) magic character is ", randsafechar())
   var bit = int(urandom(1)[0])
   if bit > maxSafeLetters or bit < 0:
     bit = rand(maxSafeLetters)
@@ -100,9 +108,12 @@ proc randsafechar*(): char =
 proc randomSafeString*(limit: int = 16): string = 
   ## A function to generate a safe random string.
   ## Used for salt & id generation and debugging (creating fake passwords)
+  runnableExamples:
+    echo("Here's a bunch of random and hopefully safe garbage: ", randomSafeString())
   for i in 1..limit:
     result.add(randsafechar())
   return result
+
 
 proc hash*(password: string, salt:string, iter: int = 160000,outlen: int = 32, genSafe: bool = true): string =
   ## We use PBKDF2-HMAC-SHA512 by default with 160000 iterations unless specified.
