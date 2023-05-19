@@ -9,11 +9,12 @@ discard db.init("main.db")
 
 import strutils
 
-when defined(addTestStuff):
+when not defined(iHaveMyOwnStuffThanks):
+  echo "Adding fake users"
   for x in getFakeUsers():
-    x.admin = true
-    x.local = true
     discard db.addUser(escape(x))
+
+  echo "Adding fake posts"
   for x in getFakePosts():
     discard db.addPost(escape(x))
 

@@ -6,6 +6,11 @@ description   = "Essential libraries for the Pothole server."
 license       = "GPL-3.0-or-later"
 srcDir        = "src"
 
+when defined(iHaveMyOwnStuffThanks):
+  before test:
+    if fileExists("main.db"):
+      rmFile("main.db")
+
 task clean, "Cleans directories":
   if dirExists("htmldocs"):
     rmDir("htmldocs")
