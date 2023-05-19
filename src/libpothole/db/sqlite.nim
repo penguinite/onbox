@@ -21,7 +21,7 @@
 # TODO TODO: Also only document the stuff thats different between this module and the postgres module. Nothing else.
 
 # From somewhere in Pothole
-import ../user, ../post, ../lib, ../crypto
+import ../user, ../post, ../lib
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace
@@ -32,7 +32,7 @@ import tiny_sqlite
 
 proc has(db:DbConn,statement:string): bool =
   ## A quick helper function to check if a thing exists.
-  if isNone(db.one(statement)):
+  if isNone(db.one(statement)):  
     return false
   return true
 
@@ -148,35 +148,34 @@ proc uninit*(): bool =
   ## Or close it basically...
   db.close()
 
-proc addUser*(user: User): User = 
+proc addUser*(user: User): bool = 
   var caller = "db/sqlite.addUser"
   ## Add a user to the database
   ## This procedure expects an escaped user to be handed to it.
-  var handle = escape(sanitizeHandle(user.handle))
-  if db.has("SELECT local FROM users WHERE handle = " & handle & ";"):
+  if db.has("SELECT local FROM users WHERE handle = " & user.handle & ";"):
     debug "User with handle " & user.handle & " already exists!", caller
-    return # Simply exit
+    return false # Simply exit
 
-  while (true):
-    if db.has("SELECT local FROM users WHERE id = " & user.id & ";"):
-      user.id = randomString() # User's ID already exists! Generate a new one!
-    else:
-      break 
+  if db.has("SELECT local FROM users WHERE id = " & user.id & ";"):
+    debug "User with id " & user.id & " already exists!", caller
+    return false # Return false if id already exists
 
   # Now we loop over the fields and build an SQL statement as we go.
   # TODO: Look into using macros or templates to automatically generate this code.
   var sqlStatement = "INSERT INTO users("
 
-  for key, value in user[].fieldPairs:
+  for key, value in user.fieldPairs:
     sqlStatement.add(key & ",")
   
   sqlStatement = sqlStatement[0 .. ^2]
   sqlStatement.add(") VALUES (")
 
-  for key, value in user[].fieldPairs:
+  for key, value in user.fieldPairs:
     when typeof(value) is string:
       sqlStatement.add(value)
     when typeof(value) is bool:
+      sqlStatement.add($value)
+    when typeof(value) is int:
       sqlStatement.add($value)
     sqlStatement.add(",")
   
@@ -190,7 +189,7 @@ proc addUser*(user: User): User =
     debug "sqlStatement: " & sqlStatement, caller
     error "Failed to insert user!", caller
 
-  return user
+  return true
 
 proc getAdmins*(): seq[string] = 
   ## A procedure that returns the usernames of all administrators.
