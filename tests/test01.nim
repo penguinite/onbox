@@ -1,13 +1,15 @@
-## Just reporting some stuff.
+echo "Test 01 - Database Operations"
 
-import libpothole/[lib, db, user, post]
+import libpothole/[lib, db, user, post, debug]
 
 echo("Version reported: ", version)
 echo("Database engine: ", dbEngine)
 
-discard db.init("main.db")
+echo "Initializing database"
 
-import strutils
+when dbEngine == "sqlite":
+  if not db.init("main.db"):
+    error "Database failed to initialize","test02.startup"
 
 when not defined(iHaveMyOwnStuffThanks):
   echo "Adding fake users"
@@ -18,5 +20,3 @@ when not defined(iHaveMyOwnStuffThanks):
   for x in getFakePosts():
     discard db.addPost(escape(x))
 
-for post in db.getLocalPosts():
-  echo($post) 
