@@ -18,8 +18,6 @@
 ## And it also provides access to several helper functions for retrieving and parsing
 ## data from a shared config table.
 
-# TODO: Rewrite the load() function so its more readable.
-
 import std/[tables, os]
 from std/strutils import split, startsWith, endsWith, splitLines, parseBool, parseInt
 import lib
@@ -62,18 +60,15 @@ func load*(input: string): Table[string, string] =
     key = "" # a string containing the key being parsed
     val = "" # A string containing a value being parsed
 
-    #[
-      ParsingX follows this format:
-        0 means we are not parsing anything
-        1 means we are parsing a section
-        2 means we are parsing a key
-        3 means we are parsing a value
-        4 means we are parsing an array
-    ]#
+  #[
+    ParsingX follows this format:
+      0 means we are not parsing anything
+      1 means we are parsing a section
+      2 means we are parsing a key
+      3 means we are parsing a value
+      4 means we are parsing an array
+  ]#
 
-  # I actually have no idea how this works.
-  # It works but like I can't even explain it...
-  # Just don't touch it... Or you'll have to re-write it...
   for line in input.splitLines:
     if line.startsWith("#") or line.isEmptyOrWhitespace():
       continue # Line is either a comment or empty
@@ -81,7 +76,7 @@ func load*(input: string): Table[string, string] =
     for ch in line:
       if ch == '[' and parsingX == 0:
         parsingX = 1
-        section = ""
+        section = "" 
         continue
 
       if parsingX == 1:
@@ -111,28 +106,36 @@ func load*(input: string): Table[string, string] =
           key.add(ch)
 
     if not isEmptyOrWhitespace(section) and not isEmptyOrWhitespace(key) and not isEmptyOrWhitespace(val) and parsingX != 4:
+      if val.startsWith('"'):
+        val = val.substr(1)
+      if val.endsWith('"'):
+        val = val.substr(0,high(val) - 1)
       result[section & ":" & key] = val
       key = ""
       val = ""
       parsingX = 0
 
+proc setupInput*(input: string): Table[string, string] =
+  ## This procedure does the same thing as setup() but it accepts the input it gets
+  ## in the parameter as the actual config file. This is basically a wrapper over load()
+  result = load(input) # Open the config file
+  # Now... We have to check if our required configuration
+  # options are actually there
+  for x in requiredConfigOptions:
+    if not result.hasKey(x):
+      var list = x.split(":")
+      error("Missing key \"" & list[1] & "\" in section \"" & list[0] & "\"", "conf.setupInput")
+      
+  return result
 
-proc setup*(filename: string): Table[string, string] =
+proc setup*(filename:string): Table[string,string] =
   ## A procedure that readies the config table to be read.
   ## The actual parsing is done in the load() function.
   ## Array splitting is done in split()
   if not fileExists(filename):
     error("File \"" & filename & "\" does not exist.", "conf.setup")
   
-  result = load(open(filename).readAll()) # Open the config file
-  # Now... We have to check if our required configuration
-  # options are actually there
-  for x in requiredConfigOptions:
-    if not result.hasKey(x):
-      var list = x.split(":")
-      error("Missing key \"" & list[1] & "\" in section \"" & list[0] & "\"", "conf.setup")
-      
-  return result
+  return setupInput(open(filename).readAll()) 
 
 proc exists*(table: Table[string, string], section, key: string): bool =
   if table.hasKey(section & ":" & key):
