@@ -142,3 +142,8 @@ when dbEngine == "docs": # For documentation only.
   proc getTotalPosts*(): int =
     ## A procedure to get the total number of local posts.
     return 0
+  
+  proc getLocalPosts*(limit: int = 15): seq[Post] =
+    ## A procedure to get posts from local users only.
+    ## Set limit to 0 to disable the limit and get all posts from local users.
+    return @[Post()]
