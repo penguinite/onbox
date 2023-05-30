@@ -53,10 +53,11 @@ const usersCols: OrderedTable[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NO
 const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The post Id
 "recipients":"VARCHAR(65535)", # A comma-separated list of recipients since sqlite3 does not support arrays by default
 "sender":"VARCHAR(65535) NOT NULL", # A string containing the sender handle
+"replyto": "VARCHAR(65535)", # A string containing the post that the sender is replying to, if at all.
+"content": "VARCHAR(65535)", # A string containing the actual post's contents.
 "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
 "local": "BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether the post originated from this server or other servers.
-
 
 # This is the database connection we will use.
 # It's initialized at startup via the init() procedure defined here.
@@ -242,7 +243,7 @@ proc getHandleFromId*(id: string): string =
 proc constructPostFromRow*(row: ResultRow): Post =
   ## A procedure that takes a database Row (From the Posts table)
   ## And turns it into a Post object ready for display, parsing and so on.
-  var post = Post()[]
+  result = Post()
 
   # This looks ugly, I know, I had to wrap it with
   # two specific functions but we don't have to re-write this
@@ -250,23 +251,72 @@ proc constructPostFromRow*(row: ResultRow): Post =
   # if we introduce new data types to the User object
   var i: int = 0;
 
-  for key,value in post.fieldPairs:
+  for key,value in result.fieldPairs:
     inc(i)
     # If its string, add it surrounding quotes
     # Otherwise add it whole
-    when post.get(key) is bool:
-      post.get(key) = parseBool(row[i - 1].strVal)
-    when post.get(key) is string:
-      post.get(key) = row[i - 1].strVal
-    when post.get(key) is seq[string]:
-      post.get(key) = row[i - 1].strVal.split(",")
+    when result.get(key) is bool:
+      result.get(key) = parseBool(int64ToString(row[i - 1].intval))
+    when result.get(key) is string:
+      result.get(key) = row[i - 1].strVal
+    when result.get(key) is seq[string]:
+      result.get(key) = split(row[i - 1].strVal, ",")
 
-  new(result); result[] = post
   return result.unescape()
 
-proc addPost*(post: Post): Post =
+proc addPost*(post: Post): bool =
   ## A function add a post into the database
-  return Post()
+  ## This function expects an escaped post to be inputted to it.
+  var caller = "db/sqlite.addPost"
+  
+  if db.has("SELECT local FROM posts WHERE id = \"" & post.id & "\";"):
+    return false # Someone has tried to add a post twice. We just won't add it.
+      
+  debug "Inserting post with Id " & post.id, caller
+
+  # Let's loop over the newuser field pairs and
+  # Build the SQL statement as we go.
+  var sqlStatement = "INSERT OR REPLACE INTO posts ("
+
+  for key, val in post.fieldPairs:
+    sqlStatement.add(key & ",")
+  
+  # Remove last character
+  sqlStatement = sqlStatement[0 .. ^2]
+
+  # Add the missing part
+  sqlStatement.add(") VALUES (")
+
+  # The other part of the SQL statement
+  # The values.
+  for key, value in post.fieldPairs:
+    when post.get(key) is string:
+      sqlStatement.add("'")
+      sqlStatement.add(value)
+      sqlStatement.add("'\n")
+    
+    when post.get(key) is seq[string]:
+      sqlStatement.add("'")
+      sqlStatement.add(value.join(","))
+      sqlStatement.add("'")
+    
+    when post.get(key) is bool:
+      sqlStatement.add($value)
+      sqlStatement.add("")
+    
+    sqlStatement.add(",")
+
+  sqlStatement = sqlStatement[0 .. ^2]
+  sqlStatement.add(");")
+
+  try:
+    db.exec(sqlStatement)
+  except:
+    debug "sqlStatement: " & sqlStatement, caller
+    error "Failed to insert post! See debug buffer!", caller
+
+
+  return true
 
 proc postIdExists*(id: string): bool =
   ## A function to see if a post id exists in the database
@@ -290,7 +340,10 @@ proc getPostsByUserId*(id:string, limit: int = 15): seq[Post] =
 
 proc getTotalPosts*(): int =
   ## A procedure to get the total number of local posts.
-  return 0
+  result = 0
+  for x in db.all("SELECT local FROM posts;"):
+    inc(result)
+  return result
 
 proc getLocalPosts*(limit: int = 15): seq[Post] =
   ## A procedure to get posts from local users only.

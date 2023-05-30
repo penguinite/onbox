@@ -20,6 +20,7 @@
 
 # From Pothole
 import lib, crypto
+from db import dbEngine
 
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace
@@ -27,7 +28,7 @@ import std/times
 
 # ActivityPub Object/Post
 type 
-  Post* = ref object
+  Post* = object
     id*: string # A unique id.
     recipients*: seq[string] # A sequence of recipient's handles.
     sender*: string # Basically, the person sending the message
@@ -38,48 +39,70 @@ type
     local*:bool # A boolean indicating whether or not the post \
                 # came from the local server or external servers
 
-proc escape*(olduser: Post): Post =
-  ## A procedure to escape a Post object
-  var post = olduser[] # De-reference at the start
+when dbEngine == "sqlite":
+  # Sqlite is deranged.
+  func escape*(str,a,b:string): string = 
+    if str.isEmptyOrWhitespace():
+      return str
 
-  # TODO: Look into using templates or macros to automatically
-  #       generate the loop that escape Posts
-  for key,val in post.fieldPairs:
+    result = strutils.escape(str,a,b)
+    var
+      i = -1
+      skipFlag = false
+
+    var oldstr = result
+    result = ""
+    for ch in oldstr:
+      inc(i)
+      if ch == '\\' and oldstr[i + 1] == '\'':
+        result.add("''")
+        skipFlag = true
+        continue
+      if skipFlag:
+        skipFlag = false
+        continue
+      result.add(ch)
+    
+    return result
+
+proc escape*(post: Post): Post =
+  ## A procedure to escape a Post object
+  result = post
+
+  for key,val in result.fieldPairs:
     when typeof(val) is bool:
-      post.get(key) = val
+      result.get(key) = val
 
     when typeof(val) is string:
-      post.get(key) = escape(val)
+      result.get(key) = escape(val,"","")
 
     when typeof(val) is seq[string]:
       var newseq: seq[string] = @[]
       for x in val:
         newseq.add(escape(x))
-      post.get(key) = newseq
+      result.get(key) = newseq
 
-  new(result); result[] = post # Re-reference at the end
   return result
 
-proc unescape*(oldpost: Post): Post =
+proc unescape*(post: Post): Post =
   ## A procedure to unescape a Post object
-  var post = oldpost[] # De-reference at the start
+  result = post
 
   # TODO: Look into using templates or macros to automatically
   #       generate the loop that unescapes Posts
-  for key,val in post.fieldPairs:
+  for key,val in result.fieldPairs:
     when typeof(val) is bool:
-      post.get(key) = val
+      result.get(key) = val
 
     when typeof(val) is string:
-      post.get(key) = unescape(val,"","")
+      result.get(key) = unescape(val,"","")
 
     when typeof(val) is seq[string]:
       var newseq: seq[string] = @[]
       for x in val:
         newseq.add(unescape(x,"",""))
-      post.get(key) = newseq
+      result.get(key) = newseq
 
-  new(result); result[] = post # Re-reference at the end
   return result
 
 proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: string = "", contexts: seq[string] = @[]): Post =
@@ -88,7 +111,7 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], loc
     error("Missing critical fields for post.","data.newPost")
 
   # Generate post id
-  post.id = randomString()
+  post.id = randomString(18)
   
   # Just do this stuff...
   post.sender = sender
@@ -111,7 +134,7 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], loc
 func `$`*(obj: Post): string =
   ## Turns a Post object into a human-readable string
   result.add("[")
-  for key,val in obj[].fieldPairs:
+  for key,val in obj.fieldPairs:
     result.add("\"" & key & "\": \"" & $val & "\",")
   result = result[0 .. len(result) - 2]
   result.add("]")

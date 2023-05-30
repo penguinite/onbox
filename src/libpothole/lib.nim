@@ -125,3 +125,6 @@ func cleanTrailing*(str: string, charset: set[char] = whitespace): string =
     dec(endnum)
 
   return str[0 .. endnum]
+
+func int64ToString*(num: int64): string =
+  return $(num.int)

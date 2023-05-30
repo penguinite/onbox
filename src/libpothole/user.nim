@@ -67,10 +67,39 @@ proc sanitizeHandle*(handle: string): string =
 
   return result
 
-proc newUser*(): User =
+proc newUser*(handle, name, password: string = "", local,admin: bool = false): User =
   ## This procedure just creates a user and that's it
+  ## We will fill out some basic details, like if you supply a password, name
+  
+  # First off let's do the things that are least likely to create an error in any way possible.
   result = User()
-  result.id = randomSafeString()
+  result.id = randomString()
+  result.salt = randomString(32)
+
+  result.kdf = lib.kdf # Always assume user is using latest KDF because why not?
+  result.local = local
+  result.admin = admin # This is false by default, same with the local thing above.
+  result.is_frozen = false # Always assume user isn't frozen. Maybe employ a check in your own software.
+
+  # Sanitize handle before using it
+  var newhandle = sanitizeHandle(handle)
+  if not isEmptyOrWhitespace(newhandle):
+    result.handle = newhandle
+  else:
+    error "No proper handle was supplied!", "user.newUser()"
+
+  # Use handle as name if name isn't supplied
+  if not isEmptyOrWhitespace(name):
+    result.name = name
+  else:
+    result.name = newhandle
+  
+  if not local and not isEmptyOrWhitespace(password):
+    result.password = pbkdf2_hmac_sha512_hash(password, result.salt)
+  else:
+    result.password = ""
+
+  # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)
   return result
 
 proc escape*(user: User, skipChecks: bool = false): User =
@@ -81,7 +110,7 @@ proc escape*(user: User, skipChecks: bool = false): User =
 
   # We only need handle and password, the rest can be guessed or blank.
   if not skipChecks:
-    if isEmptyOrWhitespace(user.handle) or isEmptyOrWhitespace(user.password):
+    if isEmptyOrWhitespace(user.handle):
       error("Missing required fields for adding users\nUser: " & $user,"user.escape")
 
   result.handle = sanitizeHandle(user.handle)
