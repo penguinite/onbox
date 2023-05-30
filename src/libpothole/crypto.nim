@@ -45,15 +45,10 @@ from std/strutils import parseInt
   like that, but I am okay with these risks so I will continue using nimcrypto and std/sysrand
 ]#
 
-const trulySafeLetters: seq[char] = @[
-  '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','~','-','_','.',':',';','=','@'
-]
-let maxSafeLetters = len(trulySafeLetters) - 1
-
 const asciiLetters: seq[char] = @[
-  '%','&','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']','^','_','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','|','}','~'
-] # This sequence has 89 entries (-1 is 88)
-let maxASCIILetters = len(asciiLetters) - 1
+  '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z' 
+] # This is basically Base62
+let maxASCIILetters* = len(asciiLetters) - 1
 
 proc randomInt*(limit: int = 18): int =
   ## A function that generates an integer, limit is how many digits should be
@@ -72,7 +67,7 @@ proc rand*(dig: int = 5): int =
   var num = randomInt(len($dig))
   if num > dig:
     num = dig
-  if num < 01:
+  if num < 0:
     num = 0
   return num
 
@@ -87,31 +82,13 @@ proc randchar*(): char =
     bit = rand(maxASCIILetters)
   return asciiLetters[bit]
 
-proc randomString*(limit: int = 18): string =
-  ## A function to generate a random character.
-  runnableExamples:
-    echo("Here's a bunch of random garbage: ", randomString())
-  for i in 1..limit:
-    result.add(randchar())
-  return result
-
-proc randsafechar*(): char =
-  ## Generates a random safe character
-  ## This is unpredictable and now safer for use in IDs!
-  runnableExamples:
-    echo("Your (safe) magic character is ", randsafechar())
-  var bit = int(urandom(1)[0])
-  if bit > maxSafeLetters or bit < 0:
-    bit = rand(maxSafeLetters)
-  return trulySafeLetters[bit]
-
-proc randomSafeString*(limit: int = 16): string = 
+proc randomString*(limit: int = 16): string = 
   ## A function to generate a safe random string.
   ## Used for salt & id generation and debugging (creating fake passwords)
   runnableExamples:
     echo("Here's a bunch of random and hopefully safe garbage: ", randomSafeString())
   for i in 1..limit:
-    result.add(randsafechar())
+    result.add(randchar())
   return result
 
 
