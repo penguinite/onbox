@@ -28,16 +28,12 @@ proc getFakeUsers*(): seq[User] =
   # Creates 10 fake users
   var sequence: seq[User];
   for x in 0 .. len(fakeHandles) - 1:
-    var user = newUser()
-    user.handle = fakeHandles[x]
-    user.password = randomString()
-    user.salt = randomString()
-    user.name = fakeNames[x]
+    var isAdmin = false
+    if rand(5) == 1:
+      isAdmin = true
+    var user = newUser(fakeHandles[x], fakeNames[x], "", true, isAdmin)
     user.kdf = lib.kdf
     user.bio = fakeBios[x]
-    if rand(5) == 1:
-      user.admin = true
-    user.local = true
     sequence.add(user)
   return sequence
 
