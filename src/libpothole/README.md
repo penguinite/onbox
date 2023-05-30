@@ -5,10 +5,10 @@ Folder that contains all the source code.
 1. conf.nim: Functions for fetch configuration file data and parsing it.
 2. crypto.nim: Functions related to cryptography or randomness.
 3. db.nim: A bit of code that switches between sqlite and postgres's database backends in compile-time
-4. db/*.nim: The actual bits of code that do the database operations (Also known as database backends)
-5. lib.nim: Shared functions, values and data used across the library.
-6. post.nim: Functions related to the Post object. (This also contains the type definition)
-7. potcode.nim: A parser for Potcode (Used for static pages & user profiles)
+4. db/sqlite.nim: The sqlite database backend
+5. db/postgres.nim: The postgres database backend
+6. lib.nim: Shared functions, values and data used across the library.
+7. post.nim: Functions related to the Post object. (This also contains the type definition)
 8. debug.nim: Procedures for debugging, right now this only creates fake users and posts.
 9. user.nim: Functions related to the User object. (This also contains the type definition)
 
