@@ -125,9 +125,8 @@ proc escape*(user: User, skipChecks: bool = false): User =
   #       generate the loop that escapes Users
   #       It could make this code a lot faster.
   for key,val in user.fieldPairs:
-    when typeof(val) is bool:
+    when typeof(val) is bool or typeof(val) is int:
       result.get(key) = val
-
     when typeof(val) is string:
       result.get(key) = escape(val)
 
@@ -140,7 +139,7 @@ proc unescape*(user: User): User =
   # TODO: Look into using templates or macros to automatically
   #       generate the loop that unescapes Users
   for key,val in user.fieldPairs:
-    when typeof(val) is bool:
+    when typeof(val) is bool or typeof(val) is int:
       result.get(key) = val
     when typeof(val) is string:
       result.get(key) = unescape(val,"","")

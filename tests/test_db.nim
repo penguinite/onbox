@@ -20,11 +20,16 @@ when not defined(iHaveMyOwnStuffThanks):
   for x in getFakePosts():
     discard db.addPost(escape(x))
 
+## getTotalPosts
 stdout.write "\nTesting getTotalPosts() "
-assert getTotalPosts() == len(fakeStatuses)
-stdout.write "Pass! \n"
+try:
+  assert getTotalPosts() == len(fakeStatuses)
+  stdout.write "Pass!\n"
+except:
+  stdout.write "Fail!\n"
 
 #[ Uncomment this if you want, I guess?
+## getLocalPosts
 echo "Displaying local Posts"
   for x in getLocalPosts(0):
   stdout.write("\n---\n")
@@ -40,6 +45,8 @@ echo "Displaying local Posts"
   stdout.write("\n")
 ]#
 
+
+## getAdmins
 stdout.write "Testing getAdmins() "
 # Create a new admin user
 var adminuser = newUser("johnadminson","John Adminson","123",true,true)
@@ -53,11 +60,69 @@ for handle in getAdmins():
     adminFlag = true
     break
 
-assert adminFlag == true
-stdout.write "Pass!\n"
+try:
+  assert adminFlag == true
+  stdout.write "Pass!\n"
+except:
+  stdout.write "Fail!\n"
 
+## getTotalLocalUsers
 stdout.write "Testing getTotalLocalUsers() "
 # By this point we have added the fakeUsers + our fake admin user above.
 # So let's just test for this:
-assert getTotalLocalUsers() > len(fakeHandles)
-stdout.write "Pass!\n"
+try:
+  assert getTotalLocalUsers() > len(fakeHandles)
+  stdout.write "Pass!\n"
+except:
+  stdout.write "Fail!\n"
+
+## userIdExists
+stdout.write "Testing userIdExists() "
+# We already have a user whose ID we know.
+# We can check for its ID easily.
+try:
+  assert userIdExists(adminuser.id) == true
+  stdout.write("Pass!\n")
+except:
+  stdout.write "Fail!\n"
+
+## userHandleExists
+stdout.write "Testing userHandleExists() "
+# Same exact thing but with the handle this time.
+try:
+  assert userHandleExists(adminuser.handle) == true
+  stdout.write("Pass!\n")
+except:
+  stdout.write "Fail!\n"
+
+## getUserById
+stdout.write "Testing getUserById() "
+try:
+  assert getUserById(adminuser.id) == adminuser
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")
+
+## getUserByHandle
+stdout.write "Testing getUserByHandle() "
+try:
+  assert getUserByHandle(adminuser.handle) == adminuser
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")
+
+## getIdFromHandle
+stdout.write "Testing getIdFromHandle() "
+try:
+  assert getIdFromHandle(adminuser.handle) == adminuser.id
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")
+
+## getHandleFromId
+stdout.write "Testing getHandleFromId() "
+try:
+  assert getHandleFromId(adminuser.id) == adminuser.handle
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")

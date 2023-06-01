@@ -207,19 +207,56 @@ proc getTotalLocalUsers*(): int =
 
 proc userIdExists*(id:string): bool =
   ## A procedure to check if a user exists by id
-  return false
+  ## This procedures does escape IDs by default.
+  return db.has("SELECT local FROM users WHERE id = " & escape(id) & ";")
 
 proc userHandleExists*(handle:string): bool =
   ## A procedure to check if a user exists by handle
-  return false
+  ## This procedure does sanitize and escape handles by default
+  return db.has("SELECT local FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";")
+
+proc constructUserFromRow*(row: ResultRow): User =
+  ## A procedure that takes a database Row (From the users table)
+  ## And turns it into a User object, ready for processing.
+  ## It unescapes users by default
+  result = User()
+
+  # This looks ugly, I know, I had to wrap it with
+  # two specific functions but we don't have to re-write this
+  # even if we add new things to the User object. EXCEPT!
+  # if we introduce new data types to the User object
+  var i: int = -1;
+
+  for key,value in result.fieldPairs:
+    inc(i)
+    # If its string, add it surrounding quotes
+    # Otherwise add it whole
+    when result.get(key) is bool:
+      result.get(key) = parseBool(int64ToString(row[i].intval))
+    when result.get(key) is string:
+      result.get(key) = row[i].strVal
+    when result.get(key) is int:
+      result.get(key) = parseInt(int64ToString(row[i].intVal))
+
+  return result.unescape()
 
 proc getUserById*(id: string): User =
   ## Retrieve a user from the database using their id
-  return User()
+  ## This procedure returns a fully unescaped user, you do not need to do anything to it.
+  ## This procedure expects a regular ID, it will sanitize and escape it by default.
+  if not userIdExists(id):
+    error "Something or someone tried to get a non-existent user with the id \"" & id & "\"", "db/sqlite.getUserById"
+
+  return constructUserFromRow(db.one("SELECT * FROM users WHERE id = " & escape(id) & ";").get)
 
 proc getUserByHandle*(handle: string): User =
   ## Retrieve a user from the database using their handle
-  return User()
+  ## This procedure returns a fully unescaped user, you do not need to do anything to it.
+  ## This procedure expects a regular handle, it will sanitize and escape it by default.
+  if not userHandleExists(handle):
+    error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\"", "db/sqlite.getUserByHandle"
+    
+  return constructUserFromRow(db.one("SELECT * FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get)
 
 proc updateUserByHandle*(handle, column, value: string): bool =
   ## A procedure to update the user by their handle
@@ -231,11 +268,18 @@ proc updateUserById*(id, column, value: string): bool =
 
 proc getIdFromHandle*(handle: string): string =
   ## A function to convert a user handle to an id.
-  return ""
+  ## This user returns
+  if not userHandleExists(handle):
+    error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\"", "db/sqlite.getIdFromHandle"
+  
+  return unescape(db.one("SELECT id FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get()[0].strVal,"","")
 
 proc getHandleFromId*(id: string): string =
   ## A function to convert a  id to a handle.
-  return ""
+  if not userIdExists(id):
+    error "Something or someone tried to get a non-existent user with the id \"" & id & "\"", "db/sqlite.getHandleFromId"
+  
+  return unescape(db.one("SELECT handle FROm users WHERE id = " & escape(id) & ";").get()[0].strVal,"","")
 
 #! This comment marks the beginning of the Post section.
 # Procedures here are primarily used for posts.
