@@ -268,7 +268,7 @@ proc updateUserById*(id, column, value: string): bool =
 
 proc getIdFromHandle*(handle: string): string =
   ## A function to convert a user handle to an id.
-  ## This user returns
+  ## This procedure expects a regular handle, it will sanitize and escape it by default.
   if not userHandleExists(handle):
     error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\"", "db/sqlite.getIdFromHandle"
   
@@ -276,6 +276,7 @@ proc getIdFromHandle*(handle: string): string =
 
 proc getHandleFromId*(id: string): string =
   ## A function to convert a  id to a handle.
+  ## This procedure expects a regular ID, it will sanitize and escape it by default.
   if not userIdExists(id):
     error "Something or someone tried to get a non-existent user with the id \"" & id & "\"", "db/sqlite.getHandleFromId"
   
