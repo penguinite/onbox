@@ -127,7 +127,7 @@ func cleanTrailing*(str: string, charset: set[char] = whitespace): string =
 
   return str[0 .. endnum]
 
+func int64ToInt*(num: int64): int =
   ## The only reason this procedure exists at all is because tiny_sqlite's intVal macro gets us a int64, not a regular int.
   ## which somehow breaks everything so we need this to convert from int64 to int
-func int64ToString*(num: int64): string =
-  return $(num.int)
+  return num.int

@@ -232,11 +232,11 @@ proc constructUserFromRow*(row: ResultRow): User =
     # If its string, add it surrounding quotes
     # Otherwise add it whole
     when result.get(key) is bool:
-      result.get(key) = parseBool(int64ToString(row[i].intval))
+      result.get(key) = parseBool($(row[i].intVal))
     when result.get(key) is string:
       result.get(key) = row[i].strVal
     when result.get(key) is int:
-      result.get(key) = parseInt(int64ToString(row[i].intVal))
+      result.get(key) = int64ToInt(row[i].intVal)
 
   return result.unescape()
 
@@ -334,7 +334,7 @@ proc constructPostFromRow*(row: ResultRow): Post =
     # If its string, add it surrounding quotes
     # Otherwise add it whole
     when result.get(key) is bool:
-      result.get(key) = parseBool(int64ToString(row[i - 1].intval))
+      result.get(key) = parseBool($(row[i - 1].intval))
     when result.get(key) is string:
       result.get(key) = row[i - 1].strVal
     when result.get(key) is seq[string]:
