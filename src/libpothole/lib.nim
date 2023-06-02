@@ -18,8 +18,8 @@
 ## It also contains useful procedures and functions that are
 ## used across the entire library.
 ##
-## This module pre-9f3077d used to store the User and Post definitions
-## But these have been moved, and this module has been re-purposed.
+## This module pre-9f3077d used to store the User and Post type definitions
+## but these have been moved, and this module has been re-purposed.
 ## The User and Post definitions are now stored in pothole/user and pothole/post respectively.
 
 # For macro definition
@@ -28,8 +28,8 @@ from std/macros import newIdentNode, newDotExpr, strVal
 var debugBuffer: seq[string]; # A sequence to store debug strings in.
 
 # App version
-const phVersion* {.strdefine.}: string = "0.0.2"
-const version*: string = phVersion # TODO: Migrate lib.version to lib.phVersion to save some memory or get rid of phVersion all together.
+const phVersion* {.strdefine.}: string = "0.0.2" ## This constant llows you to customize the libpothole version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
+const version*: string = phVersion ## This is basically just phVersion, but it's copied twice for readability purposes.
 
 # How many items can be in debugBuffer before deleting some to save memory
 # Add -d:maxDebugItems=NUM and replace NUM with a number to customize this.
@@ -43,10 +43,11 @@ const debugPrint {.booldefine.}: bool = true
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
-# Current KDF version
-const kdf* = 1
+const kdf* = 1 ## The latest Key Derivation Function supported by this build of libpothole, check out the KDF section in the DESIGN.md document for more information.
 
 proc exit*() {.noconv.} =
+  ## Dont ask me why this exists. It's like a stray cat, it appeared once and now I can't get rid of it.
+  ## Or well, I *can* get rid of it, I just haven't bothered to, don't bother the cat please!
   quit(1)
 
 proc debug*(str, caller: string) =
@@ -126,5 +127,7 @@ func cleanTrailing*(str: string, charset: set[char] = whitespace): string =
 
   return str[0 .. endnum]
 
+  ## The only reason this procedure exists at all is because tiny_sqlite's intVal macro gets us a int64, not a regular int.
+  ## which somehow breaks everything so we need this to convert from int64 to int
 func int64ToString*(num: int64): string =
   return $(num.int)
