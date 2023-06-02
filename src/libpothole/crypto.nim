@@ -86,7 +86,7 @@ proc randomString*(limit: int = 16): string =
   ## A function to generate a safe random string.
   ## Used for salt & id generation and debugging (creating fake passwords)
   runnableExamples:
-    echo("Here's a bunch of random and hopefully safe garbage: ", randomSafeString())
+    echo("Here's a bunch of random and hopefully safe garbage: ", randomString())
   for i in 1..limit:
     result.add(randchar())
   return result
@@ -101,7 +101,7 @@ proc pbkdf2_hmac_sha512_hash*(password: string, salt:string, iter: int = 210000,
     var password = "cannabis abyss"
     var salt = "__eat_flaming_death"
     # Hash the user's password
-    var hashed_password = hash(password, salt)
+    var hashed_password = pbkdf2_hmac_sha512_hash(password, salt)
   result = ""
   for x in pbkdf2(
       sha512,

@@ -18,16 +18,19 @@ task clean, "Cleans directories":
     rmDir(".sass-cache")
 
 before docs:
-  if dirExists("htmldocs"):
-    rmDir("htmldocs")
-  if dirExists(".sass-cache"):
-    rmDir(".sass-cache")
+  rmDir("htmldocs")
+  rmDir("src/htmldocs")
+  rmDir("src/libpothole/htmldocs")
+  rmDir("src/libpothole/db/htmldocs")
+  rmDir(".sass-cache")
 
-var flags = "--project --warnings:off -d:dbEngine=docs --git.url='https://gt.tilambda.zone/o/pothole/libpothole.git' --git.commit='v" & version & "' --index:on src/libpothole.nim"
+var flags = "--warnings:off -d:dbEngine=docs --git.url='https://gt.tilambda.zone/o/pothole/libpothole.git' --git.commit='v" & version & "' --index:on --outdir:htmldocs "
 task docs, "Builds proper HTML documentation.":
-  exec "nim doc " & flags
-  rmFile("htmldocs/libpothole.html")
-  rmFile("htmldocs/dochack.js")
+  for file in listFiles("src/libpothole"):
+    exec "nim doc " & flags & file
+  for file in listFiles("src/libpothole/db"):
+    exec "nim doc " & flags & file
+  exec "nim buildIndex -o:htmldocs/index.html htmldocs/"
 
 # Dependencies
 requires "nim >= 1.6.10"
