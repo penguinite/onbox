@@ -126,3 +126,23 @@ try:
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
+
+## updateUserByHandle
+# Make the johnadminson user no longer admin(son)
+stdout.write "Testing updateUserByHandle() "
+try:
+  discard updateUserByHandle(adminuser.handle,"admin","false")
+  assert getUserByHandle(adminuser.handle).admin == false
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")
+
+## updateUserById
+# Make the johnadminson user admin(son)
+stdout.write "Testing updateUserById() "
+try:
+  discard updateUserById(adminuser.id,"admin","true")
+  assert getUserById(adminuser.id).admin == true
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")

@@ -258,13 +258,46 @@ proc getUserByHandle*(handle: string): User =
     
   return constructUserFromRow(db.one("SELECT * FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get)
 
-proc updateUserByHandle*(handle, column, value: string): bool =
-  ## A procedure to update the user by their handle
-  return true
+proc update(table, condition, column, value: string): bool =
+  ## A procedure to update any value, in any column in any table.
+  ## This procedure should be wrapped, you can use updateUserByHandle() or
+  ## updateUserById() instead of using this directly.
+  var sqlStatement = "UPDATE " & table & " SET " & column & " = " & value & " WHERE " & condition & ";"
+  try:
+    db.exec(sqlStatement)
+    return true
+  except:
+    return false
 
-proc updateUserById*(id, column, value: string): bool = 
-  ## A procedure to update the user by their ID
-  return true
+proc updateUserByHandle*(handle: User.handle, column, value: string): bool =
+  ## A procedure to update any user (The user is identified by their handle)
+  ## The *only* parameter that is sanitized is the handle, the value has to be sanitized by your user program!
+  ## Or else you will be liable to truly awful security attacks!
+  ## For guidance, look at the sanitizeHandle() procedure in user.nim or the escape() procedure in the strutils module
+  if not userHandleExists(handle):
+    return false
+
+  # Check if it's a valid column to update
+  if not usersCols.hasKey(column):
+    return false
+  
+  # Then update!
+  return update("users", "handle = " & escape(sanitizeHandle(handle)), column, value)
+  
+
+proc updateUserById*(id: User.id, column, value: string): bool = 
+  ## A procedure to update any user (The user is identified by their ID)
+  ## Like with the updateUserByHandle() function, the only sanitized parameter is the id. 
+  ## You *have* to sanitize the value argument yourself
+  ## For guidance, look at the sanitizeHandle() procedure in user.nim or the escape() procedure in the strutils module
+  if not userIdExists(id):
+    return false
+
+  # Check if it's a valid column to update
+  if not usersCols.hasKey(column):
+    return false
+
+  return update("users", "id = " & escape(id), column, value)
 
 proc getIdFromHandle*(handle: string): string =
   ## A function to convert a user handle to an id.
@@ -359,7 +392,6 @@ proc addPost*(post: Post): bool =
   except:
     debug "sqlStatement: " & sqlStatement, caller
     error "Failed to insert post! See debug buffer!", caller
-
 
   return true
 
