@@ -1,6 +1,6 @@
 # libpothole
 
-Essential libraries for the Pothole microblogging backend and related projects.
+Essential libraries for the Pothole microblogging server and related projects.
 
 *Note:* Pothole and thus libpothole is very much a work-in-progress. Lots of implementation details are being figured out just now and are thus likely to change over time. In other words, this is pre-alpha or even *research* stage. 
 
