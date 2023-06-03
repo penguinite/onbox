@@ -146,3 +146,51 @@ try:
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
+
+# For these next few tests, it helps to have a post we control every aspect of.
+var custompost = newPost("johnadminson","","@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Debate: is it pronounced Gif or Jif?",@["scout","soldier","pyro","demoman","heavy","engineer","medic","sniper","spy"],true)
+
+discard addPost(custompost)
+
+## postIdExists
+stdout.write "Testing postIdExists() "
+try:
+  assert postIdExists(custompost.id) == true
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")
+
+## updatePost
+stdout.write "Testing updatePost() "
+try:
+  discard updatePost(custompost.id,"content","\"@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!\"")
+  assert getPost(custompost.id).content == "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")
+
+## getPost
+stdout.write "Testing getPost() "
+try:
+  # We changed customPost because of the previous test, remember?
+  custompost.content = "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
+  assert getPost(custompost.id) == custompost
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")
+
+## getPostsByUserHandle()
+stdout.write "Testing getPostsByUserHandle() "
+try:
+  assert getPostsByUserHandle("johnadminson",1) == @[custompost]
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")
+
+## getPostsByUserId()
+stdout.write "Testing getPostsByUserId() "
+try:
+  assert getPostsByUserId(adminuser.id,1) == @[custompost]
+  stdout.write("Pass!\n")
+except:
+  stdout.write("Fail!\n")

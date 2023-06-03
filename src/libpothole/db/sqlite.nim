@@ -320,7 +320,7 @@ proc getHandleFromId*(id: string): string =
 
 proc constructPostFromRow*(row: ResultRow): Post =
   ## A procedure that takes a database Row (From the Posts table)
-  ## And turns it into a Post object ready for display, parsing and so on.
+  ## And turns it into a Post object ready for display, parsing and so on. (That is to say, the final Post is unescaped and does not need further action.)
   result = Post()
 
   # This looks ugly, I know, I had to wrap it with
@@ -397,23 +397,50 @@ proc addPost*(post: Post): bool =
 
 proc postIdExists*(id: string): bool =
   ## A function to see if a post id exists in the database
-  return false
+  ## The id supplied can be plain and un-escaped. It will be escaped and sanitized here.
+  return db.has("SELECT local FROM posts WHERE id = " & escape(id) & ";")
 
-proc updatePostById*(id, column, value: string): bool =
-  ## A procedure to update a post using it's id
-  return true
+proc updatePost*(id, column, value: string): bool =
+  ## A procedure to update a post using it's ID.
+  ## Like with the updateUserByHandle and updateUserById procedures,
+  ## the value parameter should be heavily sanitized and escaped to prevent a class of awful security holes.
+  ## The id can be passed plain, it will be escaped.
+  update("posts","id = " & escape(id), column, value)
 
-proc getPostById*(id: string): Post =
-  ## A procedure to get a post object using its id
-  return Post()
+proc getPost*(id: string): Post =
+  ## A procedure to get a post object using it's ID.
+  ## The id can be passed plain, it will be escaped.
+  ## The output will be an unescaped
+  var post = db.one("SELECT * FROM posts WHERE id = " & escape(id) & ";")
+  if isNone(post):
+    error "Something or someone tried to retrieve a non-existent post with the ID of \"" & id & "\"", "sqlite/db.getPost"
+
+  return constructPostFromRow(post.get)
 
 proc getPostsByUserHandle*(handle:string, limit: int = 15): seq[Post] =
   ## A procedure to get any user's posts using the users handle
-  return @[Post()]  
+  ## The handle can be passed plainly, it will be escaped later.
+  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
+  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  var sqlStatement = "SELECT * FROM posts WHERE sender = " & escape(sanitizeHandle(handle)) & ";"
+  if limit != 0:
+    var i = 0;
+    for post in db.all(sqlStatement):
+      inc(i)    
+      if i > limit:
+        break
+      result.add(constructPostFromRow(post))
+  else:
+    for post in db.all(sqlStatement):
+      result.add(constructPostFromRow(post))
+  return result
 
 proc getPostsByUserId*(id:string, limit: int = 15): seq[Post] =
-  ## A procedure to get any user's posts using the users id
-  return @[Post()]
+  ## A procedure to get any user's posts using the User's ID.
+  ## This behaves exactly like the getPostsByUserHandle procedure.
+  
+  # This procedure will piggy-back off of getHandleFromId and getPostsByUserId.
+  return getPostsByUserHandle(getHandleFromId(id),limit)
 
 proc getTotalPosts*(): int =
   ## A procedure to get the total number of local posts.
