@@ -4,7 +4,7 @@ Essential libraries for the Pothole microblogging server and related projects.
 
 *Note:* Pothole and thus libpothole is very much a work-in-progress. Lots of implementation details are being figured out just now and are thus likely to change over time. In other words, this is pre-alpha or even *research* stage. 
 
-*Note:* This is the `staging` branch which contains bleeding-edge library logic, however we do not recommend this for production-ready apps at all as this might be less table. So pick your poison! stability or bleeding-edge (or pick a specific feature branch to test out a feature if you are developing for it.)
+*Note:* This is the `staging` branch which contains bleeding-edge library logic, however we do not recommend this for production-ready apps at all as this might be less stable. So pick your poison! stability or bleeding-edge (or pick a specific feature branch to test out a feature if you are developing for it.)
 
 ## What is Pothole?
 
