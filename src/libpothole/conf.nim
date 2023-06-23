@@ -52,7 +52,7 @@ func split*(obj: string): seq[string] =
   return result
 
 func load*(input: string): Table[string, string] =
-  ## This module parses the configuration file and returns a config table.
+  ## This function parses the configuration file and returns a config table.
   var
     parsingFlag = false # A flag that indicates whether or not we are parsing something right now
     parsingX = 0 # A number indicating what thing we are parsing.
@@ -125,7 +125,6 @@ proc setupInput*(input: string): Table[string, string] =
     if not result.hasKey(x):
       var list = x.split(":")
       error("Missing key \"" & list[1] & "\" in section \"" & list[0] & "\"", "conf.setupInput")
-      
   return result
 
 proc setup*(filename:string): Table[string,string] =
