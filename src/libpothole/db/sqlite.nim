@@ -39,6 +39,7 @@ proc has(db:DbConn,statement:string): bool =
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 # For this module to work, both database schemas and user object definitions must be similar
 const usersCols: OrderedTable[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The user ID
+"kind":"VARCHAR(65535) NOT NULL", # The user type, see UserType object in user.nim
 "handle":"VARCHAR(65535) UNIQUE NOT NULL", # The user's actual username (Fx. alice@alice.wonderland)
 "name":"VARCHAR(65535)", # The user's display name (Fx. Alice)
 "local":"BOOLEAN NOT NULL", # A boolean indicating whether the user originates from the local server or another one.
@@ -178,6 +179,8 @@ proc addUser*(user: User): bool =
       sqlStatement.add($value)
     when typeof(value) is int:
       sqlStatement.add($value)
+    when typeof(value) is UserType:
+      sqlStatement.add(escape(fromUserType(value)))
     sqlStatement.add(",")
   
 
@@ -237,7 +240,9 @@ proc constructUserFromRow*(row: ResultRow): User =
       result.get(key) = row[i].strVal
     when result.get(key) is int:
       result.get(key) = int64ToInt(row[i].intVal)
-
+    when result.get(key) is UserType:
+      result.get(key) = toUserType(unescape(row[i].strVal))
+  
   return result.unescape()
 
 proc getUserById*(id: string): User =
@@ -350,8 +355,6 @@ proc addPost*(post: Post): bool =
   if db.has("SELECT local FROM posts WHERE id = \"" & post.id & "\";"):
     return false # Someone has tried to add a post twice. We just won't add it.
       
-  debug "Inserting post with Id " & post.id, caller
-
   # Let's loop over the newuser field pairs and
   # Build the SQL statement as we go.
   var sqlStatement = "INSERT OR REPLACE INTO posts ("

@@ -39,8 +39,17 @@ const localInvalidHandle*: set[char] = {'@',':','.'}
 
 # User data type.
 type 
+  # What type of user, this is directly from ActivityStreams.
+  UserType* = enum
+    Person = "Person",
+    Application = "Application",
+    Organization = "Organization",
+    Group = "Group",
+    Service = "Service"
+
   User* = object
     id*: string # An unique that represents the actual user
+    kind*: UserType # What type of User this is. (Used for outgoing Activities)
     handle*: string # A string containing the user's actual username 
     name*: string # A string containing the user's display name
     local*: bool # A boolean indicating if this user is from this instance 
@@ -80,6 +89,7 @@ proc newUser*(handle, name, password: string = "", local,admin: bool = false): U
   result.local = local
   result.admin = admin # This is false by default, same with the local thing above.
   result.is_frozen = false # Always assume user isn't frozen. Maybe employ a check in your own software.
+  result.kind = Person # Even if its a group, service or application then it doesn't matter.
 
   # Sanitize handle before using it
   var newhandle = sanitizeHandle(handle)
@@ -145,6 +155,29 @@ proc unescape*(user: User): User =
       result.get(key) = unescape(val,"","")
   
   return result
+
+func toUserType*(s: string): UserType =
+  ## Converts from string to UserType.
+  parseEnum[UserType](s)
+  
+func fromUserType*(t: UserType): string =
+  ## Converts from UserType to string.
+  # Ok there has to be a way to do the same thing as above, just in reverse. I don't know what!
+  # Anything but manually specifying it! I could use macros but im too lazy to learn them.
+  result = case t:
+    of Person:
+      "Person"
+    of Application:
+      "Application"
+    of Organization:
+      "Organization"
+    of Group:
+      "Group"
+    of Service:
+      "Service"
+
+func `$`*(t: UserType): string =
+  return fromUserType(t)
 
 func `$`*(obj: User): string =
   ## Turns a User object into a human-readable string
