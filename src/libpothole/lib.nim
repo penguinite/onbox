@@ -33,7 +33,7 @@ const version*: string = phVersion ## This is basically just phVersion, but it's
 
 # How many items can be in debugBuffer before deleting some to save memory
 # Add -d:maxDebugItems=NUM and replace NUM with a number to customize this.
-const maxDebugItems {.intdefine.}: int = 120;
+const maxDebugItems {.intdefine.}: int = 150;
 
 # This boolean controls whether to print debug strings as they come
 # Irregardless of whether this is set or not, error() will print the entire debugBuffer
