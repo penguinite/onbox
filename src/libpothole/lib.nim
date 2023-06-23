@@ -56,7 +56,7 @@ proc exit*() {.noconv.} =
 proc debug*(str, caller: string) =
   ## Adds a string to the debug buffer and optionally
   ## prints it if debugPrint is set to true.
-   
+
   # Delete an item from the debug buffer if it gets too big
   if len(debugBuffer) > maxDebugItems - 1:
     debugBuffer.del(0)
@@ -83,6 +83,13 @@ proc error*(str,caller: string) =
   stderr.writeLine("\nError (" & caller & "): " & str)
   quit(1)
 
+func err*(str, caller: string) =
+  ## Exits the program, writes a stacktrace and maybe print the debug buffer.
+  debugEcho("Debugging buffer and stacktrace unavailable since this error occurs in a noSideEffect region.")
+  debugEcho("\nError (", caller, "): ", str)
+  quit(1)
+
+
 macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.
   ## Like so: user.get("local") == user.local
@@ -91,9 +98,16 @@ macro get*(obj: object, fld: string): untyped =
 func isEmptyOrWhitespace*(str: string, charset: set[char] = whitespace): bool =
   ## A faster implementation of strutils.isEmptyOrWhitespace
   ## This is basically the same thing.
-  for x in str:
-    if x notin charset:
+  for ch in str:
+    if ch notin charset:
       return false
+  return true
+
+func isEmptyOrWhitespace*(ch: char, charset: set[char] = whitespace): bool =
+  ## A faster implementation of strutils.isEmptyOrWhitespace
+  ## This is basically the same thing.
+  if ch notin charset:
+    return false
   return true
 
 func cleanString*(str: string, charset: set[char] = whitespace): string =
@@ -103,7 +117,7 @@ func cleanString*(str: string, charset: set[char] = whitespace): string =
 
   if len(str) < 1:
     return "" # Return nothing, since there is nothing to clean anyway
-  
+
   while str[startnum] in charset:
     inc(startnum)
 
@@ -115,7 +129,7 @@ func cleanString*(str: string, charset: set[char] = whitespace): string =
 func cleanLeading*(str: string, charset: set[char] = whitespace): string =
   ## A procedure to clean the beginning of a string.
   var startnum = 0;
-  
+
   while str[startnum] in charset:
     inc(startnum)
 
