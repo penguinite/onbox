@@ -150,6 +150,8 @@ func getInt*(table: Table[string, string], section, key: string): int =
   return parseInt(table[section & ":" & key])
 
 func getBool*(table: Table[string, string], section, key: string): bool =
+  if not table.hasKey(section & ":" & key):
+    return false
   return parseBool(table[section & ":" & key])
 
 func getArray*(table: Table[string, string], section, key: string): seq[string] =
