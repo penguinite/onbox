@@ -28,7 +28,7 @@ from std/macros import newIdentNode, newDotExpr, strVal
 var debugBuffer: seq[string]; # A sequence to store debug strings in.
 
 # App version
-const phVersion* {.strdefine.}: string = "0.0.2" ## This constant llows you to customize the libpothole version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
+const phVersion* {.strdefine.}: string = "0.0.2" ## This constant allows you to customize the libpothole version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
 const version*: string = phVersion ## This is basically just phVersion, but it's copied twice for readability purposes.
 
 # How many items can be in debugBuffer before deleting some to save memory
