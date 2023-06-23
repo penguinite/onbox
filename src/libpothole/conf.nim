@@ -146,6 +146,12 @@ proc exists*(table: Table[string, string], section, key: string): bool =
 func getString*(table: Table[string, string], section, key: string): string =
   return table[section & ":" & key]
 
+func getStringOrDefault*(table: Table[string, string], section, key, default: string): string =
+  if table.hasKey(section & ":" & key):
+    return table[section & ":" & key]
+  else:
+    return default
+
 func getInt*(table: Table[string, string], section, key: string): int =
   return parseInt(table[section & ":" & key])
 
