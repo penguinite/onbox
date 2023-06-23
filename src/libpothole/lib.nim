@@ -40,6 +40,9 @@ const maxDebugItems {.intdefine.}: int = 120;
 # Add -d:debugPrint=BOOL and replace BOOL with true or false to customize this.
 const debugPrint {.booldefine.}: bool = true
 
+# A folder to save debugging data to.
+const globalCrashDir* {.strdefine.}: string = "CAR_CRASHED_INTO_POTHOLE!"
+
 # A set of whitespace characters
 const whitespace*: set[char] = {' ', '\t', '\v', '\r', '\l', '\f'}
 
