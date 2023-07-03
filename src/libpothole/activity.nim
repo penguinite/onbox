@@ -34,7 +34,7 @@ type
   Activity* = object
     kind*: ActivityKind
     user*: User
-    obj*: 
+    obj*: Post
     target*: Post
 
 #[
