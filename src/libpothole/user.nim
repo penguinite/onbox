@@ -1,17 +1,18 @@
-# Copyright © Leo Gavilieau 2022-2023
+# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# This file is part of Pothole.
+# 
+# Pothole is free software: you can redistribute it and/or modify it under the terms of
+# the GNU Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+# 
+# Pothole is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+# for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # user.nim:
 ## This module contains various functions and procedures for handling User objects.
@@ -76,7 +77,7 @@ proc sanitizeHandle*(handle: string): string =
 
   return result
 
-proc newUser*(handle, name, password: string = "", local,admin: bool = false): User =
+proc newUser*(handle: string = "", name: string = "", password: string = "", local: bool = false, admin: bool = false): User =
   ## This procedure just creates a user and that's it
   ## We will fill out some basic details, like if you supply a password, name
   

@@ -1,17 +1,18 @@
-# Copyright © Leo Gavilieau 2023
+# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# This file is part of Pothole.
+# 
+# Pothole is free software: you can redistribute it and/or modify it under the terms of
+# the GNU Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+# 
+# Pothole is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+# for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # db/sqlite.nim:
 ## A database backend for sqlite3 (Using the tiny_sqlite module)
@@ -21,7 +22,7 @@
 # TODO TODO: Also only document the stuff thats different between this module and the postgres module. Nothing else.
 
 # From somewhere in Pothole
-import ../user, ../post, ../lib
+import ../[user, post, lib, conf]
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace
@@ -29,6 +30,8 @@ import std/tables
 
 # From somewhere else (nimble etc.)
 import tiny_sqlite
+
+export DbConn
 
 proc has(db:DbConn,statement:string): bool =
   ## A quick helper function to check if a thing exists.
@@ -60,14 +63,9 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
 "local": "BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether the post originated from this server or other servers.
 
-# This is the database connection we will use.
-# It's initialized at startup via the init() procedure defined here.
-{.cast(gcsafe).}:
-  var db:DbConn; 
-
-proc init*(filename: string, noSchemaCheck:bool = false): bool =
+func init*(db: var DbConn, filename: string, noSchemaCheck:bool = false): bool =
   ## Do any initialization work.
-  var caller = "db/sqlite.init" # Just so we dont repeat the same thing a whole lot.
+  const caller = "db/sqlite.init" # Just so we dont repeat the same thing a whole lot.
 
   if filename.startsWith("__eat_flaming_death"):
     debug "Someone or something used the forbidden code", caller
@@ -139,18 +137,25 @@ proc init*(filename: string, noSchemaCheck:bool = false): bool =
       missing.add(key)
   
   if len(missing) > 0:
-    debug "Major difference between built-in schema and currently-used schema", caller
+    debug "Major difference between hard-coded schema and currently-used schema", caller
     debug "Did you forget to migrate? Please migrate before re-running this program", caller
     error "Missing columns from posts schema:\n" & $missing, caller
 
   return true
 
-proc uninit*(): bool =
+proc initFromConfig*(db: var DbConn, config: Table[string, string]) = 
+  if config.exists("db","filename"):
+    discard db.init(config.getString("db","filename"))
+
+proc uninit*(db: DbConn): bool =
   ## Uninitialize the database.
   ## Or close it basically...
-  db.close()
+  try:
+    db.close()
+  except:
+    error "Couldn't close the database", "db/sqlite.uninit"
 
-proc addUser*(user: User): bool = 
+proc addUser*(db: DbConn, user: User): bool = 
   var caller = "db/sqlite.addUser"
   ## Add a user to the database
   ## This procedure expects an escaped user to be handed to it.
@@ -195,25 +200,25 @@ proc addUser*(user: User): bool =
 
   return true
 
-proc getAdmins*(): seq[string] = 
+proc getAdmins*(db: DbConn): seq[string] = 
   ## A procedure that returns the usernames of all administrators.
   for row in db.all("SELECT handle FROM users WHERE admin = true;"):
     result.add(row[0].strVal)
   return result
   
-proc getTotalLocalUsers*(): int =
+proc getTotalLocalUsers*(db: DbConn): int =
   ## A procedure to get the total number of local users.
   result = 0
   for x in db.all("SELECT handle FROM users WHERE local = true;"):
     inc(result)
   return result
 
-proc userIdExists*(id:string): bool =
+proc userIdExists*(db: DbConn, id:string): bool =
   ## A procedure to check if a user exists by id
   ## This procedures does escape IDs by default.
   return db.has("SELECT local FROM users WHERE id = " & escape(id) & ";")
 
-proc userHandleExists*(handle:string): bool =
+proc userHandleExists*(db: DbConn, handle:string): bool =
   ## A procedure to check if a user exists by handle
   ## This procedure does sanitize and escape handles by default
   return db.has("SELECT local FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";")
@@ -245,25 +250,25 @@ proc constructUserFromRow*(row: ResultRow): User =
   
   return result.unescape()
 
-proc getUserById*(id: string): User =
+proc getUserById*(db: DbConn, id: string): User =
   ## Retrieve a user from the database using their id
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
   ## This procedure expects a regular ID, it will sanitize and escape it by default.
-  if not userIdExists(id):
+  if not db.userIdExists(id):
     error "Something or someone tried to get a non-existent user with the id \"" & id & "\"", "db/sqlite.getUserById"
 
   return constructUserFromRow(db.one("SELECT * FROM users WHERE id = " & escape(id) & ";").get)
 
-proc getUserByHandle*(handle: string): User =
+proc getUserByHandle*(db: DbConn, handle: string): User =
   ## Retrieve a user from the database using their handle
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
   ## This procedure expects a regular handle, it will sanitize and escape it by default.
-  if not userHandleExists(handle):
+  if not db.userHandleExists(handle):
     error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\"", "db/sqlite.getUserByHandle"
     
   return constructUserFromRow(db.one("SELECT * FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get)
 
-proc update(table, condition, column, value: string): bool =
+proc update(db: DbConn, table, condition, column, value: string): bool =
   ## A procedure to update any value, in any column in any table.
   ## This procedure should be wrapped, you can use updateUserByHandle() or
   ## updateUserById() instead of using this directly.
@@ -274,12 +279,12 @@ proc update(table, condition, column, value: string): bool =
   except:
     return false
 
-proc updateUserByHandle*(handle: User.handle, column, value: string): bool =
+proc updateUserByHandle*(db: DbConn, handle: User.handle, column, value: string): bool =
   ## A procedure to update any user (The user is identified by their handle)
   ## The *only* parameter that is sanitized is the handle, the value has to be sanitized by your user program!
   ## Or else you will be liable to truly awful security attacks!
   ## For guidance, look at the sanitizeHandle() procedure in user.nim or the escape() procedure in the strutils module
-  if not userHandleExists(handle):
+  if not db.userHandleExists(handle):
     return false
 
   # Check if it's a valid column to update
@@ -287,35 +292,35 @@ proc updateUserByHandle*(handle: User.handle, column, value: string): bool =
     return false
   
   # Then update!
-  return update("users", "handle = " & escape(sanitizeHandle(handle)), column, value)
+  return db.update("users", "handle = " & escape(sanitizeHandle(handle)), column, value)
   
 
-proc updateUserById*(id: User.id, column, value: string): bool = 
+proc updateUserById*(db: DbConn, id: User.id, column, value: string): bool = 
   ## A procedure to update any user (The user is identified by their ID)
   ## Like with the updateUserByHandle() function, the only sanitized parameter is the id. 
   ## You *have* to sanitize the value argument yourself
   ## For guidance, look at the sanitizeHandle() procedure in user.nim or the escape() procedure in the strutils module
-  if not userIdExists(id):
+  if not db.userIdExists(id):
     return false
 
   # Check if it's a valid column to update
   if not usersCols.hasKey(column):
     return false
 
-  return update("users", "id = " & escape(id), column, value)
+  return db.update("users", "id = " & escape(id), column, value)
 
-proc getIdFromHandle*(handle: string): string =
+proc getIdFromHandle*(db: DbConn, handle: string): string =
   ## A function to convert a user handle to an id.
   ## This procedure expects a regular handle, it will sanitize and escape it by default.
-  if not userHandleExists(handle):
+  if not db.userHandleExists(handle):
     error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\"", "db/sqlite.getIdFromHandle"
   
   return unescape(db.one("SELECT id FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get()[0].strVal,"","")
 
-proc getHandleFromId*(id: string): string =
+proc getHandleFromId*(db: DbConn, id: string): string =
   ## A function to convert a  id to a handle.
   ## This procedure expects a regular ID, it will sanitize and escape it by default.
-  if not userIdExists(id):
+  if not db.userIdExists(id):
     error "Something or someone tried to get a non-existent user with the id \"" & id & "\"", "db/sqlite.getHandleFromId"
   
   return unescape(db.one("SELECT handle FROm users WHERE id = " & escape(id) & ";").get()[0].strVal,"","")
@@ -347,7 +352,7 @@ proc constructPostFromRow*(row: ResultRow): Post =
 
   return result.unescape()
 
-proc addPost*(post: Post): bool =
+proc addPost*(db: DbConn, post: Post): bool =
   ## A function add a post into the database
   ## This function expects an escaped post to be inputted to it.
   var caller = "db/sqlite.addPost"
@@ -398,19 +403,19 @@ proc addPost*(post: Post): bool =
 
   return true
 
-proc postIdExists*(id: string): bool =
+proc postIdExists*(db: DbConn, id: string): bool =
   ## A function to see if a post id exists in the database
   ## The id supplied can be plain and un-escaped. It will be escaped and sanitized here.
   return db.has("SELECT local FROM posts WHERE id = " & escape(id) & ";")
 
-proc updatePost*(id, column, value: string): bool =
+proc updatePost*(db: DbConn, id, column, value: string): bool =
   ## A procedure to update a post using it's ID.
   ## Like with the updateUserByHandle and updateUserById procedures,
   ## the value parameter should be heavily sanitized and escaped to prevent a class of awful security holes.
   ## The id can be passed plain, it will be escaped.
-  update("posts","id = " & escape(id), column, value)
+  db.update("posts","id = " & escape(id), column, value)
 
-proc getPost*(id: string): Post =
+proc getPost*(db: DbConn, id: string): Post =
   ## A procedure to get a post object using it's ID.
   ## The id can be passed plain, it will be escaped.
   ## The output will be an unescaped
@@ -420,7 +425,7 @@ proc getPost*(id: string): Post =
 
   return constructPostFromRow(post.get)
 
-proc getPostsByUserHandle*(handle:string, limit: int = 15): seq[Post] =
+proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post] =
   ## A procedure to get any user's posts using the users handle
   ## The handle can be passed plainly, it will be escaped later.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
@@ -438,21 +443,21 @@ proc getPostsByUserHandle*(handle:string, limit: int = 15): seq[Post] =
       result.add(constructPostFromRow(post))
   return result
 
-proc getPostsByUserId*(id:string, limit: int = 15): seq[Post] =
+proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
   ## A procedure to get any user's posts using the User's ID.
   ## This behaves exactly like the getPostsByUserHandle procedure.
   
   # This procedure will piggy-back off of getHandleFromId and getPostsByUserId.
-  return getPostsByUserHandle(getHandleFromId(id),limit)
+  return db.getPostsByUserHandle(db.getHandleFromId(id),limit)
 
-proc getTotalPosts*(): int =
+proc getTotalPosts*(db: DbConn): int =
   ## A procedure to get the total number of local posts.
   result = 0
   for x in db.all("SELECT local FROM posts;"):
     inc(result)
   return result
 
-proc getLocalPosts*(limit: int = 15): seq[Post] =
+proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Post] =
   ## A procedure to get posts from local users only.
   ## Set limit to 0 to disable the limit and get all posts from local users.
   # This clearly does not work.

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="/css/style.css"/>
+		<title>$name$ - Pothole</title>
+	</head>
+	<body>
+		<header>
+			<h1>$name$</h1>
+			<nav>
+				<a href="/">Hjem</a>
+				<a href="/about/">Om denne instance</a>
+				<a href="/auth/sign_up">Registrer et nyt konto</a>
+				<a href="/auth/sign_in">Log ind</a>
+			</nav>
+		</header>
+		<main>
+			<p>$description$</p>
+            <h2>Personale for denne instance</h2>
+            $staff$
+			<h2>Regler for denne instance</h2>
+			$rules$
+			<h2>Hvad er det for en side?</h2>
+			<p>Den side som du lige nu kigger på er en del af <a href="https://da.wikipedia.org/wiki/Fediverse">Fediverset</a>, det betyder at du kan godt kommunikere med andre på forskellige hjemmesider, servere osv. hvis de implementere et protokol som hedder "ActivityPub"</p>
+			<p>Det er muligt at tale med alle som implementere denne protokol, men de mest kendte er Mastodon, Pleroma, Akkoma, Misskey, Calckey, Bonfire.</p>
+		</main>
+		<footer>
+			<p>Denne hjemmeside kører på <a href="https://xmoo.vern.cc/pothole/">Pothole $version$</a></p>
+		</footer>
+	</body>
+</html>

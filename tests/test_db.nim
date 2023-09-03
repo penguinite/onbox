@@ -1,6 +1,6 @@
 echo "Test 01 - Database Operations"
 
-import libpothole/[lib, db, user, post, debug]
+import libpothole/[lib, database, user, post, debug]
 
 echo("Version reported: ", version)
 echo("Database engine: ", dbEngine)
@@ -8,8 +8,10 @@ echo("Database engine: ", dbEngine)
 echo "Initializing database"
 
 when dbEngine == "sqlite":
-  if not db.init("main.db"):
-    error "Database failed to initialize","test02.startup"
+  var db: DbConn;
+  if not init(db, "main.db"):
+    error "Couldn't initialize database", "test_db"
+    
 
 when not defined(iHaveMyOwnStuffThanks):
   echo "Adding fake users"
@@ -23,7 +25,7 @@ when not defined(iHaveMyOwnStuffThanks):
 ## getTotalPosts
 stdout.write "\nTesting getTotalPosts() "
 try:
-  assert getTotalPosts() == len(fakeStatuses)
+  assert db.getTotalPosts() == len(fakeStatuses)
   stdout.write "Pass!\n"
 except:
   stdout.write "Fail!\n"
@@ -55,7 +57,7 @@ adminuser.email = "johnadminson@adminson.family.testinternal" # inb4 Google crea
 discard db.addUser(escape(adminuser))
 
 var adminFlag = false # This flag will get flipped when it sees the name "johnadminson" in the list of names that getAdmins() provides. If this happens then the test passes!
-for handle in getAdmins():
+for handle in db.getAdmins():
   if handle == adminuser.handle:
     adminFlag = true
     break
@@ -71,7 +73,7 @@ stdout.write "Testing getTotalLocalUsers() "
 # By this point we have added the fakeUsers + our fake admin user above.
 # So let's just test for this:
 try:
-  assert getTotalLocalUsers() > len(fakeHandles)
+  assert db.getTotalLocalUsers() > len(fakeHandles)
   stdout.write "Pass!\n"
 except:
   stdout.write "Fail!\n"
@@ -81,7 +83,7 @@ stdout.write "Testing userIdExists() "
 # We already have a user whose ID we know.
 # We can check for its ID easily.
 try:
-  assert userIdExists(adminuser.id) == true
+  assert db.userIdExists(adminuser.id) == true
   stdout.write("Pass!\n")
 except:
   stdout.write "Fail!\n"
@@ -90,7 +92,7 @@ except:
 stdout.write "Testing userHandleExists() "
 # Same exact thing but with the handle this time.
 try:
-  assert userHandleExists(adminuser.handle) == true
+  assert db.userHandleExists(adminuser.handle) == true
   stdout.write("Pass!\n")
 except:
   stdout.write "Fail!\n"
@@ -98,7 +100,7 @@ except:
 ## getUserById
 stdout.write "Testing getUserById() "
 try:
-  assert getUserById(adminuser.id) == adminuser
+  assert db.getUserById(adminuser.id) == adminuser
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -106,7 +108,7 @@ except:
 ## getUserByHandle
 stdout.write "Testing getUserByHandle() "
 try:
-  assert getUserByHandle(adminuser.handle) == adminuser
+  assert db.getUserByHandle(adminuser.handle) == adminuser
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -114,7 +116,7 @@ except:
 ## getIdFromHandle
 stdout.write "Testing getIdFromHandle() "
 try:
-  assert getIdFromHandle(adminuser.handle) == adminuser.id
+  assert db.getIdFromHandle(adminuser.handle) == adminuser.id
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -122,7 +124,7 @@ except:
 ## getHandleFromId
 stdout.write "Testing getHandleFromId() "
 try:
-  assert getHandleFromId(adminuser.id) == adminuser.handle
+  assert db.getHandleFromId(adminuser.id) == adminuser.handle
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -131,8 +133,8 @@ except:
 # Make the johnadminson user no longer admin(son)
 stdout.write "Testing updateUserByHandle() "
 try:
-  discard updateUserByHandle(adminuser.handle,"admin","false")
-  assert getUserByHandle(adminuser.handle).admin == false
+  discard db.updateUserByHandle(adminuser.handle,"admin","false")
+  assert db.getUserByHandle(adminuser.handle).admin == false
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -141,8 +143,8 @@ except:
 # Make the johnadminson user admin(son)
 stdout.write "Testing updateUserById() "
 try:
-  discard updateUserById(adminuser.id,"admin","true")
-  assert getUserById(adminuser.id).admin == true
+  discard db.updateUserById(adminuser.id,"admin","true")
+  assert db.getUserById(adminuser.id).admin == true
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -150,12 +152,12 @@ except:
 # For these next few tests, it helps to have a post we control every aspect of.
 var custompost = newPost("johnadminson","","@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Debate: is it pronounced Gif or Jif?",@["scout","soldier","pyro","demoman","heavy","engineer","medic","sniper","spy"],true)
 
-discard addPost(custompost)
+discard db.addPost(custompost)
 
 ## postIdExists
 stdout.write "Testing postIdExists() "
 try:
-  assert postIdExists(custompost.id) == true
+  assert db.postIdExists(custompost.id) == true
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -163,8 +165,8 @@ except:
 ## updatePost
 stdout.write "Testing updatePost() "
 try:
-  discard updatePost(custompost.id,"content","\"@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!\"")
-  assert getPost(custompost.id).content == "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
+  discard db.updatePost(custompost.id,"content","\"@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!\"")
+  assert db.getPost(custompost.id).content == "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -174,7 +176,7 @@ stdout.write "Testing getPost() "
 try:
   # We changed customPost because of the previous test, remember?
   custompost.content = "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
-  assert getPost(custompost.id) == custompost
+  assert db.getPost(custompost.id) == custompost
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -182,7 +184,7 @@ except:
 ## getPostsByUserHandle()
 stdout.write "Testing getPostsByUserHandle() "
 try:
-  assert getPostsByUserHandle("johnadminson",1) == @[custompost]
+  assert db.getPostsByUserHandle("johnadminson",1) == @[custompost]
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
@@ -190,7 +192,7 @@ except:
 ## getPostsByUserId()
 stdout.write "Testing getPostsByUserId() "
 try:
-  assert getPostsByUserId(adminuser.id,1) == @[custompost]
+  assert db.getPostsByUserId(adminuser.id,1) == @[custompost]
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
