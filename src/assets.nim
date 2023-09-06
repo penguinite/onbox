@@ -145,15 +145,6 @@ proc setAsset*(folder, id, name: string, data: openArray[byte]): bool =
       file.close()
     except:
       debug "The write failed? Okay, this environment is severely buggy. PLEASE INVESTIGATE BEFORE RE-LAUNCHING!", caller
-
-    debug "Saving debug buffer for later troubleshooting",caller
-    try:
-      createDir(lib.globalCrashDir)
-      var file = open(lib.globalCrashDir & "/data.bin")
-      file.write(lib.debugBuffer)
-      file.close()
-    except:
-      debug "The write failed? Okay, this environment is severely buggy. PLEASE INVESTIGATE BEFORE RE-LAUNCHING!", caller
     
     error "Failed to write user-upload file, debugging data is in " & lib.globalCrashDir,caller
 
