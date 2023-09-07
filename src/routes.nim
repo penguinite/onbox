@@ -25,29 +25,11 @@ import std/strutils except isEmptyOrWhitespace
 # From nimble/other sources
 import prologue
 
-proc init*(config: var Table[string, string], uploadsFolder, staticFolder: var string, db: var DbConn, configFile: string): string =
-  ## Initializes the routes module by setting up the global configs.
-  try:
-    config = conf.setup(configFile)
-    uploadsFolder = assets.initUploads(config)
-    staticFolder = assets.initStatic(config)
-    db.initFromConfig(config)
-    return ""
-  except CatchableError as e:
-    return e.msg
-
 #! Actual prologue routes
 
 # our serveStatic route reads from static/FILENAME and renders it as a template.
 # This helps keep everything simpler, since we just add our route to the string, it's asset and
 # Bingo! We've got a proper route that also does templating!
-
-# But this won't work for /auth/ routes!
-
-const staticURLs: Table[string,string] = {
-  "/": "index.html", 
-  "/about": "about.html", "/about/more": "about.html", # About pages, they run off of the same template.
-}.toTable
 
 proc prepareTable(config: Table[string, string], db: DbConn): Table[string,string] =
   var table = { # Config table for the templating library.
@@ -81,25 +63,3 @@ proc prepareTable(config: Table[string, string], db: DbConn): Table[string,strin
       table["version"] = lib.phVersion
 
   return table
-
-proc serveStatic*(ctx: Context) {.async, gcsafe.} =
-  var path = ctx.request.path
-
-  # If the path has a slash at the end, remove it.
-  # Except if the path is the root, aka. literally just a slash
-  if path.endsWith("/") and path != "/": path = path[0..^2]
-
-  resp renderTemplate(
-    getAsset(staticFolder, staticURLs[path]), # Get path from thing
-    prepareTable() # The command table, for the templating function.
-  )
-
-proc serveCSS*(ctx:Context) {.async, gcsafe.} =
-  resp plainTextResponse(getAsset(staticFolder,"style.css"), Http200)
-
-proc genStaticURLs(): seq[UrlPattern] =
-  for x in staticURLs.keys:
-    result.add(pattern(x, serveStatic))
-  result.add(pattern("/css/style.css",serveCSS))
-
-let staticURLRoutes* = genStaticURLs() # This will be used by the main pothole.nim file

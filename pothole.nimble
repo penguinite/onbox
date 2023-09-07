@@ -11,16 +11,8 @@ backend       = "c"
 
 # Add different switches depending on if we are in debug/release mode
 switch("app","console")
-switch("threads","on")
 switch("opt","speed")
 switch("stackTrace","on")
-switch("mm","orc")
-switch("gc","orc")
-switch("threadAnalysis","off")
-when defined(debug):
-  switch("define","debug")
-else:
-  switch("define","release")
 
 task clean, "Removes build folder if it exists":
   if dirExists(binDir):
@@ -41,7 +33,6 @@ after build:
 
 # Dependencies
 requires "nim >= 1.6.10"
-requires "prologue >= 0.6.4"
 requires "nimcrypto >= 0.5.4"
 
 const dbEngine{.strdefine.} = "sqlite"
