@@ -23,18 +23,14 @@ import std/tables
 import std/strutils except isEmptyOrWhitespace
 
 # From nimble/other sources
-import prologue
+import mummy
 
-proc init*(config: var Table[string, string], uploadsFolder, staticFolder: var string, db: var DbConn, configFile: string): string =
-  ## Initializes the routes module by setting up the global configs.
-  try:
-    config = conf.setup(configFile)
-    uploadsFolder = assets.initUploads(config)
-    staticFolder = assets.initStatic(config)
-    db.initFromConfig(config)
-    return ""
-  except CatchableError as e:
-    return e.msg
+let
+  config = setup(getConfigFilename())
+  staticFolder = initStatic(config)
+  db = initFromConfig(config)
+
+
 
 #! Actual prologue routes
 
@@ -44,7 +40,7 @@ proc init*(config: var Table[string, string], uploadsFolder, staticFolder: var s
 
 # But this won't work for /auth/ routes!
 
-const staticURLs: Table[string,string] = {
+const staticURLs*: Table[string,string] = {
   "/": "index.html", 
   "/about": "about.html", "/about/more": "about.html", # About pages, they run off of the same template.
 }.toTable
@@ -82,24 +78,30 @@ proc prepareTable(config: Table[string, string], db: DbConn): Table[string,strin
 
   return table
 
-proc serveStatic*(ctx: Context) {.async, gcsafe.} =
-  var path = ctx.request.path
+#! Mummy relies on gcsafe indirectly.
+## TODO: Figure out how to stop making it rely on that stupid pragma.
 
+proc serveStatic*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/html"
+
+  var path = req.uri
+
+  if path.endsWith("/") and path != "/": path = path[0..^2]
   # If the path has a slash at the end, remove it.
   # Except if the path is the root, aka. literally just a slash
-  if path.endsWith("/") and path != "/": path = path[0..^2]
 
-  resp renderTemplate(
-    getAsset(staticFolder, staticURLs[path]), # Get path from thing
-    prepareTable() # The command table, for the templating function.
-  )
-
-proc serveCSS*(ctx:Context) {.async, gcsafe.} =
-  resp plainTextResponse(getAsset(staticFolder,"style.css"), Http200)
-
-proc genStaticURLs(): seq[UrlPattern] =
-  for x in staticURLs.keys:
-    result.add(pattern(x, serveStatic))
-  result.add(pattern("/css/style.css",serveCSS))
-
-let staticURLRoutes* = genStaticURLs() # This will be used by the main pothole.nim file
+  {.gcsafe.}:
+    req.respond(200, headers, renderTemplate(
+      getAsset(staticFolder, staticURLs[path]),
+      prepareTable(config, db)
+    ))
+  
+proc serveCSS*(req: Request) = 
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/css"
+  
+  # If I change the "static/" to staticFolder then it won't work
+  # because nim is a shit language that doesn't recognize let as immutable.
+  {.gcsafe.}:
+    req.respond(200, headers, getAsset(staticFolder, "style.css"))

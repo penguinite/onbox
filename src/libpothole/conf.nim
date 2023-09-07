@@ -162,3 +162,9 @@ func getBool*(table: Table[string, string], section, key: string): bool =
 
 func getArray*(table: Table[string, string], section, key: string): seq[string] =
   return split(table[section & ":" & key])
+
+proc getConfigFilename*(): string =
+  result = "pothole.conf"
+  if existsEnv("POTHOLE_CONFIG"):
+    result = getEnv("POTHOLE_CONFIG")
+  return result

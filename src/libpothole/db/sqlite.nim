@@ -143,9 +143,10 @@ func init*(db: var DbConn, filename: string, noSchemaCheck:bool = false): bool =
 
   return true
 
-proc initFromConfig*(db: var DbConn, config: Table[string, string]) = 
+proc initFromConfig*(config: Table[string, string]): DbConn = 
   if config.exists("db","filename"):
-    discard db.init(config.getString("db","filename"))
+    discard init(result, config.getString("db","filename"))
+    return result
 
 proc uninit*(db: DbConn): bool =
   ## Uninitialize the database.
