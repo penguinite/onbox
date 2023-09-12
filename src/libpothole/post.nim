@@ -109,7 +109,7 @@ proc unescape*(post: Post): Post =
 proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: string = "", contexts: seq[string] = @[]): Post =
   var post: Post = Post()
   if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
-    error("Missing critical fields for post.","data.newPost")
+    error "Missing critical fields for post." 
 
   # Generate post id
   post.id = randomString(18)

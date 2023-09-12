@@ -1,6 +1,6 @@
 echo "Test 01 - Database Operations"
-
-import libpothole/[lib, database, user, post, debug]
+import std/tables
+import debug
 
 echo("Version reported: ", version)
 echo("Database engine: ", dbEngine)
@@ -8,10 +8,9 @@ echo("Database engine: ", dbEngine)
 echo "Initializing database"
 
 when dbEngine == "sqlite":
-  var db: DbConn;
-  if not init(db, "main.db"):
-    error "Couldn't initialize database", "test_db"
-    
+  var
+    config = {"db:filename": "main.db"}.toTable()
+    db = init(config)    
 
 when not defined(iHaveMyOwnStuffThanks):
   echo "Adding fake users"
@@ -29,6 +28,8 @@ try:
   stdout.write "Pass!\n"
 except:
   stdout.write "Fail!\n"
+  stdout.write "result: " & $db.getTotalPosts() & "\n"
+  stdout.write "len: " & $len(fakeStatuses) & "\n"
 
 #[ Uncomment this if you want, I guess?
 ## getLocalPosts
@@ -67,6 +68,7 @@ try:
   stdout.write "Pass!\n"
 except:
   stdout.write "Fail!\n"
+  stdout.write "getAdmins: " & $db.getAdmins() & "\n"
 
 ## getTotalLocalUsers
 stdout.write "Testing getTotalLocalUsers() "
@@ -77,6 +79,8 @@ try:
   stdout.write "Pass!\n"
 except:
   stdout.write "Fail!\n"
+  stdout.write "result: " & $db.getTotalLocalUsers() & "\n"
+  stdout.write "len: " & $len(fakeHandles) & "\n"
 
 ## userIdExists
 stdout.write "Testing userIdExists() "
@@ -84,9 +88,11 @@ stdout.write "Testing userIdExists() "
 # We can check for its ID easily.
 try:
   assert db.userIdExists(adminuser.id) == true
-  stdout.write("Pass!\n")
+  stdout.write "Pass!\n"
 except:
   stdout.write "Fail!\n"
+  stdout.write "result: " & $db.userIdExists(adminuser.id) & "\n"
+  stdout.write "id: " & adminuser.id & "\n"
 
 ## userHandleExists
 stdout.write "Testing userHandleExists() "
@@ -96,38 +102,50 @@ try:
   stdout.write("Pass!\n")
 except:
   stdout.write "Fail!\n"
+  stdout.write "result: " & $db.userHandleExists(adminuser.handle) & "\n"
+  stdout.write "handle: " & adminuser.handle & "\n"
 
 ## getUserById
 stdout.write "Testing getUserById() "
 try:
   assert db.getUserById(adminuser.id) == adminuser
-  stdout.write("Pass!\n")
+  stdout.write "Pass!\n"
 except:
-  stdout.write("Fail!\n")
+  stdout.write "Fail!\n"
+  stdout.write "result: " & $db.getUserById(adminuser.id) & "\n"
+  stdout.write "adminuser: " & $adminuser & "\n"
 
 ## getUserByHandle
 stdout.write "Testing getUserByHandle() "
 try:
   assert db.getUserByHandle(adminuser.handle) == adminuser
-  stdout.write("Pass!\n")
+  stdout.write "Pass!\n"
 except:
-  stdout.write("Fail!\n")
+  stdout.write "Fail!\n"
+  stdout.write "result: " & $db.getUserByHandle(adminuser.handle) & "\n"
+  stdout.write "adminuser: " & $adminuser & "\n"
 
 ## getIdFromHandle
 stdout.write "Testing getIdFromHandle() "
 try:
   assert db.getIdFromHandle(adminuser.handle) == adminuser.id
-  stdout.write("Pass!\n")
+  stdout.write "Pass!\n"
 except:
-  stdout.write("Fail!\n")
+  stdout.write "Fail!\n"
+  stdout.write "result: " & db.getIdFromHandle(adminuser.handle) & "\n"
+  stdout.write "handle: " & adminuser.handle & "\n"
+  stdout.write "id: " & adminuser.id & "\n"
 
 ## getHandleFromId
 stdout.write "Testing getHandleFromId() "
 try:
   assert db.getHandleFromId(adminuser.id) == adminuser.handle
-  stdout.write("Pass!\n")
+  stdout.write "Pass!\n"
 except:
-  stdout.write("Fail!\n")
+  stdout.write "Fail!\n"
+  stdout.write "result: " & db.getHandleFromId(adminuser.handle) & "\n"
+  stdout.write "id: " & adminuser.id & "\n"
+  stdout.write "handle: " & adminuser.handle & "\n"
 
 ## updateUserByHandle
 # Make the johnadminson user no longer admin(son)

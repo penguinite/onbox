@@ -16,10 +16,10 @@
 #
 # db/sqlite.nim:
 ## A database backend for sqlite3 (Using the tiny_sqlite module)
-## This backend is very much early in development and it is actually untested
+## This backend is somewhat mature now.
 
-# TODO: Finish this.
-# TODO TODO: Also only document the stuff thats different between this module and the postgres module. Nothing else.
+# TODO: Implement a connection-pooling mechanism
+# What I mean by this is, basically convert this library into a Channel so that threads can communicate.
 
 # From somewhere in Pothole
 import ../[user, post, lib, conf]
@@ -31,7 +31,7 @@ import std/tables
 # From somewhere else (nimble etc.)
 import tiny_sqlite
 
-export DbConn
+export DbConn, isOpen
 
 proc has(db:DbConn,statement:string): bool =
   ## A quick helper function to check if a thing exists.
@@ -63,113 +63,95 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
 "local": "BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether the post originated from this server or other servers.
 
-func init*(db: var DbConn, filename: string, noSchemaCheck:bool = false): bool =
-  ## Do any initialization work.
-  const caller = "db/sqlite.init" # Just so we dont repeat the same thing a whole lot.
+proc createDbTableWithColsTable(db: DbConn, tablename: string, cols: OrderedTable[string,string]):  bool =
+  ## We use this procedure to create a SQL statement that creates a table using the hard-coded rules
+  # We build the sql statement slowly.
+  var sqlStatement = "CREATE TABLE IF NOT EXISTS " & tablename & " ("
+  for key, value in cols.pairs:
+    sqlStatement.add("$# $#," % [key, value])
+  sqlStatement = sqlStatement[0 .. ^2] # Remove last comma
+  sqlStatement.add(");") # Add final two characters
 
-  if filename.startsWith("__eat_flaming_death"):
-    debug "Someone or something used the forbidden code", caller
-    return false
-  
-  if isEmptyOrWhitespace(filename):
-    debug "String is mostly empty or whitespace. ", caller
-    return false
-
-  debug "Opening database at " & filename, caller
-  db = openDatabase(filename) 
-
-  # Create tables by running through the postCols and userCols tables.
-  var sqlStatement = "CREATE TABLE IF NOT EXISTS users ("
-  for key, value in usersCols.pairs:
-    sqlStatement.add(key & " " & value & ",")
-  sqlStatement = sqlStatement[0 .. ^2]
-  sqlStatement.add(");")
-
-  try: # Try to run it and pray for good luck
+  # Now we run and hope for the best!
+  try:
     db.execScript(sqlStatement)
-  except:
-    error "Failed to create the users table!", caller
+    return true
+  except CatchableError as err:
+    log "Error whilst creating table " & tablename & ": " & err.msg
+    return false
 
-  # And now the posts table
-  sqlStatement = "CREATE TABLE IF NOT EXISTS posts (";
-  for key, value in postsCols.pairs:
-    sqlStatement.add(key & " " & value & ",")
-  sqlStatement = sqlStatement[0 .. ^2]
-  sqlStatement.add(");")
+proc isDbTableSameAsColsTable(db: DbConn, tablename: string, table: OrderedTable[string, string]) =
+  ## We use this procedure to compare two tables against each other and see if there are any mismatches.
+  ## A mismatch could signify someone forgetting to complete the migration instructions.
+  var cols: seq[string] = @[] # To store the columns that are currently in the database
+  var missing: seq[string] = @[] # To store the columns missing from the database.
 
-  try: # Same as before
-    db.execScript(sqlStatement)
-  except:
-    error "Failed to create the posts table!", caller
-  
-  # Now skip the schema check
-  if noSchemaCheck:
-    debug "Schema check skipped.", caller
-    return true # All thats left is the schema check. So let's return early.
-
-  var cols: seq[string] = @[]
-  for row in db.all("PRAGMA table_info('users');"):
+  for row in db.all("PRAGMA table_info('" & tablename & "');"):
     cols.add(row[1].strVal)
 
-  var missing: seq[string] = @[]
-  for key in usersCols.keys:
-    if key in cols:
-      continue
-    else:
+  for key in table.keys:
+    if key notin cols:
       missing.add(key)
-  
+
   if len(missing) > 0:
-    debug "Major difference between built-in schema and currently-used schema", caller
-    debug "Did you forget to migrate? Please migrate before re-running this program", caller
-    error "Missing columns from users schema:\n" & $missing, caller
+    log "Major difference between built-in schema and currently-used schema"
+    log "Did you forget to migrate? Please migrate before re-running this program"
+    error "Missing columns from " & tablename & " schema:\n" & $missing
 
-  # Now we do the same above schema check but for the posts table.
+proc init*(config: Table[string, string], schemaCheck: bool = true): DbConn  =
+  # Some checks to run before we actually open the database
+  if not config.exists("db","filename"):
+    log "Couldn't find mandatory key \"filename\" in section \"db\""
+    log "Using \"main.db\" as substitute instead"
 
-  cols = @[]
-  for row in db.all("PRAGMA table_info('posts');"):
-    cols.add(row[1].strVal)
+  let fn = config.getStringOrDefault("db","filename","main.db")
 
-  missing = @[]
-  for key in postsCols.keys:
-    if key in cols:
-      continue
-    else:
-      missing.add(key)
+  log "Opening sqlite3 database at ", fn
+
+  if fn.startsWith("__eat_flaming_death"):
+    log "Someone or something used the forbidden code. Quietly returning... Stuff might break!"
+    return
+
+  # Open database and initialize the users and posts table.
+  result = openDatabase(fn)
   
-  if len(missing) > 0:
-    debug "Major difference between hard-coded schema and currently-used schema", caller
-    debug "Did you forget to migrate? Please migrate before re-running this program", caller
-    error "Missing columns from posts schema:\n" & $missing, caller
+  # Create the tables first
+  if not createDbTableWithColsTable(result, "users", usersCols): error "Couldn't create users table!"
+  if not createDbTableWithColsTable(result, "posts", postsCols): error "Couldn't create posts table!"
 
-  return true
+  # Now we check the schema to make sure it matches the hard-coded one.
+  if schemaCheck:
+    isDbTableSameAsColsTable(result, "users", usersCols)
+    isDbTableSameAsColsTable(result, "posts", postsCols)
 
-proc initFromConfig*(config: Table[string, string]): DbConn = 
-  if config.exists("db","filename"):
-    discard init(result, config.getString("db","filename"))
-    return result
+  return result
+
+proc quickInit*(config: Table[string, string]): DbConn = 
+  ## This procedure quickly initializes the database by skipping a bunch of checks.
+  ## It assumes that you have done these checks on startup by running the regular init() proc once.
+  return openDatabase(config.getStringOrDefault("db","filename","main.db"))
 
 proc uninit*(db: DbConn): bool =
   ## Uninitialize the database.
   ## Or close it basically...
   try:
     db.close()
-  except:
-    error "Couldn't close the database", "db/sqlite.uninit"
+  except CatchableError as err:
+    error "Couldn't close the database: " & err.msg
 
 proc addUser*(db: DbConn, user: User): bool = 
-  var caller = "db/sqlite.addUser"
+  
   ## Add a user to the database
   ## This procedure expects an escaped user to be handed to it.
   if db.has("SELECT local FROM users WHERE handle = " & user.handle & ";"):
-    debug "User with handle " & user.handle & " already exists!", caller
+    log "User with handle " & user.handle & " already exists!"
     return false # Simply exit
 
   if db.has("SELECT local FROM users WHERE id = " & user.id & ";"):
-    debug "User with id " & user.id & " already exists!", caller
+    log "User with id " & user.id & " already exists!"
     return false # Return false if id already exists
 
   # Now we loop over the fields and build an SQL statement as we go.
-  # TODO: Look into using macros or templates to automatically generate this code.
   var sqlStatement = "INSERT INTO users("
 
   for key, value in user.fieldPairs:
@@ -196,8 +178,12 @@ proc addUser*(db: DbConn, user: User): bool =
   try:
     db.exec(sqlStatement)
   except:
-    debug "sqlStatement: " & sqlStatement, caller
-    error "Failed to insert user!", caller
+    log "sqlStatement: " & sqlStatement
+    when not defined(phPrivate):
+      log "Failed to insert user!"
+      return
+    else:
+      error "Failed to insert user!"
 
   return true
 
@@ -247,7 +233,7 @@ proc constructUserFromRow*(row: ResultRow): User =
     when result.get(key) is int:
       result.get(key) = int64ToInt(row[i].intVal)
     when result.get(key) is UserType:
-      result.get(key) = toUserType(unescape(row[i].strVal))
+      result.get(key) = toUserType(unescape(row[i].strVal, "", ""))
   
   return result.unescape()
 
@@ -256,7 +242,7 @@ proc getUserById*(db: DbConn, id: string): User =
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
   ## This procedure expects a regular ID, it will sanitize and escape it by default.
   if not db.userIdExists(id):
-    error "Something or someone tried to get a non-existent user with the id \"" & id & "\"", "db/sqlite.getUserById"
+    error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
 
   return constructUserFromRow(db.one("SELECT * FROM users WHERE id = " & escape(id) & ";").get)
 
@@ -265,7 +251,7 @@ proc getUserByHandle*(db: DbConn, handle: string): User =
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
   ## This procedure expects a regular handle, it will sanitize and escape it by default.
   if not db.userHandleExists(handle):
-    error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\"", "db/sqlite.getUserByHandle"
+    error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\""
     
   return constructUserFromRow(db.one("SELECT * FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get)
 
@@ -314,7 +300,7 @@ proc getIdFromHandle*(db: DbConn, handle: string): string =
   ## A function to convert a user handle to an id.
   ## This procedure expects a regular handle, it will sanitize and escape it by default.
   if not db.userHandleExists(handle):
-    error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\"", "db/sqlite.getIdFromHandle"
+    error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\""
   
   return unescape(db.one("SELECT id FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get()[0].strVal,"","")
 
@@ -322,7 +308,7 @@ proc getHandleFromId*(db: DbConn, id: string): string =
   ## A function to convert a  id to a handle.
   ## This procedure expects a regular ID, it will sanitize and escape it by default.
   if not db.userIdExists(id):
-    error "Something or someone tried to get a non-existent user with the id \"" & id & "\"", "db/sqlite.getHandleFromId"
+    error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
   
   return unescape(db.one("SELECT handle FROm users WHERE id = " & escape(id) & ";").get()[0].strVal,"","")
 
@@ -399,8 +385,11 @@ proc addPost*(db: DbConn, post: Post): bool =
   try:
     db.exec(sqlStatement)
   except:
-    debug "sqlStatement: " & sqlStatement, caller
-    error "Failed to insert post! See debug buffer!", caller
+    log "sqlStatement: " & sqlStatement
+    when not defined(phPrivate):
+      log "Failed to insert post!"
+    else:
+      error "Failed to insert post!"
 
   return true
 
@@ -422,7 +411,7 @@ proc getPost*(db: DbConn, id: string): Post =
   ## The output will be an unescaped
   var post = db.one("SELECT * FROM posts WHERE id = " & escape(id) & ";")
   if isNone(post):
-    error "Something or someone tried to retrieve a non-existent post with the ID of \"" & id & "\"", "sqlite/db.getPost"
+    error "Something or someone tried to retrieve a non-existent post with the ID of \"" & id & "\""
 
   return constructPostFromRow(post.get)
 

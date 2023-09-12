@@ -20,7 +20,7 @@
 ## data from a shared config table.
 
 import std/[tables, os]
-from std/strutils import split, startsWith, endsWith, splitLines, parseBool, parseInt
+import std/strutils except isEmptyOrWhitespace
 import lib
 
 # Required configuration file options to check for.
@@ -125,7 +125,7 @@ proc setupInput*(input: string): Table[string, string] =
   for x in requiredConfigOptions:
     if not result.hasKey(x):
       var list = x.split(":")
-      error("Missing key \"" & list[1] & "\" in section \"" & list[0] & "\"", "conf.setupInput")
+      error "Config file is missing essential key \"", list[1], "\" in section \"", list[0], "\""
   return result
 
 proc setup*(filename:string): Table[string,string] =
@@ -133,7 +133,7 @@ proc setup*(filename:string): Table[string,string] =
   ## The actual parsing is done in the load() function.
   ## Array splitting is done in split()
   if not fileExists(filename):
-    error("File \"" & filename & "\" does not exist.", "conf.setup")
+    error "File \"$#\" does not exist." % [filename]
   
   return setupInput(open(filename).readAll()) 
 
@@ -168,3 +168,13 @@ proc getConfigFilename*(): string =
   if existsEnv("POTHOLE_CONFIG"):
     result = getEnv("POTHOLE_CONFIG")
   return result
+
+proc isNil*(table: Table[string, string]): bool =
+  var i = 0;
+  for key in table.keys:
+    inc(i)
+
+  if i > 0:
+    return false
+  else:
+    return true

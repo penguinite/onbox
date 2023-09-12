@@ -25,11 +25,17 @@ import std/strutils except isEmptyOrWhitespace
 # From nimble/other sources
 import mummy
 
-let
-  config = setup(getConfigFilename())
-  staticFolder = initStatic(config)
-  db = initFromConfig(config)
+var
+  config {.threadvar.}: Table[string, string]
+  staticFolder {.threadvar.}: string
+  db {.threadvar.}: DbConn
 
+proc preRouteInit() =
+  ## This route is ran before every single request.
+  ## It has very little overhead yet it ensures that all the data we need is available for every request.
+  if config.isNil(): config = setup(getConfigFilename())
+  if staticFolder == "": staticFolder = initStatic(config)
+  if not db.isOpen(): db = quickInit(config)
 
 
 #! Actual prologue routes
@@ -56,6 +62,7 @@ proc prepareTable(config: Table[string, string], db: DbConn): Table[string,strin
 
    # Add admins and other staff
   if config.getBool("web","show_staff"):
+    
     table["staff"] = "" # Clear whatever is in it first.
     # Build the list, item by item using database functions.
     table["staff"].add("<ul>")
@@ -82,6 +89,7 @@ proc prepareTable(config: Table[string, string], db: DbConn): Table[string,strin
 ## TODO: Figure out how to stop making it rely on that stupid pragma.
 
 proc serveStatic*(req: Request) =
+  preRouteInit()
   var headers: HttpHeaders
   headers["Content-Type"] = "text/html"
 
@@ -91,11 +99,10 @@ proc serveStatic*(req: Request) =
   # If the path has a slash at the end, remove it.
   # Except if the path is the root, aka. literally just a slash
 
-  {.gcsafe.}:
-    req.respond(200, headers, renderTemplate(
-      getAsset(staticFolder, staticURLs[path]),
-      prepareTable(config, db)
-    ))
+  req.respond(200, headers, renderTemplate(
+    getAsset(staticFolder, staticURLs[path]),
+    prepareTable(config, db)
+  ))
   
 proc serveCSS*(req: Request) = 
   var headers: HttpHeaders
@@ -103,5 +110,4 @@ proc serveCSS*(req: Request) =
   
   # If I change the "static/" to staticFolder then it won't work
   # because nim is a shit language that doesn't recognize let as immutable.
-  {.gcsafe.}:
-    req.respond(200, headers, getAsset(staticFolder, "style.css"))
+  req.respond(200, headers, getAsset(staticFolder, "style.css"))

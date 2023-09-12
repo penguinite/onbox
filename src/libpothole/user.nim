@@ -97,7 +97,7 @@ proc newUser*(handle: string = "", name: string = "", password: string = "", loc
   if not isEmptyOrWhitespace(newhandle):
     result.handle = newhandle
   else:
-    error "No proper handle was supplied!", "user.newUser()"
+    error "No proper handle was supplied!"
 
   # Use handle as name if name isn't supplied
   if not isEmptyOrWhitespace(name):
@@ -122,7 +122,7 @@ proc escape*(user: User, skipChecks: bool = false): User =
   # We only need handle and password, the rest can be guessed or blank.
   if not skipChecks:
     if isEmptyOrWhitespace(user.handle):
-      error("Missing required fields for adding users\nUser: " & $user,"user.escape")
+      error "Missing required fields for adding users\nUser: " & $user
 
   result.handle = sanitizeHandle(user.handle)
   result.email = sanitizeHandle(user.email)

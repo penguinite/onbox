@@ -26,8 +26,8 @@ import std/strutils except isEmptyOrWhitespace
 when defined(noEmbeddingAssets):
   {.warning: "Not embedding assets is a really bad idea.".}
   proc getEmbeddedAsset*(fn: string): string = 
-    debug "This build does not embed assets, thus getEmbeddedAsset does not work.", "assets.getEmbeddedAsset"
-    error "Someone or something has attempted to fetch an asset with the filename " & fn & "\nUnfortunately assets were not embedded in this build, and so the only reasonable way out is to throw an error\nand force the administrator to setup the files properly for the next startup", "assets.getEmbeddedAsset"
+    debug "This build does not embed assets, thus getEmbeddedAsset does not work."
+    error "Someone or something has attempted to fetch an asset with the filename " & fn & "\nUnfortunately assets were not embedded in this build, and so the only reasonable way out is to throw an error\nand force the administrator to setup the files properly for the next startup"
 else:
   func getEmbeddedAsset*(fn: string): string = 
     # We wrap it over a function so we dont immediately use up the RAM.
@@ -135,17 +135,17 @@ proc setAsset*(folder, id, name: string, data: openArray[byte]): bool =
   except CatchableError as err:
     # Not being able to write to a file should be enough to error out and force
     # the operator to troubleshoot
-    var caller = "assets.setAsset(writeStage)"
-    debug "The user upload failed because of " & err.msg, caller
-    debug "Saving data as data.bin for later troubleshooting",caller
+    
+    log "The user upload failed because of ", err.msg
+    log "Saving data as data.bin for later troubleshooting"
     try:
       createDir(lib.globalCrashDir)
       var file = open(lib.globalCrashDir & "/data.bin")
       file.write(data)
       file.close()
     except:
-      debug "The write failed? Okay, this environment is severely buggy. PLEASE INVESTIGATE BEFORE RE-LAUNCHING!", caller
+      log "The write failed? Okay, this environment is severely buggy. PLEASE INVESTIGATE BEFORE RE-LAUNCHING!"
     
-    error "Failed to write user-upload file, debugging data is in " & lib.globalCrashDir,caller
+    error "Failed to write user-upload file, debugging data is in " & lib.globalCrashDir
 
   

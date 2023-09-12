@@ -25,7 +25,7 @@
 
 # For macro definition
 from std/macros import newIdentNode, newDotExpr, strVal
-from std/strutils import Whitespace
+from std/strutils import Whitespace, `%`
 
 # App version
 const phVersion* {.strdefine.}: string = "0.0.2" ## This constant allows you to customize the libpothole version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
@@ -36,32 +36,25 @@ const globalCrashDir* {.strdefine.}: string = "CAR_CRASHED_INTO_POTHOLE!"
 
 const kdf* = 1 ## The latest Key Derivation Function supported by this build of libpothole, check out the KDF section in the DESIGN.md document for more information.
 
-proc exit*() {.noconv.} =
-  ## Dont ask me why this exists. It's like a stray cat, it appeared once and now I can't get rid of it.
-  ## Or well, I *can* get rid of it, I just haven't bothered to, don't bother the cat please!
-  quit(1)
+when not defined(phNoLog):
+  template log*(str: varargs[string, `$`]) =
+    var msg = ""
+    for s in str:
+      msg.add(s)
+    stdout.write("($#:$#): $#\n" % [instantiationInfo().filename, $instantiationInfo().line, msg])
+else:
+  template log*(msg: varargs[string, `$`]) = return
 
-func debug*(str, caller: string) =
-  ## Prints a string out to stderr as it may contain
-  ## useful debugging info.
-  var toBeAdded = "(" & caller & "): " & str
-
-  when not defined(phPrivate) or defined(phNoDebug):
-    debugEcho(toBeAdded)
-
-func error*(str,caller: string) =
+template error*(str: varargs[string, `$`]) =
   ## Exits the program, writes a stacktrace and thats it.
-  ## 
-  ## Yes, this technically does have side-effects but when
-  ## we encounter a catastrophic error, we can't be worried
-  ## about mathematical concepts and programming paradigms.
-  {.cast(noSideEffect).}:
-    stderr.writeLine("\nPrinting stacktrace...")
-    writeStackTrace()
+  stderr.write("\nPrinting stacktrace...\n")
+  writeStackTrace()  
 
-    stderr.writeLine("\nError (" & caller & "): " & str)
-    quit(1)
-
+  var msg = ""
+  for s in str:
+    msg.add(s)
+  stderr.write("\n[ERROR] ($#:$#): $#\n" % [instantiationInfo().filename, $instantiationInfo().line, msg])
+  quit(1)
 
 macro get*(obj: object, fld: string): untyped =
   ## A procedure to get a field of an object using a string.

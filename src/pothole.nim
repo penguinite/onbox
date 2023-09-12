@@ -15,13 +15,16 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From Pothole
-import libpothole/[lib, conf]
+import libpothole/[lib, conf, database]
 import routes
 
 # From standard library
-from std/os import existsEnv, getEnv
-from std/strutils import split, parseInt, toLower
-from std/tables import keys
+import std/strutils except isEmptyOrWhitespace
+import std/[os, tables]
+
+proc exit() {.noconv.} =
+  echo "Interrupted by Ctrl+C"
+  quit(1)
 
 # From nimble
 import mummy, mummy/routers
@@ -31,7 +34,7 @@ echo "Copyright © Leo Gavilieau 2022-2023."
 echo "Licensed under the GNU Affero General Public License version 3 or later" 
 
 # Catch Ctrl+C so we can exit without causing a stacktrace
-setControlCHook(lib.exit)
+setControlCHook(exit)
 
 echo "Using " & getConfigFilename() & " as config file"
 
@@ -40,15 +43,18 @@ var port = 3500
 if config.exists("web","port"):
   port = config.getInt("web","port")
 
+when dbEngine == "sqlite":
+  discard init(config)
+
 echo "Running on http://localhost:" & $port
 
 var router: Router
 
 for url in staticURLs.keys:
   router.get(url, serveStatic)
-
+  if not url.endsWith('/'):
+    router.get(url & "/", serveStatic)
 router.get("/css/style.css", serveCSS)
 
 let server = newServer(router)
-
 server.serve(Port(port))

@@ -28,18 +28,12 @@
 ## one database.
 
 
-when defined(dbEngine):
-  const dbEngine* {.strdefine.}: string = "" ## The dbEngine constant is used to signify what database engine the user wants at compile-time.
-else:
-  when defined(docs):
-    const dbEngine* = "docs"
-  else:
-    const dbEngine* = "sqlite"
-
-when dbEngine == "postgres":
-  import db/postgres
-  export postgres
+const dbEngine* {.strdefine.}: string = "sqlite" ## The dbEngine constant is used to signify what database engine the user wants at compile-time.
 
 when dbEngine == "sqlite":
   import db/sqlite
   export sqlite
+
+when dbEngine == "postgres":
+  import db/postgres
+  export postgres

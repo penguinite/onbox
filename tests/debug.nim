@@ -15,11 +15,11 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # debug.nim:
-## Common procedures for debugging. Right now this is used to create
-## fake users and fake posts. You will not need this, and you should 
-## not depend on this in your app at all!
+## Common procedures for debugging. This is only useful for creating
+## fake users and fake posts (for testing)
 
-import user, post, crypto, lib
+import libpothole/[user, database, post, crypto, lib]
+export user, post, crypto, lib, database
 
 const fakeNames = @["Jeremy", "Jane Doe", "pyro", "Tavish Finnegan DeGroo", "Mikhail", "Dell Conagher", "Ludwig Humboldt", "Mundy", "spy"]
 const fakeHandles* = @["scout","soldier","pyro","demoman","heavy","engineer", "medic", "sniper", "spy"]
