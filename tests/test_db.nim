@@ -185,9 +185,10 @@ stdout.write "Testing updatePost() "
 try:
   discard db.updatePost(custompost.id,"content","\"@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!\"")
   assert db.getPost(custompost.id).content == "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
-  stdout.write("Pass!\n")
+  stdout.write "Pass!\n"
 except:
-  stdout.write("Fail!\n")
+  stdout.write "Fail!\n"
+  stdout.write "result: " & db.getPost(custompost.id).content & "\n"
 
 ## getPost
 stdout.write "Testing getPost() "

@@ -28,7 +28,13 @@ import std/strutils except isEmptyOrWhitespace
 import std/times
 
 # ActivityPub Object/Post
-type 
+type
+
+  # Generic "Like" object
+  Favorite* = object
+    reactor*: string # The reactor's id
+    reaction*: string # The reactor's reaction
+
   Post* = object
     id*: string # A unique id.
     recipients*: seq[string] # A sequence of recipient's handles.
@@ -37,8 +43,9 @@ type
     content*: string # The actual content of the post
     written*: string # A timestamp of when the Post was created
     updated*: string # A timestamp of when then Post was last edited
-    local*:bool # A boolean indicating whether or not the post \
-                # came from the local server or external servers
+    local*:bool # A boolean indicating whether or not the post came from the local server or external servers
+    favorites*: seq[Favorite]
+
 
 when dbEngine == "sqlite":
   # Sqlite is deranged.
@@ -66,6 +73,12 @@ when dbEngine == "sqlite":
     
     return result
 
+func escape*(obj: Favorite): Favorite =
+  ## A function to escape a Favorite object
+  result.reactor = escape(obj.reactor)
+  result.reaction = escape(obj.reaction)
+  return result
+
 proc escape*(post: Post): Post =
   ## A procedure to escape a Post object
   result = post
@@ -83,6 +96,17 @@ proc escape*(post: Post): Post =
         newseq.add(escape(x))
       result.get(key) = newseq
 
+    when typeof(val) is seq[Favorite]:
+      var newseq: seq[Favorite] = @[]
+      for reaction in val:
+        newseq.add(escape(reaction))
+      result.get(key) = newseq
+
+  return result
+
+func unescape*(obj: Favorite): Favorite =
+  result.reaction = unescape(obj.reaction)
+  result.reactor = unescape(obj.reactor)
   return result
 
 proc unescape*(post: Post): Post =
@@ -102,6 +126,12 @@ proc unescape*(post: Post): Post =
       var newseq: seq[string] = @[]
       for x in val:
         newseq.add(unescape(x,"",""))
+      result.get(key) = newseq
+
+    when typeof(val) is seq[Favorite]:
+      var newseq: seq[Favorite] = @[]
+      for x in val:
+        newseq.add(unescape(x))
       result.get(key) = newseq
 
   return result
@@ -139,3 +169,12 @@ func `$`*(obj: Post): string =
     result.add("\"" & key & "\": \"" & $val & "\",")
   result = result[0 .. len(result) - 2]
   result.add("]")
+
+proc convertFromPlain*(sequence: seq[string]): seq[Favorite] = 
+  for thing in sequence:
+    var stuff = split(thing, '\\')
+    var obj = Favorite()
+    obj.reaction = stuff[0]
+    obj.reactor = stuff[1]
+    result.add(obj)
+  return result

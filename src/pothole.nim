@@ -56,5 +56,7 @@ for url in staticURLs.keys:
     router.get(url & "/", serveStatic)
 router.get("/css/style.css", serveCSS)
 
+when defined(debug): router.get("/showRandomPosts/", randomPosts)
+
 let server = newServer(router)
 server.serve(Port(port))

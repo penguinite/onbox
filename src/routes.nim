@@ -85,9 +85,6 @@ proc prepareTable(config: Table[string, string], db: DbConn): Table[string,strin
 
   return table
 
-#! Mummy relies on gcsafe indirectly.
-## TODO: Figure out how to stop making it rely on that stupid pragma.
-
 proc serveStatic*(req: Request) =
   preRouteInit()
   var headers: HttpHeaders
@@ -103,6 +100,38 @@ proc serveStatic*(req: Request) =
     getAsset(staticFolder, staticURLs[path]),
     prepareTable(config, db)
   ))
+
+
+when defined(debug):
+  proc randomPosts*(req: Request) =
+    preRouteInit()
+    var headers: HttpHeaders
+    headers["Content-Type"] = "text/html"
+
+    var response = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Showing local posts</title><link rel="stylesheet" href="/css/style.css"/></head><body>"""
+    for post in db.getLocalPosts(0):
+      response.add("<article>")
+      response.add("<p>From " & post.sender & "<br>")
+      if len(post.recipients) < 1:
+        for person in post.recipients:
+          response.add("To: " & person & "</p>")
+      else:
+        response.add("To: Everyone!</p>")
+      response.add("<p>" & post.content & "</p>")
+      if post.local:
+        response.add("<p>Local post, Written: " & post.written & "</p>")
+      else:
+        response.add("<p>Written: " & post.written & "</p>")
+      if len(post.favorites) > 0:
+        response.add("<ul>")
+        for reaction in post.favorites:
+          response.add("<li>" & reaction.reactor & " reacted with " & reaction.reaction & "</li>")
+        response.add("</ul>")
+      response.add("</article><hr>")
+
+    response.add("</body></html>")
+
+    req.respond(200, headers, response)
   
 proc serveCSS*(req: Request) = 
   var headers: HttpHeaders

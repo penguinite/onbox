@@ -61,7 +61,8 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 "content": "VARCHAR(65535)", # A string containing the actual post's contents.
 "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
-"local": "BOOLEAN NOT NULL"}.toOrderedTable # A boolean indicating whether the post originated from this server or other servers.
+"local": "BOOLEAN NOT NULL", # A boolean indicating whether the post originated from this server or other servers.
+"favorites": "VARCHAR(65535)"}.toOrderedTable 
 
 proc createDbTableWithColsTable(db: DbConn, tablename: string, cols: OrderedTable[string,string]):  bool =
   ## We use this procedure to create a SQL statement that creates a table using the hard-coded rules
@@ -324,26 +325,27 @@ proc constructPostFromRow*(row: ResultRow): Post =
   # two specific functions but we don't have to re-write this
   # even if we add new things to the User object. EXCEPT!
   # if we introduce new data types to the User object
-  var i: int = 0;
+  var i: int = -1;
 
   for key,value in result.fieldPairs:
     inc(i)
     # If its string, add it surrounding quotes
     # Otherwise add it whole
     when result.get(key) is bool:
-      result.get(key) = parseBool($(row[i - 1].intval))
+      result.get(key) = parseBool($(row[i].intval))
     when result.get(key) is string:
-      result.get(key) = row[i - 1].strVal
+      result.get(key) = row[i].strVal
     when result.get(key) is seq[string]:
-      result.get(key) = split(row[i - 1].strVal, ",")
+      result.get(key) = split(row[i].strVal, ",")
+    when result.get(key) is seq[Favorite]:
+      if len(row[i].strVal) > 0:
+        result.get(key) = convertFromPlain(split(row[i].strVal, ";"))
 
   return result.unescape()
 
 proc addPost*(db: DbConn, post: Post): bool =
   ## A function add a post into the database
-  ## This function expects an escaped post to be inputted to it.
-  var caller = "db/sqlite.addPost"
-  
+  ## This function expects an escaped post to be inputted to it.  
   if db.has("SELECT local FROM posts WHERE id = \"" & post.id & "\";"):
     return false # Someone has tried to add a post twice. We just won't add it.
       
@@ -366,7 +368,7 @@ proc addPost*(db: DbConn, post: Post): bool =
     when post.get(key) is string:
       sqlStatement.add("'")
       sqlStatement.add(value)
-      sqlStatement.add("'\n")
+      sqlStatement.add("'")
     
     when post.get(key) is seq[string]:
       sqlStatement.add("'")
@@ -375,7 +377,14 @@ proc addPost*(db: DbConn, post: Post): bool =
     
     when post.get(key) is bool:
       sqlStatement.add($value)
-      sqlStatement.add("")
+
+    when post.get(key) is seq[Favorite]:
+      sqlStatement.add("'")
+      for x in value:
+        sqlStatement.add("" & x.reaction & "\\" & x.reactor & ";")
+      if len(value) > 0:
+        sqlStatement = sqlStatement[0 .. ^2]
+      sqlStatement.add("'")
     
     sqlStatement.add(",")
 
@@ -384,12 +393,9 @@ proc addPost*(db: DbConn, post: Post): bool =
 
   try:
     db.exec(sqlStatement)
-  except:
+  except CatchableError as err:
     log "sqlStatement: " & sqlStatement
-    when not defined(phPrivate):
-      log "Failed to insert post!"
-    else:
-      error "Failed to insert post!"
+    error "Failed to insert post: ", err.msg
 
   return true
 
@@ -450,8 +456,6 @@ proc getTotalPosts*(db: DbConn): int =
 proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Post] =
   ## A procedure to get posts from local users only.
   ## Set limit to 0 to disable the limit and get all posts from local users.
-  # This clearly does not work.
-  # TODO: Investigate why it does not work.
   var sqlStatement = "SELECT * FROM posts WHERE local = true;"
   if limit != 0:
     for row in db.all(sqlStatement):
