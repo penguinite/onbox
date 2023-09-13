@@ -61,8 +61,12 @@ const postsCols: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE N
 "content": "VARCHAR(65535)", # A string containing the actual post's contents.
 "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
+"modified":"BOOLEAN NOT NULL", # A boolean indicating whether the post was modified or not.
 "local": "BOOLEAN NOT NULL", # A boolean indicating whether the post originated from this server or other servers.
-"favorites": "VARCHAR(65535)"}.toOrderedTable 
+"favorites": "VARCHAR(65535)", # A string containing a list of user ids that have reacted to this post alongside their reactions
+"boosts": "VARCHAR(65535)", # A string containing a list of user ids that boosted this post.
+"revisions": "VARCHAR(65535)", # A string containing previous revisions of a post
+}.toOrderedTable 
 
 proc createDbTableWithColsTable(db: DbConn, tablename: string, cols: OrderedTable[string,string]):  bool =
   ## We use this procedure to create a SQL statement that creates a table using the hard-coded rules
@@ -191,7 +195,7 @@ proc addUser*(db: DbConn, user: User): bool =
 proc getAdmins*(db: DbConn): seq[string] = 
   ## A procedure that returns the usernames of all administrators.
   for row in db.all("SELECT handle FROM users WHERE admin = true;"):
-    result.add(row[0].strVal)
+    result.add(row[0].strVal.unescape("",""))
   return result
   
 proc getTotalLocalUsers*(db: DbConn): int =
@@ -234,8 +238,8 @@ proc constructUserFromRow*(row: ResultRow): User =
     when result.get(key) is int:
       result.get(key) = int64ToInt(row[i].intVal)
     when result.get(key) is UserType:
-      result.get(key) = toUserType(unescape(row[i].strVal, "", ""))
-  
+      result.get(key) = toUserType(unescape(row[i].strVal,"",""))
+
   return result.unescape()
 
 proc getUserById*(db: DbConn, id: string): User =
@@ -337,9 +341,11 @@ proc constructPostFromRow*(row: ResultRow): Post =
       result.get(key) = row[i].strVal
     when result.get(key) is seq[string]:
       result.get(key) = split(row[i].strVal, ",")
-    when result.get(key) is seq[Favorite]:
+    when result.get(key) is seq[Action]:
       if len(row[i].strVal) > 0:
         result.get(key) = convertFromPlain(split(row[i].strVal, ";"))
+    when result.get(key) is DateTime:
+      result.get(key) = parse(row[i].strVal, "yyyy-MM-dd-HH:mm:sszzz", utc())
 
   return result.unescape()
 
@@ -378,12 +384,17 @@ proc addPost*(db: DbConn, post: Post): bool =
     when post.get(key) is bool:
       sqlStatement.add($value)
 
-    when post.get(key) is seq[Favorite]:
+    when post.get(key) is seq[Action]:
       sqlStatement.add("'")
       for x in value:
-        sqlStatement.add("" & x.reaction & "\\" & x.reactor & ";")
+        sqlStatement.add("" & x.action & "\\" & x.actor & ";")
       if len(value) > 0:
         sqlStatement = sqlStatement[0 .. ^2]
+      sqlStatement.add("'")
+    
+    when post.get(key) is DateTime:
+      sqlStatement.add("'")
+      sqlStatement.add(format(value, "yyyy-MM-dd-HH:mm:sszzz"))
       sqlStatement.add("'")
     
     sqlStatement.add(",")

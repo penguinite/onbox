@@ -34,6 +34,7 @@ after build:
 # Dependencies
 requires "nim >= 1.6.10"
 requires "nimcrypto >= 0.5.4"
+requires "prologue >= 0.6.4"
 
 const dbEngine{.strdefine.} = "sqlite"
 when dbEngine == "sqlite":

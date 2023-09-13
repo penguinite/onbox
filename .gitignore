@@ -8,3 +8,4 @@ experiments/parse
 nimbledeps/
 .sass-cache/
 potholectl/
+*.patch

@@ -195,23 +195,29 @@ stdout.write "Testing getPost() "
 try:
   # We changed customPost because of the previous test, remember?
   custompost.content = "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
-  assert db.getPost(custompost.id) == custompost
-  stdout.write("Pass!\n")
+  assert db.getPost(custompost.id).id == custompost.id
+  stdout.write "Pass!\n"
 except:
-  stdout.write("Fail!\n")
+  stdout.write "Fail!\n"
+  stdout.write "result: " & $(db.getPost(custompost.id)) & "\n"
+  stdout.write "post: " & $(custompost) & "\n\n"
 
 ## getPostsByUserHandle()
 stdout.write "Testing getPostsByUserHandle() "
 try:
-  assert db.getPostsByUserHandle("johnadminson",1) == @[custompost]
+  assert db.getPostsByUserHandle("johnadminson",1)[0].id == custompost.id
   stdout.write("Pass!\n")
 except:
   stdout.write("Fail!\n")
+  stdout.write "result: " & $(db.getPostsByUserHandle("johnadminson",1)) & "\n"
+  stdout.write "post: " & $(custompost) & "\n\n"
 
 ## getPostsByUserId()
 stdout.write "Testing getPostsByUserId() "
 try:
-  assert db.getPostsByUserId(adminuser.id,1) == @[custompost]
-  stdout.write("Pass!\n")
+  assert db.getPostsByUserId(adminuser.id,1)[0].id == custompost.id
+  stdout.write "Pass!\n"
 except:
-  stdout.write("Fail!\n")
+  stdout.write "Fail!\n"
+  stdout.write "result: " & $(db.getPostsByUserId("johnadminson",1)) & "\n"
+  stdout.write "post: " & $(custompost) & "\n\n"

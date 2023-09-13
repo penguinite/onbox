@@ -27,7 +27,7 @@ proc exit() {.noconv.} =
   quit(1)
 
 # From nimble
-import mummy, mummy/routers
+import prologue
 
 echo "Pothole version ", lib.version 
 echo "Copyright © Leo Gavilieau 2022-2023." 
@@ -48,15 +48,20 @@ when dbEngine == "sqlite":
 
 echo "Running on http://localhost:" & $port
 
-var router: Router
+when defined(debug):
+  const debugMode = true
+else:
+  const debugMode = false
 
-for url in staticURLs.keys:
-  router.get(url, serveStatic)
-  if not url.endsWith('/'):
-    router.get(url & "/", serveStatic)
-router.get("/css/style.css", serveCSS)
+let settings = newSettings(
+  debug = debugMode,
+  port = Port(port),
+  appName = "Pothole"
+)
 
-when defined(debug): router.get("/showRandomPosts/", randomPosts)
-
-let server = newServer(router)
-server.serve(Port(port))
+var app = newApp(settings)
+for x in staticURLs.keys: 
+  app.get(x, serveStatic)
+app.get("/css/style.css", serveCSS)
+when defined(debug): app.get("/showRandomPosts/", randomPosts)
+app.run()

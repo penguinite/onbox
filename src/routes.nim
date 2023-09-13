@@ -23,7 +23,7 @@ import std/tables
 import std/strutils except isEmptyOrWhitespace
 
 # From nimble/other sources
-import mummy
+import prologue
 
 var
   config {.threadvar.}: Table[string, string]
@@ -85,28 +85,27 @@ proc prepareTable(config: Table[string, string], db: DbConn): Table[string,strin
 
   return table
 
-proc serveStatic*(req: Request) =
+proc serveStatic*(ctx: Context) {.async.} =
   preRouteInit()
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
 
-  var path = req.uri
+  var path = ctx.request.path
 
   if path.endsWith("/") and path != "/": path = path[0..^2]
   # If the path has a slash at the end, remove it.
   # Except if the path is the root, aka. literally just a slash
 
-  req.respond(200, headers, renderTemplate(
+  resp renderTemplate(
     getAsset(staticFolder, staticURLs[path]),
     prepareTable(config, db)
-  ))
+  )
 
+proc serveCSS*(ctx: Context) {.async.} = 
+  ctx.response.setHeader("Content-Type","text/css")
+  resp getAsset(staticFolder, "style.css")
 
 when defined(debug):
-  proc randomPosts*(req: Request) =
+  proc randomPosts*(ctx:Context) {.async.} =
     preRouteInit()
-    var headers: HttpHeaders
-    headers["Content-Type"] = "text/html"
 
     var response = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Showing local posts</title><link rel="stylesheet" href="/css/style.css"/></head><body>"""
     for post in db.getLocalPosts(0):
@@ -125,18 +124,26 @@ when defined(debug):
       if len(post.favorites) > 0:
         response.add("<ul>")
         for reaction in post.favorites:
-          response.add("<li>" & reaction.reactor & " reacted with " & reaction.reaction & "</li>")
+          response.add("<li>" & reaction.actor & " reacted with " & reaction.action & "</li>")
+        response.add("</ul>")
+      if len(post.boosts) > 0:
+        response.add("<ul>")
+        for boost in post.boosts:
+          response.add("<li>" & boost.actor & " boosted")
+          case boost.action:
+          of "all":
+            response.add(" to everyone!")
+          of "followers":
+            response.add(" to their followers!")
+          of "local":
+            response.add(" to their instance!")
+          of "private":
+            response.add(" to themselves!")
+          response.add("</li>")
         response.add("</ul>")
       response.add("</article><hr>")
 
     response.add("</body></html>")
 
-    req.respond(200, headers, response)
+    resp htmlResponse(response)
   
-proc serveCSS*(req: Request) = 
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/css"
-  
-  # If I change the "static/" to staticFolder then it won't work
-  # because nim is a shit language that doesn't recognize let as immutable.
-  req.respond(200, headers, getAsset(staticFolder, "style.css"))

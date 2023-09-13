@@ -33,6 +33,7 @@ proc getFakeUsers*(): seq[User] =
     if rand(5) == 1:
       isAdmin = true
     var user = newUser(fakeHandles[x], fakeNames[x], "", true, isAdmin)
+    user.id = fakeHandles[x]
     user.kdf = lib.kdf
     user.bio = fakeBios[x]
     sequence.add(user)
@@ -45,15 +46,27 @@ const reactions* = @[
   "happy","sad","angry","disgusted","favorite"
 ]
 
+const boosts* = @[
+  "all","followers","local","private"
+]
+
 proc getFakePosts*(): seq[Post] =
   # Creates 10 fake Posts.
   result = @[]
+
   for x in fakeStatuses:
     var post = newPost(fakeHandles[rand(len(fakeHandles) - 1)], "", x, @[], true)
+
     for i in 0..rand(5):
-      var reaction = reactions[rand(len(reactions) - 1)]
+      var reaction = reactions[rand(len(reactions) - 1)] # Its not supposed to use the handle but I am too lazy to make it do stuff the right way.
       var reactor = fakeHandles[rand(len(fakeHandles) - 1)]
       post.favorites.add(convertFromPlain(@[reaction & "\\" & reactor]))
+
+    for i in 0..rand(5):
+      var boost = boosts[rand(len(boosts) - 1)]
+      var booster = fakeHandles[rand(len(fakeHandles) - 1)]
+      post.boosts.add(convertFromPlain(@[boost & "\\" & booster]))
+
     result.add(post)
   return result
 

@@ -27,13 +27,15 @@ from database import dbEngine
 import std/strutils except isEmptyOrWhitespace
 import std/times
 
+export DateTime, parse, format, utc
+
 # ActivityPub Object/Post
 type
 
-  # Generic "Like" object
-  Favorite* = object
-    reactor*: string # The reactor's id
-    reaction*: string # The reactor's reaction
+  # Generic object for storing Boosts and Likes.
+  Action* = object
+    actor*: string # The actor's id
+    action*: string # The actor's action (Specific emote they react with, specific boost function they use.)
 
   Post* = object
     id*: string # A unique id.
@@ -41,10 +43,13 @@ type
     sender*: string # Basically, the person sending the message
     replyto*: string # Resource/Post person was replying to,  
     content*: string # The actual content of the post
-    written*: string # A timestamp of when the Post was created
-    updated*: string # A timestamp of when then Post was last edited
+    written*: DateTime # A timestamp of when the Post was created
+    updated*: DateTime # A timestamp of when then Post was last edited
+    modified*: bool # A boolean indicating whether the Post was edited or not.
     local*:bool # A boolean indicating whether or not the post came from the local server or external servers
-    favorites*: seq[Favorite]
+    favorites*: seq[Action] # A sequence of reactions this post has.
+    boosts*: seq[Action] # A sequence of id's that have boosted this post.
+    revisions*: seq[string] # A sequence of past revisions, this is basically copies of post.content
 
 
 when dbEngine == "sqlite":
@@ -73,10 +78,10 @@ when dbEngine == "sqlite":
     
     return result
 
-func escape*(obj: Favorite): Favorite =
+func escape*(obj: Action): Action =
   ## A function to escape a Favorite object
-  result.reactor = escape(obj.reactor)
-  result.reaction = escape(obj.reaction)
+  result.actor = escape(obj.actor)
+  result.action = escape(obj.action)
   return result
 
 proc escape*(post: Post): Post =
@@ -96,17 +101,17 @@ proc escape*(post: Post): Post =
         newseq.add(escape(x))
       result.get(key) = newseq
 
-    when typeof(val) is seq[Favorite]:
-      var newseq: seq[Favorite] = @[]
+    when typeof(val) is seq[Action]:
+      var newseq: seq[Action] = @[]
       for reaction in val:
         newseq.add(escape(reaction))
       result.get(key) = newseq
 
   return result
 
-func unescape*(obj: Favorite): Favorite =
-  result.reaction = unescape(obj.reaction)
-  result.reactor = unescape(obj.reactor)
+func unescape*(obj: Action): Action =
+  result.action = unescape(obj.action)
+  result.actor = unescape(obj.actor)
   return result
 
 proc unescape*(post: Post): Post =
@@ -128,15 +133,15 @@ proc unescape*(post: Post): Post =
         newseq.add(unescape(x,"",""))
       result.get(key) = newseq
 
-    when typeof(val) is seq[Favorite]:
-      var newseq: seq[Favorite] = @[]
+    when typeof(val) is seq[Action]:
+      var newseq: seq[Action] = @[]
       for x in val:
         newseq.add(unescape(x))
       result.get(key) = newseq
 
   return result
 
-proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: string = "", contexts: seq[string] = @[]): Post =
+proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: DateTime = now().utc, contexts: seq[string] = @[]): Post =
   var post: Post = Post()
   if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
     error "Missing critical fields for post." 
@@ -148,6 +153,7 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], loc
   post.sender = sender
   post.recipients = recipients
   post.local = local
+  post.modified = false
   post.content = content
 
   if isEmptyOrWhitespace(replyto):
@@ -155,10 +161,8 @@ proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], loc
   else:
     post.replyto = replyto
 
-  if isEmptyOrWhitespace(written):
-    post.written = $(now().utc) # Writing time-related code is always going to be messy...
-  else:
-    post.written = written
+  post.written = written
+  post.updated = now().utc
 
   return post
 
@@ -170,11 +174,11 @@ func `$`*(obj: Post): string =
   result = result[0 .. len(result) - 2]
   result.add("]")
 
-proc convertFromPlain*(sequence: seq[string]): seq[Favorite] = 
+proc convertFromPlain*(sequence: seq[string]): seq[Action] = 
   for thing in sequence:
     var stuff = split(thing, '\\')
-    var obj = Favorite()
-    obj.reaction = stuff[0]
-    obj.reactor = stuff[1]
+    var obj = Action()
+    obj.action = stuff[0]
+    obj.actor = stuff[1]
     result.add(obj)
   return result
