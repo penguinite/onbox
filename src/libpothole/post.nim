@@ -182,3 +182,5 @@ proc convertFromPlain*(sequence: seq[string]): seq[Action] =
     obj.actor = stuff[1]
     result.add(obj)
   return result
+
+proc formatDate*(dt: DateTime): string = dt.format("MMM d, YYYY HH:mm")

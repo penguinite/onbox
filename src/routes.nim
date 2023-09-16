@@ -15,7 +15,7 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From libpothole or pothole's server codebase
-import libpothole/[lib,conf,database]
+import libpothole/[lib,post,conf,database]
 import assets
 
 # From stdlib
@@ -118,9 +118,9 @@ when defined(debug):
         response.add("To: Everyone!</p>")
       response.add("<p>" & post.content & "</p>")
       if post.local:
-        response.add("<p>Local post, Written: " & post.written & "</p>")
+        response.add("<p>Local post, Written: " & formatDate(post.written) & "</p>")
       else:
-        response.add("<p>Written: " & post.written & "</p>")
+        response.add("<p>Written: " & formatDate(post.written) & "</p>")
       if len(post.favorites) > 0:
         response.add("<ul>")
         for reaction in post.favorites:
