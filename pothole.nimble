@@ -6,7 +6,7 @@ description   = "A lightweight and efficient microblogging server."
 license       = "AGPL-3.0-or-later"
 srcDir        = "src"
 binDir        = "build"
-bin           = @["pothole"]
+bin           = @["pothole","potholectl"]
 backend       = "c"
 
 # Add different switches depending on if we are in debug/release mode
