@@ -2,4 +2,9 @@
 Path: /test_crypto.nim
 Description: A test file for crypto.nim, prints too much though.
 Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
-License: GPL-3.0-or-later
+License: AGPL-3.0-or-later
+
+Path: /example_mrf.nim
+Description: A template for a custom MRF policy.
+Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
+License: AGPL-3.0-or-later

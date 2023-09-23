@@ -85,9 +85,11 @@ func cleanString*(str: string, charset: set[char] = Whitespace): string =
     return "" # Return nothing, since there is nothing to clean anyway
 
   while str[startnum] in charset:
+    if startnum == high(str): return ""
     inc(startnum)
 
   while endnum >= 0 and str[endnum] in charset:
+    if endnum == high(str): return ""
     dec(endnum)
 
   return str[startnum .. endnum]
@@ -97,6 +99,7 @@ func cleanLeading*(str: string, charset: set[char] = Whitespace): string =
   var startnum = 0;
 
   while str[startnum] in charset:
+    if startnum == high(str): return ""
     inc(startnum)
 
   return str[startnum .. len(str) - 1]
@@ -106,6 +109,7 @@ func cleanTrailing*(str: string, charset: set[char] = Whitespace): string =
   var endnum = len(str) - 1;
 
   while endnum >= 0 and str[endnum] in charset:
+    if endnum == high(str): return ""
     dec(endnum)
 
   return str[0 .. endnum]

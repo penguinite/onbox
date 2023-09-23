@@ -37,14 +37,16 @@ Licensed under the GNU Affero GPL License under version 3 or later.
 """ % [lib.version]
 
 func genArg(short,long,desc: string): string =
-  return "-" & short & ",--" & long & "\t\t;; " & desc
+  return "-$#,--$#\t\t;; $#" % [short, long, desc]
 
 func genCmd(cmd,desc: string): string =
-  return cmd & "\t\t-- " & desc
+  return "$#\t\t-- $#" % [cmd, desc]
 
 const helpDialog* = @[
   prefix,
   "Available subsystems: ",
+  genCmd("db","Database-related operations"),
+  genCmd("mrf","MRF-related operations"),
   "",
   "Universal arguments: ",
   genArg("h","help","Displays help prompt for any given command and exits."),
@@ -60,9 +62,49 @@ helpTable["db"] = @[
 helpTable["db:schema_check"] = @[
   prefix,
   """
-  This command initializes a database with schema checking enabled.
-  You can use it to test if the database needs migration.
+This command initializes a database with schema checking enabled.
+You can use it to test if the database needs migration.
   """,
   "Available arguments:",
   genArg("c","config","Specify a config file to use")
+]
+
+helpTable["mrf"] = @[
+  prefix,
+  """
+This subsystem handles "Extensions"/"Plugins" related operations.
+Certain features in Pothole are extensible at run-time and this subsystem 
+is there specifically to aid with debugging, enabling and making use of this
+extensibility.
+
+If its unclear what these commands do then, you should read the docs.
+As some of them change the config file, which might or might not break stuff.
+
+Available commands:
+  """,
+  genCmd("view", "Views information about a specific module."),
+  genCmd("config_config", "Checks the config file for any errors related to extensions.")
+]
+
+helpTable["mrf:view"] = @[
+  prefix,
+  """
+This command reads a custom MRF policy and shows its metadata.
+You should supply the path to the module for this command, it does not
+read the config file.
+
+Available arguments:
+  """,
+  genArg("t","technical","Show non-human-friendly metadata. Ie. Technical data.")
+]
+
+helpTable["mrf:config_check"] = @[
+  prefix,
+  """
+This command reads the config file and checks if the "MRF" section is valid.
+It does not make any changes, it merely points out errors and potential fixes.
+
+Available arguments:
+  """,
+  genArg("c","config","Path to configuration file.")
 ]
