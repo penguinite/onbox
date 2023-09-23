@@ -1,7 +1,10 @@
 body {
-    font-family: ui-sans-serif, sans-serif, system-ui;
-    background-color: #eee;
-    line-height: 1.6rem;
-    max-width: 700px;
-    margin:auto;
-  }
+  font-family: ui-sans-serif, sans-serif, system-ui;
+  background-color: #eee;
+  line-height: 1.6rem;
+  max-width: 700px;
+  margin:auto;
+}
+
+label { display: block; }
+a { text-decoration: none; }

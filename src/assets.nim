@@ -35,6 +35,10 @@ else:
     const assets: Table[string, string] = {
       "index.html": staticRead("../assets/" & phLang & "/index.html"),
       "about.html": staticRead("../assets/" & phLang & "/about.html"),
+      "signup.html": staticRead("../assets/" & phLang & "/signup.html"),
+      "signup_disabled.html": staticRead("../assets/" & phLang & "/signup_disabled.html"),
+      "error.html": staticRead("../assets/" & phLang & "/error.html"),
+      "success.html": staticRead("../assets/" & phLang & "/success.html"),
       "style.css": staticRead("../assets/style.css") # CSS doesn't need language. Hopefully.
     }.toTable
     return assets[fn]

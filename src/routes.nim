@@ -15,11 +15,11 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From libpothole or pothole's server codebase
-import libpothole/[lib,post,conf,database]
+import libpothole/[lib,post,conf,database,user]
 import assets
 
 # From stdlib
-import std/tables
+import std/[tables, options]
 import std/strutils except isEmptyOrWhitespace
 
 # From nimble/other sources
@@ -100,14 +100,57 @@ proc serveStatic*(ctx: Context) {.async.} =
   )
 
 proc serveCSS*(ctx: Context) {.async.} = 
+  preRouteInit()
   ctx.response.setHeader("Content-Type","text/css")
   resp getAsset(staticFolder, "style.css")
+
+proc get_auth_signup*(ctx: Context) {.async.} =
+  preRouteInit()
+  var filename = "signup.html"
+
+  if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == false:
+    filename = "signup_disabled.html"
+
+  resp renderTemplate(
+    getAsset(staticFolder, filename),
+    prepareTable(config, db)
+  )
+
+proc renderError(error: string): string =
+  # One liner to generate an error webpage.
+  return renderTemplate(
+    getAsset(staticFolder,"error.html"),
+    {"error": error}.toTable,
+  )
+
+proc renderSuccess(str: string): string =
+  # One liner to generate a "Success!" webpage.
+  return renderTemplate(
+    getAsset(staticFolder, "success.html"),
+    {"result": str}.toTable,
+  )
+
+proc post_auth_signup*(ctx: Context) {.async.} =
+  preRouteInit()
+
+  if isNone(ctx.getPostParamsOption("user")) or isEmptyOrWhitespace(ctx.getPostParamsOption("user").get()):
+    resp renderError("Missing or invalid username.")
+
+  if isNone(ctx.getPostParamsOption("pass")) or isEmptyOrWhitespace(ctx.getPostParamsOption("pass").get()):
+    resp renderError("Missing or invalid password")
+
+  when not defined(phPrivate):
+    if isNone(ctx.getPostParamsOption("email")) or isEmptyOrWhitespace(ctx.getPostParamsOption("email").get()):
+      resp renderError("Missing or invalid email: " & ctx.getPostParamsOption("email").get())
+
+  
+  
 
 when defined(debug):
   proc randomPosts*(ctx:Context) {.async.} =
     preRouteInit()
 
-    var response = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Showing local posts</title><link rel="stylesheet" href="/css/style.css"/></head><body>"""
+    var response = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" coctx.getPostParamsOption("username").get()ntent="width=device-width, initial-scale=1"><title>Showing local posts</title><link rel="stylesheet" href="/css/style.css"/></head><body>"""
     for post in db.getLocalPosts(0):
       response.add("<article>")
       response.add("<p>From " & post.sender & "<br>")
