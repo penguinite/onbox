@@ -20,7 +20,7 @@
 ## On startup, we will load all of these and do some special operation to some modules.
 ## (Ie. index.html, the pothole main webpage, will need to be compiled with the built-in quick template library.)
 import std/[tables, os]
-import libpothole/[conf,lib]
+import conf,lib
 import std/strutils except isEmptyOrWhitespace
 
 when defined(noEmbeddingAssets):

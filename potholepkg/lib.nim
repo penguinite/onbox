@@ -28,13 +28,13 @@ from std/macros import newIdentNode, newDotExpr, strVal
 from std/strutils import Whitespace, `%`
 
 # App version
-const phVersion* {.strdefine.}: string = "0.0.2" ## This constant allows you to customize the libpothole version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
+const phVersion* {.strdefine.}: string = "0.0.2" ## This constant allows you to customize the potholepkg version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
 const version*: string = phVersion ## This is basically just phVersion, but it's copied twice for readability purposes.
 
 # A folder to save debugging data to.
 const globalCrashDir* {.strdefine.}: string = "CAR_CRASHED_INTO_POTHOLE!"
 
-const kdf* = 1 ## The latest Key Derivation Function supported by this build of libpothole, check out the KDF section in the DESIGN.md document for more information.
+const kdf* = 1 ## The latest Key Derivation Function supported by this build of potholepkg, check out the KDF section in the DESIGN.md document for more information.
 
 when not defined(phNoLog):
   template log*(str: varargs[string, `$`]) =

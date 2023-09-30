@@ -1,6 +1,6 @@
 echo "Test 01 - Cryptography"
 
-import libpothole/crypto
+import potholepkg/crypto
 
 echo "Testing random strings. Are all of these random?"
 echo maxASCIILetters

@@ -4,9 +4,9 @@ version       = "0.0.2"
 author        = "xmoo"
 description   = "A lightweight and efficient microblogging server."
 license       = "AGPL-3.0-or-later"
-srcDir        = "src"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
+installDirs    = @["potholepkg"]
 backend       = "c"
 
 # Add different switches depending on if we are in debug/release mode
@@ -26,9 +26,13 @@ before build:
   if dirExists(binDir):
     rmdir(binDir)
   mkDir(binDir)
+  if dirExists("static/"):
+    rmdir("static/")
+  if dirExists("uploads/"):
+    rmdir("uploads/")
 
 after build:
-  cpFile("LICENSE",binDir & "/LICENSE")
+  cpFile("mrf.conf", binDir & "/mrf.conf")
   cpFile("pothole.conf",binDir & "/pothole.conf")
 
 # Dependencies

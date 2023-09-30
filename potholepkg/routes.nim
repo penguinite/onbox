@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
-# From libpothole or pothole's server codebase
-import libpothole/[lib,post,conf,database,user]
+# From potholepkg or pothole's server codebase
+import lib,conf,database
 import assets
 
 # From stdlib

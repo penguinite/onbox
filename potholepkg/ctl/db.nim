@@ -14,22 +14,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# ctl/ext.nim:
-## Operations related to extensions.
-## It does stuff like reveal the embedded metadata and uh... stuff...
+# ctl/db.nim:
+## Database operations for Potholectl
+## This simply parses the subsystem & command (and maybe arguments)
+## and it calls the appropriate function from src/db.nim
 
 # From ctl/ folder in Pothole
 import shared
 
 # From elsewhere in Pothole
-import ../libpothole/[lib,conf]
+import ../[database,lib,conf]
 
 # From standard libraries
 from std/tables import Table
 
 proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   if args.check("h","help"):
-    helpPrompt("ext",cmd)
+    helpPrompt("db",cmd)
 
   var config: Table[string,string]
   if args.check("c", "config"):
@@ -38,12 +39,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     config = conf.setup(getConfigFilename())
 
   case cmd:
-  of "view":
-    echo args
-  of "check_config":
-    echo args
-  of "enable":
-    echo args
-  else:
-    return
+  of "schema_check":
+    log "Re-running database initialization with schema checking enabled."
+    discard init(config,true)
     

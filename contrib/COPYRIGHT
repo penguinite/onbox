@@ -8,3 +8,8 @@ Path: /example_mrf.nim
 Description: A template for a custom MRF policy.
 Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
 License: AGPL-3.0-or-later
+
+Path: /OVEREXCITED_RAMBLER_MRF.nim
+Description: MRF Policy that makes everyone sound like an OVEREXCITED RAMBLER! 
+Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
+License: AGPL-3.0-or-later

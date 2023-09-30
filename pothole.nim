@@ -15,12 +15,10 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From Pothole
-import libpothole/[lib, conf, database]
-import routes
+import potholepkg/[lib, conf, database, routes]
 
 # From standard library
-import std/strutils except isEmptyOrWhitespace
-import std/[os, tables]
+import std/tables
 
 proc exit() {.noconv.} =
   echo "Interrupted by Ctrl+C"
@@ -60,8 +58,8 @@ let settings = newSettings(
 )
 
 var app = newApp(settings)
-for x in staticURLs.keys: 
-  app.get(x, serveStatic)
+for ur in staticURLs.keys: 
+  app.get(ur, serveStatic)
 app.get("/css/style.css", serveCSS)
 when defined(debug): app.get("/showRandomPosts/", randomPosts)
 app.get("/auth/sign_up", get_auth_signup)

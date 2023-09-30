@@ -21,13 +21,20 @@
 import help
 
 # From elsewhere in Pothole
-import ../libpothole/[lib, database, conf]
+import ../[lib, database]
 
 # From standard library
-import std/[tables,os]
+import std/[tables]
 
-const subsystems* = @["db"]
-const commands* = @["db:init"]
+var subsystems*: seq[string] = @[]
+var commands*: seq[string] = @[]
+
+proc initStuff*() =
+  for key in helpTable.keys:
+    if ':' in key:
+      commands.add(key)
+    else:
+      subsystems.add(key)
 
 proc helpPrompt*(subsystem:string = "", command: string = "") =
   ## A procedure to print the appropriate help dialog depending on subsystem and command.

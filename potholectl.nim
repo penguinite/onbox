@@ -20,10 +20,10 @@
 ## Pothole's internals with.
 
 # From Pothole
-import libpothole/lib
+import potholepkg/lib
 
 # From Pothole (ctl folder)
-import ctl/[shared, db, mrf]
+import potholepkg/ctl/[shared, db, mrf]
 
 # From standard library
 import std/[os, parseopt, strutils, tables]
@@ -46,16 +46,20 @@ var
 # Potholectl follows this format: potholectl SUBSYSTEM [-OPTIONAL_ARGS] COMMAND MANDATORY_ARGS 
 # ie. ./pothole db init --backend=native main.db
 # or ./pothole conf parse pothole.conf
+initStuff()
 for kind, key, val in p.getopt():
   case kind
 
   of cmdArgument:
     if isSubsystem(key) and len(subsystem) < 1:
       subsystem = toLowerAscii(key)
+      continue
+    
     if isCommand(subsystem, key) and len(subsystem) > 0:
       command = toLowerAscii(key)
-    if len(subsystem) > 0 and len(command) > 0:
-      data.add(key)
+      continue
+
+    data.add(key)
 
   of cmdLongOption, cmdShortOption:
     if len(val) > 0:

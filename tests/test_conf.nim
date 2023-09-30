@@ -1,6 +1,6 @@
 echo "Test 02 - Configuration Parsing"
 
-import libpothole/conf
+import potholepkg/conf
 import std/strutils
 
 var exampleConfig = ""

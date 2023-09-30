@@ -10,3 +10,4 @@ nimbledeps/
 potholectl/
 docs/
 *.patch
+*.so

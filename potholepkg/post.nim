@@ -21,7 +21,6 @@
 
 # From Pothole
 import lib, crypto
-from database import dbEngine
 
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace
@@ -51,7 +50,7 @@ type
     boosts*: seq[Action] # A sequence of id's that have boosted this post.
     revisions*: seq[string] # A sequence of past revisions, this is basically copies of post.content
 
-
+const dbEngine* {.strdefine.}: string = "sqlite"
 when dbEngine == "sqlite":
   # Sqlite is deranged.
   func escape*(str,a,b:string): string = 

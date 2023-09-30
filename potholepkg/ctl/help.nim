@@ -18,7 +18,7 @@
 ## Contains help dialogs for all subsystems and commands
 ## In potholectl.
 
-from ../libpothole/lib import version
+from ../lib import version
 import std/[tables, strutils]
 
 # This table contains help info for every file.
