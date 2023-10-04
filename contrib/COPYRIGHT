@@ -1,4 +1,3 @@
-
 Path: /test_crypto.nim
 Description: A test file for crypto.nim, prints too much though.
 Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
@@ -13,3 +12,8 @@ Path: /OVEREXCITED_RAMBLER_MRF.nim
 Description: MRF Policy that makes everyone sound like an OVEREXCITED RAMBLER! 
 Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
 License: AGPL-3.0-or-later
+
+Path: /nimrtl.nim
+Description: NimRtl source file, downloaded from https://raw.githubusercontent.com/nim-lang/Nim/devel/lib/nimrtl.nim
+Copyright: © Andreas Rumpf 2010
+License: MIT

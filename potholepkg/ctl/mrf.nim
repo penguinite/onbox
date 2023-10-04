@@ -53,22 +53,25 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       except CatchableError as err:
         log "Couldn't load library because of ", err.msg
 
+      if lib == nil:
+        log "Library is nil?"
+
       echo "potholectl will run a couple of tests, these try to show what features/filters this MRF policy has."
       echo "If there is no output then it means this MRF policy has no features or potholectl couldnt detect them."
 
-      if cast[postFilterProc](lib.symAddr("filterIncomingPost")) != nil:
+      if cast[PostFilterProc](lib.symAddr("filterIncomingPost")) != nil:
         log "This MRF policy filters incoming posts"
-      if cast[postFilterProc](lib.symAddr("filterOutgoingPost")) != nil:
+      if cast[PostFilterProc](lib.symAddr("filterOutgoingPost")) != nil:
         log "This MRF policy filters outgoing posts"
 
-      if cast[postFilterProc](lib.symAddr("filterIncomingUser")) != nil:
+      if cast[UserFilterProc](lib.symAddr("filterIncomingUser")) != nil:
         log "This MRF policy filters incoming users"
-      if cast[postFilterProc](lib.symAddr("filterOutgoingUser")) != nil:
+      if cast[UserFilterProc](lib.symAddr("filterOutgoingUser")) != nil:
         log "This MRF policy filters outgoing users"
 
-      if cast[postFilterProc](lib.symAddr("filterIncomingActivity")) != nil:
+      if cast[ActivityFilterProc](lib.symAddr("filterIncomingActivity")) != nil:
         log "This MRF policy filters incoming activities"
-      if cast[postFilterProc](lib.symAddr("filterOutgoingActivity")) != nil:
+      if cast[ActivityFilterProc](lib.symAddr("filterOutgoingActivity")) != nil:
         log "This MRF policy filters outgoing activities"
       
 

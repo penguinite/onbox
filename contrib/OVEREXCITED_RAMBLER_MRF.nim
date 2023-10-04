@@ -4,7 +4,9 @@
 import potholepkg/mrf
 import std/strutils
 
-proc filterIncomingPost*(post: Post, config: Table[string, string]): Post {.cdecl, exportc, dynlib.} =
+{.push dynlib exportc.}
+
+proc filterIncomingPost*(post: Post, config: Table[string, string]): Post =
   # Do stuff here.
   # Additionally, you can return a completely empty object if
   # you wish the MRF facility to reject it.
