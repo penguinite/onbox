@@ -13,6 +13,7 @@ backend       = "c"
 switch("app","console")
 switch("opt","speed")
 switch("stackTrace","on")
+switch("mm","orc")
 
 task clean, "Removes build folder if it exists":
   if dirExists(binDir):
@@ -32,7 +33,6 @@ before build:
     rmdir("uploads/")
 
 after build:
-  cpFile("mrf.conf", binDir & "/mrf.conf")
   cpFile("pothole.conf",binDir & "/pothole.conf")
 
 # Dependencies

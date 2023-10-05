@@ -25,8 +25,8 @@ import shared
 import ../mrf
 
 # From standard libraries
-from std/tables import Table
-import std/[dynlib, os]
+import std/strutils except isEmptyOrWhitespace
+import std/[dynlib, os, tables, posix]
 
 proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   if args.check("h","help"):
@@ -48,13 +48,14 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "Inspecting file " & filename
 
       var lib: LibHandle
-      try:
-        lib = loadLib(filename)
-      except CatchableError as err:
-        log "Couldn't load library because of ", err.msg
 
+      if not filename.startsWith('/') or not filename.startsWith("./"):
+        lib = loadLib("./" & filename)
+      else:
+        lib = loadLib(filename)
+        
       if lib == nil:
-        log "Library is nil?"
+        log "Failed to load library, dlerror output: ", $dlerror()
 
       echo "potholectl will run a couple of tests, these try to show what features/filters this MRF policy has."
       echo "If there is no output then it means this MRF policy has no features or potholectl couldnt detect them."

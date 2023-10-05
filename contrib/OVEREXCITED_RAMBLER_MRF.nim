@@ -4,7 +4,7 @@
 import potholepkg/mrf
 import std/strutils
 
-{.push dynlib exportc.}
+{.push cdecl, dynlib, exportc.}
 
 proc filterIncomingPost*(post: Post, config: Table[string, string]): Post =
   # Do stuff here.
