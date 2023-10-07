@@ -18,9 +18,6 @@
 ## A database backend for sqlite3 (Using the tiny_sqlite module)
 ## This backend is somewhat mature now.
 
-# TODO: Implement a connection-pooling mechanism
-# What I mean by this is, basically convert this library into a Channel so that threads can communicate.
-
 # From somewhere in Pothole
 import ../[user, post, lib, conf]
 

@@ -2,12 +2,8 @@ build
 *.db
 *htmldocs*
 static/
-blogs/
+!docs/static/
 uploads/
-experiments/parse
 nimbledeps/
-.sass-cache/
-potholectl/
-docs/
 *.patch
 *.so

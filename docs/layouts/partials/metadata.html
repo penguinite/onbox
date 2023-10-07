@@ -1,0 +1,15 @@
+{{ if .PublishDate }}
+<em>Written {{ .PublishDate.Format "Jan 2, 2006" }}</em>
+{{ end }}
+{{ if ne .Lastmod .Date }}
+<em>Updated {{ .Lastmod.Format "Jan 2, 2006" }}</em>
+{{ end }}
+{{ with .Params.tags }}
+  <br>
+  <span>Tags: 
+  {{ range . }}
+  {{ $href := print (relURL "tags/") (urlize .) }}
+  <a href="{{ $href }}">{{ . }}</a>
+  {{ end }}
+  </span>
+{{ end }}

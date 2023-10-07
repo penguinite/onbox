@@ -3,6 +3,7 @@ import std/tables
 import debug
 
 echo("Version reported: ", version)
+const dbEngine*{.strdefine.} = "sqlite"
 echo("Database engine: ", dbEngine)
 
 echo "Initializing database"
