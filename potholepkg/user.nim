@@ -77,7 +77,7 @@ proc sanitizeHandle*(handle: string): string =
 
   return result
 
-proc newUser*(handle: string = "", name: string = "", password: string = "", local: bool = false, admin: bool = false): User =
+proc newUser*(handle: string, name: string = "", password: string = "", local: bool = false): User =
   ## This procedure just creates a user and that's it
   ## We will fill out some basic details, like if you supply a password, name
   
@@ -88,41 +88,33 @@ proc newUser*(handle: string = "", name: string = "", password: string = "", loc
 
   result.kdf = lib.kdf # Always assume user is using latest KDF because why not?
   result.local = local
-  result.admin = admin # This is false by default, same with the local thing above.
-  result.is_frozen = false # Always assume user isn't frozen. Maybe employ a check in your own software.
+  result.admin = false # This is false by default.
+  result.is_frozen = false # Always assume user isn't frozen.
   result.kind = Person # Even if its a group, service or application then it doesn't matter.
 
   # Sanitize handle before using it
-  var newhandle = sanitizeHandle(handle)
-  if not isEmptyOrWhitespace(newhandle):
-    result.handle = newhandle
-  else:
-    error "No proper handle was supplied!"
-
+  let newhandle = sanitizeHandle(handle)
+  if newhandle.isEmptyOrWhitespace():
+    return # We can't use the error template for some reason.
+  result.handle = newhandle
+    
   # Use handle as name if name isn't supplied
-  if not isEmptyOrWhitespace(name):
-    result.name = name
-  else:
+  result.name = name
+  if isEmptyOrWhitespace(name):
     result.name = newhandle
   
-  if not local and not isEmptyOrWhitespace(password):
-    result.password = pbkdf2_hmac_sha512_hash(password, result.salt)
-  else:
-    result.password = ""
+  result.password = ""
+  if local and not isEmptyOrWhitespace(password):
+    result.password = pbkdf2_hmac_sha512_hash(password, result.salt)  
 
   # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)
   return result
 
-proc escape*(user: User, skipChecks: bool = false): User =
+proc escape*(user: User): User =
   ## A procedure for escaping a User object
   ## skipChecks allows you to skip the essential handle and password checks.
   ## This is only used for potholectl.
   result = user
-
-  # We only need handle and password, the rest can be guessed or blank.
-  if not skipChecks:
-    if isEmptyOrWhitespace(user.handle):
-      error "Missing required fields for adding users\nUser: " & $user
 
   result.handle = sanitizeHandle(user.handle)
   result.email = sanitizeHandle(user.email)
@@ -156,15 +148,25 @@ proc unescape*(user: User): User =
       result.get(key) = unescape(val,"","")
   
   return result
-
-func toUserType*(s: string): UserType =
-  ## Converts from string to UserType.
-  parseEnum[UserType](s)
   
+func toUserType*(s: string): UserType =
+  ## Converts a plain string into a UserType
+  case s:
+  of "Person":
+    return Person
+  of "Application":
+    return Application
+  of "Organization":
+    return Organization
+  of "Group":
+    return Group
+  of "Service":
+    return Service
+  else:
+    return Person
+
 func fromUserType*(t: UserType): string =
-  ## Converts from UserType to string.
-  # Ok there has to be a way to do the same thing as above, just in reverse. I don't know what!
-  # Anything but manually specifying it! I could use macros but im too lazy to learn them.
+  ## Converts a UserType to string.
   result = case t:
     of Person:
       "Person"

@@ -15,8 +15,7 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From potholepkg or pothole's server codebase
-import lib,conf,database
-import assets
+import lib,conf,database,assets,user,post,crypto
 
 # From stdlib
 import std/[tables, options]
@@ -132,20 +131,47 @@ proc renderSuccess(str: string): string =
 
 proc post_auth_signup*(ctx: Context) {.async.} =
   preRouteInit()
+  proc isInvalidParam(str: string): bool =
+    ## Returns true if the parameter is invalid (It doesnt exist or it's nearly empty)
+    let param = ctx.getPostParamsOption(str)
+    if isNone(param) or isEmptyOrWhitespace(param.get()):
+      return true
+    return false
 
-  if isNone(ctx.getPostParamsOption("user")) or isEmptyOrWhitespace(ctx.getPostParamsOption("user").get()):
+  proc getParam(str: string): string =
+    # I just hate writing ctx.getPostParamsOption().get() everywhere
+    return ctx.getPostParamsOption(str).get()
+
+  # Let's first check for required options.
+  # Everything else will come later.
+  if isInvalidParam("user"):
     resp renderError("Missing or invalid username.")
 
-  if isNone(ctx.getPostParamsOption("pass")) or isEmptyOrWhitespace(ctx.getPostParamsOption("pass").get()):
-    resp renderError("Missing or invalid password")
+  if isInvalidParam("pass"):
+    resp renderError("Missing or invalid password.")
 
-  when not defined(phPrivate):
-    if isNone(ctx.getPostParamsOption("email")) or isEmptyOrWhitespace(ctx.getPostParamsOption("email").get()):
-      resp renderError("Missing or invalid email: " & ctx.getPostParamsOption("email").get())
+  # Email is a bit special since we have the phPrivate feature.
+  var email = ""
 
+  when defined(phPrivate):
+    if not isInvalidParam("email"):
+      email = getParam("email")
+  else:
+    if isInvalidParam("email"):
+      resp renderError("Missing or invalid email.")
+    email = getParam("email")
+
+  var user = newUser(getParam("user"))
+  user.local = true # newUser() sets this as false.
+  user.password = pbkdf2_hmac_sha512_hash(getParam("pass"),user.salt)
+  user.email = email
+
+  user.name = toLowerAscii(user.handle)
+  if not isInvalidParam("name"):
+    user.name = getParam("name")
   
   
-
+  
 when defined(debug):
   proc randomPosts*(ctx:Context) {.async.} =
     preRouteInit()
