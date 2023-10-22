@@ -34,22 +34,21 @@ echo "Licensed under the GNU Affero General Public License version 3 or later"
 # Catch Ctrl+C so we can exit without causing a stacktrace
 setControlCHook(exit)
 
-echo "Using " & getConfigFilename() & " as config file"
+echo "Using ", getConfigFilename(), " as config file"
 
 let config = setup(getConfigFilename())
 var port = 3500
 if config.exists("web","port"):
   port = config.getInt("web","port")
 
-when dbEngine == "sqlite":
-  discard init(config)
+# Initialize database
+discard init(config)
 
 echo "Running on http://localhost:" & $port
 
+const debugMode = false
 when defined(debug):
   const debugMode = true
-else:
-  const debugMode = false
 
 let settings = newSettings(
   debug = debugMode,
