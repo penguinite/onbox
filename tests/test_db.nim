@@ -11,16 +11,16 @@ echo "Initializing database"
 when dbEngine == "sqlite":
   var
     config = {"db:filename": "main.db"}.toTable()
-    db = init(config)    
+    db = init(config)
 
 when not defined(iHaveMyOwnStuffThanks):
   echo "Adding fake users"
-  for x in getFakeUsers():
-    discard db.addUser(escape(x))
+  for user in getFakeUsers():
+    discard db.addUser(user.escape())
 
   echo "Adding fake posts"
-  for x in getFakePosts():
-    discard db.addPost(escape(x))
+  for post in getFakePosts():
+    discard db.addPost(post.escape())
 
 ## getTotalPosts
 stdout.write "\nTesting getTotalPosts() "
@@ -32,10 +32,10 @@ except:
   stdout.write "result: " & $db.getTotalPosts() & "\n"
   stdout.write "len: " & $len(fakeStatuses) & "\n"
 
-#[ Uncomment this if you want, I guess?
+# Uncomment this if you want, I guess?
 ## getLocalPosts
 echo "Displaying local Posts"
-  for x in getLocalPosts(0):
+for x in db.getLocalPosts(0):
   stdout.write("\n---\n")
   echo "From: @", x.sender
   if isEmptyOrWhitespace(x.replyto):
@@ -47,13 +47,14 @@ echo "Displaying local Posts"
     echo "To: ", printOut
   echo "\n" & x.content
   stdout.write("\n")
-]#
+#]#
 
 
 ## getAdmins
 stdout.write "Testing getAdmins() "
 # Create a new admin user
-var adminuser = newUser("johnadminson","John Adminson","123",true,true)
+var adminuser = newUser("johnadminson","John Adminson","123",true)
+adminuser.admin = true
 adminuser.bio = "I am John Adminson! The son of the previous admin, George Admin"
 adminuser.email = "johnadminson@adminson.family.testinternal" # inb4 Google creates a testinternal TLD
 discard db.addUser(escape(adminuser))
@@ -191,17 +192,34 @@ except:
   stdout.write "Fail!\n"
   stdout.write "result: " & db.getPost(custompost.id).content & "\n"
 
+## Ok so the database code throws out the nanoseconds, which is reasonable
+## since who the hell needs that much precision in a microblogging server.
+## So we have to manually clear the nanoseconds.
+## But also we can't just re-assign the nanoseconds so we have to convert it to
+## the actual database format. Blame std/times for not exposing the actual fields.
+custompost.written = toDate(toString(custompost.written))
+custompost.updated = toDate(toString(custompost.updated))
+
 ## getPost
 stdout.write "Testing getPost() "
 try:
   # We changed customPost because of the previous test, remember?
   custompost.content = "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
-  assert db.getPost(custompost.id).id == custompost.id
+  assert db.getPost(custompost.id) == custompost
   stdout.write "Pass!\n"
 except:
   stdout.write "Fail!\n"
-  stdout.write "result: " & $(db.getPost(custompost.id)) & "\n"
-  stdout.write "post: " & $(custompost) & "\n\n"
+  let result = db.getPost(custompost.id)
+  for key, val in result.fieldPairs:
+    if val != custompost.get(key):
+      echo key, " does not match!"
+      echo "---"
+      echo "result: ", $val
+      echo "custompost: ", $(custompost.get(key))
+      echo "---\n\n"
+  if result.revisions != custompost.revisions:
+    echo result.revisions[0]
+    echo len(result.revisions)
 
 ## getPostsByUserHandle()
 stdout.write "Testing getPostsByUserHandle() "

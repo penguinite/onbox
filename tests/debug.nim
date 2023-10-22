@@ -28,18 +28,18 @@ const fakeBios = @["All the ladies love me!", "GOD BLESS AMERICA", "Apparently, 
 proc getFakeUsers*(): seq[User] =
   # Creates 10 fake users
   var sequence: seq[User];
-  for x in 0 .. len(fakeHandles) - 1:
-    var isAdmin = false
-    if rand(5) == 1:
-      isAdmin = true
-    var user = newUser(fakeHandles[x], fakeNames[x], "", true, isAdmin)
+
+  for x in 0 .. high(fakeHandles):
+    var user = newUser(fakeHandles[x], fakeNames[x], "", true)
+    if rand(5) == 1: user.admin = true
     user.id = fakeHandles[x]
     user.kdf = lib.kdf
     user.bio = fakeBios[x]
     sequence.add(user)
+
   return sequence
 
-const fakeStatuses* = @["Hello World!", "I hate writing database stuff...","To be weak is to be strong but unconventional", "I like to keep an air of mystery around me", "Here's a cute picture of a cat! (I don't know how to use this app, I am sorry if the picture does not appear)", "Cannabis abyss and Pot hole mean the same thing.", "Woke up, had some coffee, ran over a child during my commute to work, escaped masterfully.\n\nHow was your day?","\"It's GNU/Linux\"\n\"It's just Linux\"\n\nThey don't know that it's...\nwhatever the fuck you want to call it\nlife is meaningless, we're all gonna die","The FBI looking at me googling \"How to destroy children\": 😨\nThe FBI looking at me after clarifying im programming in C: 😇","When god falls, I will find the spigot upon which they meter out grace and smash it permanently open.","No matter how much I ferventley pray, god never reveals why they deeply dislike me.","Always store confidential data in /dev/urandom for safety!\nNo one can recover data from /dev/urandom","If you want a job, write software.\nIf you want a career, write a package manager.","Lorem Ipsum Dolor Sit Amet","It does not matter how slow you go as long as you do not stop.","Sometimes the most impressive things are the simplest things","systemd introduces new tool called systemd-lifed\n\nsimply create a config file and systemd will possess your body and take cake of your own life for you.","Hello from potholepkg!"]
+const fakeStatuses* = @["Hello World!", "I hate writing database stuff...", "I like to keep an air of mystery around me", "Here's a cute picture of a cat! (I don't know how to use this app, I am sorry if the picture does not appear)", "Cannabis abyss and Pot hole mean the same thing.", "Woke up, had some coffee, hit a car during my commute to work, escaped masterfully.\n\nHow was your day?","\"It's GNU/Linux\"\n\"It's just Linux\"\n\nThey don't know that it's...\nwhatever the fuck you want to call it\nlife is meaningless, we're all gonna die","The FBI looking at me googling \"How to destroy children\": 😨\nThe FBI looking at me after clarifying im programming in C: 😇","When god falls, I will find the spigot upon which they meter out grace and smash it permanently open.","No matter how much I ferventley pray, god never reveals why they deeply dislike me.","Always store confidential data in /dev/urandom for safety!\nNo one can recover data from /dev/urandom","If you want a job, write software.\nIf you want a career, write a package manager.","Lorem Ipsum Dolor Sit Amet","It does not matter how slow you go as long as you do not stop.","Sometimes the most impressive things are the simplest things","systemd introduces new tool called systemd-lifed\n\nsimply create a config file and systemd will possess your body and take cake of your own life for you.","Hello from potholepkg!","Consider: inhaling spaghetti","Man. I love AI lawyers so much.\n\"Mr. Doe, how do you justify these grave crimes?\"\n\"Uh... Connection timed out?\"\n","It is hell here!","Anna is eating a canary","He says he is a model but really he is a priest","I don't love you, I only love mayonnaise.","He informed the jury that he was too pretty to go to jail.","THERE IS A PROBLEM! He uh... wants to come with his cow.","Jeg er osten","I thought it was an apple store but they only sold computers.","What does 8008 look like on a calculator?","I am going out for a walk with my lawyer","Excuse me! I have become an apple!","DE KOMMER IND LIGE NU! IGENNEM VINDUERNE!"]
 
 
 const reactions* = @[
@@ -55,24 +55,27 @@ proc getFakePosts*(): seq[Post] =
   result = @[]
 
   for x in fakeStatuses:
-    var post = newPost(fakeHandles[rand(len(fakeHandles) - 1)], "", x, @[], true)
+    var post = newPost(fakeHandles[rand(high(fakeHandles))], "", x, @[], true)
 
     for i in 0..rand(5):
-      var reaction = reactions[rand(len(reactions) - 1)] # Its not supposed to use the handle but I am too lazy to make it do stuff the right way.
-      var reactor = fakeHandles[rand(len(fakeHandles) - 1)]
-      post.favorites.add(convertFromPlain(@[reaction & "\\" & reactor]))
+      post.favorites.add(create(
+        fakeHandles[rand(high(fakeHandles))], # Reactor
+        reactions[rand(high(reactions))] # Reaction
+      ))
 
     for i in 0..rand(5):
-      var boost = boosts[rand(len(boosts) - 1)]
-      var booster = fakeHandles[rand(len(fakeHandles) - 1)]
-      post.boosts.add(convertFromPlain(@[boost & "\\" & booster]))
+
+      post.boosts.add(create(
+        fakeHandles[rand(high(fakeHandles))], # Booster
+        boosts[rand(high(boosts))] # Boost
+      ))
 
     result.add(post)
   return result
 
 proc showFakePosts*() =
   for x in fakeStatuses:
-    var post = newPost(fakeHandles[rand(len(fakeHandles) - 1)], "", x, @[], true)
+    var post = newPost(fakeHandles[rand(high(fakeHandles))], "", x, @[], true)
     echo "---"
     echo("Author: " & post.sender)
     echo(post.content)
