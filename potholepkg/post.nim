@@ -50,33 +50,6 @@ type
     boosts*: seq[Action] # A sequence of id's that have boosted this post.
     revisions*: seq[string] # A sequence of past revisions, this is basically copies of post.content
 
-const dbEngine* {.strdefine.}: string = "sqlite"
-when dbEngine == "sqlite":
-  # Sqlite is deranged.
-  func escape*(str,a,b:string): string = 
-    if str.isEmptyOrWhitespace():
-      return str
-
-    result = strutils.escape(str,a,b)
-    var
-      i = -1
-      skipFlag = false
-
-    var oldstr = result
-    result = ""
-    for ch in oldstr:
-      inc(i)
-      if ch == '\\' and oldstr[i + 1] == '\'':
-        result.add("''")
-        skipFlag = true
-        continue
-      if skipFlag:
-        skipFlag = false
-        continue
-      result.add(ch)
-    
-    return result
-
 func escape*(obj: Action): Action =
   ## A function to escape a Favorite object
   result.actor = escape(obj.actor)
@@ -92,13 +65,14 @@ proc escape*(post: Post): Post =
       result.get(key) = val
 
     when typeof(val) is string:
-      result.get(key) = escape(val,"","")
+      result.get(key) = escape(val)
 
     when typeof(val) is seq[string]:
       var newseq: seq[string] = @[]
       for x in val:
         newseq.add(escape(x))
       result.get(key) = newseq
+
 
     when typeof(val) is seq[Action]:
       var newseq: seq[Action] = @[]
@@ -109,8 +83,8 @@ proc escape*(post: Post): Post =
   return result
 
 func unescape*(obj: Action): Action =
-  result.action = unescape(obj.action)
-  result.actor = unescape(obj.actor)
+  result.action = unescape(obj.action,"","")
+  result.actor = unescape(obj.actor,"","")
   return result
 
 proc unescape*(post: Post): Post =
@@ -173,13 +147,62 @@ func `$`*(obj: Post): string =
   result = result[0 .. len(result) - 2]
   result.add("]")
 
-proc convertFromPlain*(sequence: seq[string]): seq[Action] = 
-  for thing in sequence:
-    var stuff = split(thing, '\\')
-    var obj = Action()
-    obj.action = stuff[0]
-    obj.actor = stuff[1]
-    result.add(obj)
+proc create*(actor, action: string): Action =
+  ## Used in debug.nim and also the fromString() proc
+  result.actor = actor
+  result.action = action
   return result
+
+proc fromString*(str: string): seq[Action] = 
+  # Converts a string representation of an Action sequence which looks like this: 
+  # `"pyro":"sad";"heavy":"favorite";"medic":"happy"`
+  # into an actual sequence of Actions
+  var
+    actor = ""
+    action = ""
+    inStr = false
+    switchFlag = false
+
+  for ch in str:
+    if ch == '"':
+      if inStr:
+        inStr = false
+      else:
+        inStr = true
+      continue
+
+    if not inStr:
+      if ch == ':':
+        switchFlag = true
+      
+      if ch == ';':
+        result.add(create(actor, action))
+        actor = ""
+        action = ""
+        switchFlag = false
+      continue
+  
+    if switchFlag:
+      action.add(ch)
+    else:
+      actor.add(ch)
+  
+  return result
+
+proc toString*(sequence: seq[Action]): string =
+  for x in sequence:
+    result.add(x.actor & " -> " & x.action & "; ")
+  if len(sequence) > 0:
+    result = result[0 .. ^3]
+  return result
+
+proc toString*(sequence: seq[string]): string =
+  return sequence.join(",")
+
+proc toString*(date: DateTime): string = 
+  return format(date, "yyyy-MM-dd-HH:mm:sszzz")
+
+proc toDate*(str: string): DateTime =
+  return parse(str, "yyyy-MM-dd-HH:mm:sszzz", utc())
 
 proc formatDate*(dt: DateTime): string = dt.format("MMM d, YYYY HH:mm")

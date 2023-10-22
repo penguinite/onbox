@@ -23,9 +23,9 @@
 ## but these have been moved, and this module has been re-purposed.
 ## The User and Post definitions are now stored in pothole/user and pothole/post respectively.
 
-# For macro definition
-from std/macros import newIdentNode, newDotExpr, strVal
 from std/strutils import Whitespace, `%`
+# For macro definition
+import std/macros
 
 # App version
 const phVersion* {.strdefine.}: string = "0.0.2" ## This constant allows you to customize the potholepkg version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`

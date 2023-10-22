@@ -32,9 +32,14 @@ export DbConn, isOpen
 
 proc has(db:DbConn,statement:string): bool =
   ## A quick helper function to check if a thing exists.
-  if isNone(db.one(statement)):  
-    return false
-  return true
+  try:
+    if isNone(db.one(statement)):  
+      return false
+    return true
+  except CatchableError as err:
+    log "We are about to fatally crash so here is some information that might help debug this!"
+    log "sqlStatement: ", statement
+    error "tiny_sqlite returns error when using has() function: ", err.msg
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 # For this module to work, both database schemas and user object definitions must be similar
@@ -338,25 +343,41 @@ proc constructPostFromRow*(row: ResultRow): Post =
       result.get(key) = row[i].strVal
     when result.get(key) is seq[string]:
       result.get(key) = split(row[i].strVal, ",")
+
+      # the split() proc sometimes creates items in the sequence
+      # even when there isn't. So this bit of code manually
+      # clears the list if two specific conditions are met.
+      if len(result.get(key)) == 1 and result.get(key)[0] == "":
+        result.get(key) = @[]
     when result.get(key) is seq[Action]:
       if len(row[i].strVal) > 0:
-        result.get(key) = convertFromPlain(split(row[i].strVal, ";"))
+        result.get(key) = fromString(row[i].strVal)
     when result.get(key) is DateTime:
-      result.get(key) = parse(row[i].strVal, "yyyy-MM-dd-HH:mm:sszzz", utc())
+      result.get(key) = toDate(row[i].strVal)
 
   return result.unescape()
 
 proc addPost*(db: DbConn, post: Post): bool =
   ## A function add a post into the database
   ## This function expects an escaped post to be inputted to it.  
-  if db.has("SELECT local FROM posts WHERE id = \"" & post.id & "\";"):
+  
+  var testString = ""
+  if post.id.startsWith('\"'):
+    testString = "SELECT local FROM posts WHERE id = " & post.id & ";"
+  else:
+    testString = "SELECT local FROM posts WHERE id = \"" & post.id & "\";"
+
+  if db.has(testString):
     return false # Someone has tried to add a post twice. We just won't add it.
-      
+
   # Let's loop over the newuser field pairs and
   # Build the SQL statement as we go.
-  var sqlStatement = "INSERT OR REPLACE INTO posts ("
+  var
+    sqlStatement = "INSERT OR REPLACE INTO posts ("
+    i = -1
 
   for key, val in post.fieldPairs:
+    inc(i)
     sqlStatement.add(key & ",")
   
   # Remove last character
@@ -366,41 +387,33 @@ proc addPost*(db: DbConn, post: Post): bool =
   sqlStatement.add(") VALUES (")
 
   # The other part of the SQL statement
-  # The values.
-  for key, value in post.fieldPairs:
-    when post.get(key) is string:
-      sqlStatement.add("'")
-      sqlStatement.add(value)
-      sqlStatement.add("'")
-    
-    when post.get(key) is seq[string]:
-      sqlStatement.add("'")
-      sqlStatement.add(value.join(","))
-      sqlStatement.add("'")
-    
-    when post.get(key) is bool:
-      sqlStatement.add($value)
-
-    when post.get(key) is seq[Action]:
-      sqlStatement.add("'")
-      for x in value:
-        sqlStatement.add("" & x.action & "\\" & x.actor & ";")
-      if len(value) > 0:
-        sqlStatement = sqlStatement[0 .. ^2]
-      sqlStatement.add("'")
-    
-    when post.get(key) is DateTime:
-      sqlStatement.add("'")
-      sqlStatement.add(format(value, "yyyy-MM-dd-HH:mm:sszzz"))
-      sqlStatement.add("'")
-    
-    sqlStatement.add(",")
+  # The question marks (for parameter substitution)
+  sqlStatement.add("?,")
+  for x in 1 .. i:
+    sqlStatement.add(" ?,")
 
   sqlStatement = sqlStatement[0 .. ^2]
   sqlStatement.add(");")
 
+  
+  # TODO: Automate this some day.
+  # I believe we can use a template or a macro to automate inserting this stuff in.
   try:
-    db.exec(sqlStatement)
+    db.exec(
+      sqlStatement,
+      post.id,
+      toString(post.recipients),
+      post.sender,
+      post.replyto,
+      post.content,
+      toString(post.written),
+      toString(post.updated),
+      post.modified,
+      post.local,
+      toString(post.favorites),
+      toString(post.boosts),
+      toString(post.revisions)
+    )
   except CatchableError as err:
     log "sqlStatement: " & sqlStatement
     error "Failed to insert post: ", err.msg
