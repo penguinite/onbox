@@ -19,6 +19,7 @@
 ## fake users and fake posts (for testing)
 
 import potholepkg/[user, database, post, crypto, lib]
+import std/tables
 export user, post, crypto, lib, database
 
 const fakeNames = @["Jeremy", "Jane Doe", "pyro", "Tavish Finnegan DeGroo", "Mikhail", "Dell Conagher", "Ludwig Humboldt", "Mundy", "spy"]
@@ -56,21 +57,23 @@ proc getFakePosts*(): seq[Post] =
 
   for x in fakeStatuses:
     var post = newPost(fakeHandles[rand(high(fakeHandles))], "", x, @[], true)
-
-    for i in 0..rand(5):
-      post.favorites.add(create(
-        fakeHandles[rand(high(fakeHandles))], # Reactor
-        reactions[rand(high(reactions))] # Reaction
-      ))
-
-    for i in 0..rand(5):
-
-      post.boosts.add(create(
-        fakeHandles[rand(high(fakeHandles))], # Booster
-        boosts[rand(high(boosts))] # Boost
-      ))
-
     result.add(post)
+  return result
+
+proc getFakeReactions*(): Table[string, seq[string]] = 
+  var users: seq[string] = @[]
+  for i in 0..rand(5):
+    for i in 0..rand(high(fakeHandles)):
+      users.add(fakeHandles[i])
+    result[reactions[rand(high(reactions))]] =  users
+  return result
+
+proc getFakeBoosts*(): Table[string, seq[string]] =
+  var users: seq[string] = @[]
+  for i in 0..rand(5):
+    for i in 0..rand(high(fakeHandles)):
+      users.add(fakeHandles[i])
+    result[boosts[rand(high(boosts))]] = users
   return result
 
 proc showFakePosts*() =

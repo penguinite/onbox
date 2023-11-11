@@ -21,6 +21,8 @@ when not defined(iHaveMyOwnStuffThanks):
   echo "Adding fake posts"
   for post in getFakePosts():
     discard db.addPost(post)
+    echo "Adding fake reactions"
+    db.addBulkReactions(post.id, getFakeReactions())
 
 ## getTotalPosts
 stdout.write "\nTesting getTotalPosts() "
@@ -34,6 +36,7 @@ except:
 
 # Uncomment this if you want, I guess?
 ## getLocalPosts
+#[
 echo "Displaying local Posts"
 for x in db.getLocalPosts(0):
   stdout.write("\n---\n")
@@ -47,7 +50,7 @@ for x in db.getLocalPosts(0):
     echo "To: ", printOut
   echo "\n" & x.content
   stdout.write("\n")
-#]#
+]#
 
 
 ## getAdmins
@@ -185,7 +188,7 @@ except:
 ## updatePost
 stdout.write "Testing updatePost() "
 try:
-  discard db.updatePost(custompost.id,"content","\"@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!\"")
+  discard db.updatePost(custompost.id,"content","@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!")
   assert db.getPost(custompost.id).content == "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
   stdout.write "Pass!\n"
 except:
