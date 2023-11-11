@@ -60,7 +60,7 @@ var app = newApp(settings)
 for ur in staticURLs.keys: 
   app.get(ur, serveStatic)
 app.get("/css/style.css", serveCSS)
-when defined(debug): app.get("/showRandomPosts/", randomPosts)
+app.get("/showRandomPosts/", randomPosts)
 app.get("/auth/sign_up", get_auth_signup)
 app.post("/auth/sign_up", post_auth_signup)
 

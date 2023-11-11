@@ -169,50 +169,47 @@ proc post_auth_signup*(ctx: Context) {.async.} =
   user.name = toLowerAscii(user.handle)
   if not isInvalidParam("name"):
     user.name = getParam("name")
-  
-  
-  
-when defined(debug):
-  proc randomPosts*(ctx:Context) {.async.} =
-    preRouteInit()
 
-    var response = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" coctx.getPostParamsOption("username").get()ntent="width=device-width, initial-scale=1"><title>Showing local posts</title><link rel="stylesheet" href="/css/style.css"/></head><body>"""
-    for post in db.getLocalPosts(0):
-      response.add("<article>")
-      response.add("<p>From " & post.sender & "<br>")
-      if len(post.recipients) < 1:
-        for person in post.recipients:
-          response.add("To: " & person & "</p>")
-      else:
-        response.add("To: Everyone!</p>")
-      response.add("<p>" & post.content & "</p>")
-      if post.local:
-        response.add("<p>Local post, Written: " & formatDate(post.written) & "</p>")
-      else:
-        response.add("<p>Written: " & formatDate(post.written) & "</p>")
-      if len(post.favorites) > 0:
-        response.add("<ul>")
-        for reaction in post.favorites:
-          response.add("<li>" & reaction.actor & " reacted with " & reaction.action & "</li>")
-        response.add("</ul>")
-      if len(post.boosts) > 0:
-        response.add("<ul>")
-        for boost in post.boosts:
-          response.add("<li>" & boost.actor & " boosted")
-          case boost.action:
-          of "all":
-            response.add(" to everyone!")
-          of "followers":
-            response.add(" to their followers!")
-          of "local":
-            response.add(" to their instance!")
-          of "private":
-            response.add(" to themselves!")
-          response.add("</li>")
-        response.add("</ul>")
-      response.add("</article><hr>")
+proc randomPosts*(ctx:Context) {.async.} =
+  preRouteInit()
+  var response = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" coctx.getPostParamsOption("username").get()ntent="width=device-width, initial-scale=1"><title>Showing local posts</title><link rel="stylesheet" href="/css/style.css"/></head><body>"""
+  for post in db.getLocalPosts(0):
+    response.add("<article>")
+    response.add("<p>From " & post.sender & "<br>")
+    if len(post.recipients) < 1:
+      for person in post.recipients:
+        response.add("To: " & person & "</p>")
+    else:
+      response.add("To: Everyone!</p>")
+    response.add("<p>" & post.content & "</p>")
+    if post.local:
+      response.add("<p>Local post, Written: " & formatDate(post.written) & "</p>")
+    else:
+      response.add("<p>Written: " & formatDate(post.written) & "</p>")
 
-    response.add("</body></html>")
-
-    resp htmlResponse(response)
-  
+    response.add("<ul>")
+    for reaction, list in post.reactions:
+      response.add("<li>")
+      for reactor in list:
+        response.add(reactor & ", ")
+      response = response[0..^3]
+      response.add("reacted with " & reaction & "</li>")
+    response.add("</ul>")
+    #if len(post.boosts) > 0:
+    #  response.add("<ul>")
+    #  for boost in post.boosts:
+    #    response.add("<li>" & boost.actor & " boosted")
+    #    case boost.action:
+    #    of "all":
+    #      response.add(" to everyone!")
+    #    of "followers":
+    #      response.add(" to their followers!")
+    #    of "local":
+    #      response.add(" to their instance!")
+    #    of "private":
+    #      response.add(" to themselves!")
+    #    response.add("</li>")
+    #  response.add("</ul>")
+    response.add("</article><hr>")
+  response.add("</body></html>")
+  resp htmlResponse(response)
