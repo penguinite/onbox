@@ -29,8 +29,8 @@ import common
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 const reactionsCols*: OrderedTable[string, string] = {"id": "BLOB PRIMARY KEY UNIQUE NOT NULL",
-"pid": "BLOB UNIQUE NOT NULL", # ID of post that user reacted to
-"uid": "BLOB UNIQUE NOT NULL", # ID of user who reacted to post
+"pid": "BLOB NOT NULL", # ID of post that user reacted to
+"uid": "BLOB NOT NULL", # ID of user who reacted to post
 "reaction": "BLOB NOT NULL" # Specific reaction
 }.toOrderedTable
 
@@ -41,8 +41,8 @@ proc getReactions*(db: DbConn, id: string): Table[string, seq[string]] =
 
 proc addReaction*(db: DbConn, pid,uid,reaction: string): bool =
   let
-    testStatement = db.stmt("SELECT 1 FROM reactions WHERE id = ?;")
-    statement = db.stmt("INSERT OR REPLACE INTO reactions (id, pid, uid, reaction) VALUES (?,?,?,?);")
+    testStatement = db.stmt("SELECT id FROM reactions WHERE id = ?;")
+    statement = db.stmt("INSERT INTO reactions (id, pid, uid, reaction) VALUES (?,?,?,?);")
   try:
     var id = randomString()
     while has(testStatement.one(id)):

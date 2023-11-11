@@ -25,12 +25,12 @@ import tiny_sqlite
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 const boostsCols*: OrderedTable[string, string] = {"id": "BLOB PRIMARY KEY UNIQUE NOT NULL",
-"pid": "BLOB UNIQUE NOT NULL", # ID of post that user boosted
-"uid": "BLOB UNIQUE NOT NULL", # ID of user that boosted post
+"pid": "BLOB NOT NULL", # ID of post that user boosted
+"uid": "BLOB NOT NULL", # ID of user that boosted post
 "level": "BLOB NOT NULL" # The "boost level", ie. is it followers-only or whatever.
 }.toOrderedTable
 
 proc getBoosts*(db: DbConn, id: string): Table[string, seq[string]] =
   let statement = db.stmt("SELECT uid,level FROM boosts WHERE pid = ?;")
-  echo statement.all(id)
+  #echo statement.all(id)
   statement.finalize()
