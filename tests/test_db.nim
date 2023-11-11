@@ -21,7 +21,6 @@ when not defined(iHaveMyOwnStuffThanks):
   echo "Adding fake posts"
   for post in getFakePosts():
     discard db.addPost(post)
-    echo "Adding fake reactions"
     db.addBulkReactions(post.id, getFakeReactions())
 
 ## getTotalPosts
