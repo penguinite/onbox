@@ -20,7 +20,7 @@ when not defined(iHaveMyOwnStuffThanks):
 
   echo "Adding fake posts"
   for post in getFakePosts():
-    discard db.addPost(post.escape())
+    discard db.addPost(post)
 
 ## getTotalPosts
 stdout.write "\nTesting getTotalPosts() "

@@ -326,7 +326,7 @@ proc constructPostFromRow*(row: ResultRow): Post =
   ## A procedure that takes a database Row (From the Posts table)
   ## And turns it into a Post object ready for display, parsing and so on. (That is to say, the final Post is unescaped and does not need further action.)
   result = Post()
-
+  
   # This looks ugly, I know, I had to wrap it with
   # two specific functions but we don't have to re-write this
   # even if we add new things to the User object. EXCEPT!
@@ -349,17 +349,18 @@ proc constructPostFromRow*(row: ResultRow): Post =
       # clears the list if two specific conditions are met.
       if len(result.get(key)) == 1 and result.get(key)[0] == "":
         result.get(key) = @[]
-    when result.get(key) is seq[Action]:
+    when result.get(key) is Table[string, string]:
       if len(row[i].strVal) > 0:
-        result.get(key) = fromString(row[i].strVal)
+        result.get(key) = toTable(row[i].strVal)
     when result.get(key) is DateTime:
       result.get(key) = toDate(row[i].strVal)
 
-  return result.unescape()
+  return result
 
 proc addPost*(db: DbConn, post: Post): bool =
   ## A function add a post into the database
-  ## This function expects an escaped post to be inputted to it.  
+  ## This function uses parameterized substitution Aka. prepared statements.
+  ## So escaping objects before sending them here is not a requirement.
   
   var testString = ""
   if post.id.startsWith('\"'):
