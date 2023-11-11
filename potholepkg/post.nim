@@ -40,8 +40,8 @@ type
     updated*: DateTime # A timestamp of when then Post was last edited
     modified*: bool # A boolean indicating whether the Post was edited or not.
     local*:bool # A boolean indicating whether or not the post came from the local server or external servers
-    favorites*: Table[string, string] # A sequence of reactions this post has.
-    boosts*: Table[string, string] # A sequence of id's that have boosted this post.
+    reactions*: Table[string, seq[string]] # A sequence of reactions this post has.
+    boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post.
     revisions*: seq[string] # A sequence of past revisions, this is basically copies of post.content
 
 proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: DateTime = now().utc, contexts: seq[string] = @[]): Post =
@@ -76,36 +76,6 @@ func `$`*(obj: Post): string =
     result.add("\"" & key & "\": \"" & $val & "\",")
   result = result[0 .. len(result) - 2]
   result.add("]")
-
-proc toString*(table: Table[string, string]): string =
-  for key,val in table.pairs:
-    result.add(escape(key) & ":" & escape(val) & ";")
-  return result
-
-proc toTable*(str: string): Table[string, string] =
-  var
-    key,val = ""
-    strFlag, switch = false;
-
-  for ch in str:
-    if ch == '"':
-      if strFlag:
-        strFlag = false
-      else:
-        strFlag = true
-    
-    if not strFlag:
-      if ch == ':':
-        switch = true
-        continue
-
-      if ch == ';':
-        result[unescape(key)] = unescape(val)
-    
-    if switch: val.add(ch)
-    else: key.add(ch)
-  
-  return result
 
 proc toString*(sequence: seq[string]): string =
   return sequence.join(",")
