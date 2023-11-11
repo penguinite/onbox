@@ -2,4 +2,4 @@ baseURL = 'https://xmoo.tilambda.zone/pothole/'
 languageCode = 'en-us'
 title = 'Pothole'
 
-canonifyURLs = "false"
+canonifyURLs = "true"
