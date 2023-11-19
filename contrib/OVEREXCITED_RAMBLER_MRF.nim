@@ -1,5 +1,5 @@
 # This policy makes everyone sound like an overexcited rambler.
-# Ie. "Hello everyone" turns into "HELLO EVERYONE!!! :D"
+# Ie. "Hello everyone" turns into "HELLO EVERYONE :DDDDDD"
 
 import potholepkg/mrf
 import std/strutils
@@ -13,4 +13,4 @@ proc filterIncomingPost*(post: Post, config: Table[string, string]): Post =
   result = post
   result.content = toUpper(post.content)
 
-  result.content.add("!!! :D")
+  result.content.add(" :DDDDDD")
