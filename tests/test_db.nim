@@ -1,17 +1,17 @@
 echo "Test 01 - Database Operations"
+
+import potholepkg/[user, conf, database, post, crypto, lib]
 import std/tables
 import debug
 
 echo("Version reported: ", version)
 const dbEngine*{.strdefine.} = "sqlite"
-echo("Database engine: ", dbEngine)
 
 echo "Initializing database"
 
-when dbEngine == "sqlite":
-  var
-    config = {"db:filename": "main.db"}.toTable()
-    db = init(config)
+let
+  config = load(getConfigFilename())
+  db = database.init(config)
 
 when not defined(iHaveMyOwnStuffThanks):
   echo "Adding fake users"

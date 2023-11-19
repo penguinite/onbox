@@ -17,10 +17,8 @@
 # debug.nim:
 ## Common procedures for debugging. This is only useful for creating
 ## fake users and fake posts (for testing)
-
-import potholepkg/[user, database, post, crypto, lib]
-import std/tables
-export user, post, crypto, lib, database
+import std/[tables]
+import potholepkg/[user, post, crypto, lib, database, conf]
 
 const fakeNames = @["Jeremy", "Jane Doe", "pyro", "Tavish Finnegan DeGroo", "Mikhail", "Dell Conagher", "Ludwig Humboldt", "Mundy", "spy"]
 const fakeHandles* = @["scout","soldier","pyro","demoman","heavy","engineer", "medic", "sniper", "spy"]

@@ -23,7 +23,10 @@ import ../../crypto
 import std/tables
 
 # From somewhere else (nimble etc.)
-import tiny_sqlite
+when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
+  include db_connector/db_postgres
+else:
+  include db_postgres
 
 import common
 

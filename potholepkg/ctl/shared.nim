@@ -83,7 +83,4 @@ proc versionPrompt*() =
 
 proc initDb*(config: Table[string, string], schemaCheck: bool = false): DbConn = 
   ## Returns an initialized database connection.
-  when dbEngine == "sqlite" or dbEngine == "postgres":
-    return init(config, false)
-  else:
-    error "Unknown database engine", dbEngine
+  return init(config, false)

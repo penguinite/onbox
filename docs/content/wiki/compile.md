@@ -52,37 +52,6 @@ After the command exits, you will see a new directory called `server`, this is w
 
 ## Building pothole.{#building}
 
-Building pothole is as easy as running a single command.
-But you will need to make a choice regarding database engines.
-
-### Selecting a database engine.
-
-With the use of compile-time directives, Pothole can add support for multiple database engines,
-but there is a caveat: you can only add support for one database engine at a time.
-
-This means a pothole binary with `sqlite` support is only able to open sqlite databases and nothing else.
-
-1.  Sqlite
-
-Pothole supports sqlite, for simple servers (1-5 users) this is good enough
-although if you are going to host Pothole for more users then using Postgres is a good option.
-
-The main benefit of using sqlite is that it is lightweight,
-it does not require a database server to run in the background.
-And if you are hosting only for yourself and you do not mind a bit of latency then sqlite is a good option.
-
-2.  Postgres
-
-*Note: as of now, postgres support is very limited-*
-
-Pothole supports postgres, this is a good option for small servers that don't want latency
-or for servers with more than 5 users.
-
-Your performance and mileage with this database backend will vary
-since it's not used very much in actual development.
-
-## Building
-
 Now it's time to actually build pothole. Open your shell and `cd`
 to the new folder. Make sure you have nim and nimble installed for
 this section.

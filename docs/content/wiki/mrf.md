@@ -9,6 +9,8 @@ Pothole's MRF feature is extremely similar to [Pleroma's MRF](https://docs-devel
 
 The Message Rewriting Facility allows you to modify or reject messages. the "Message" in MRF is not limited to just posts, it includes Users and any kind of Activity as well. Which means that the possible use-cases for MRF is unlimited.
 
+Be very careful about the MRF policies that you choose to add, especially if they are custom-written and be sure to review them to make sure they are not doing something malicious in the background since real unrestricted code is being ran every time your server gets a new post, user or activity. In general, MRF policies should not import other modules (except for basic things such as string functions and `potholepkg/mrf` of course) and they absolutely, should **not** under any circumstances, be running database operations.
+
 Here are a couple of possible use-cases:
 
 1. [Making every post sound like an overexcited rambler](https://gt.tilambda.zone/o/pothole/server.git/tree/contrib/OVEREXCITED_RAMBLER_MRF.nim?h=staging)

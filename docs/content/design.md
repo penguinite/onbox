@@ -102,20 +102,21 @@ I am not trying to add ActivityPub support *yet* but I am trying to experiment w
 For now, I will be experimenting with sqlite databases,
 it's important to note that sqlite is quite different.
 
-### Postgres + Sqlite only.
+### Postgres only.
 
-For debugging and development, I think it's useful to offer sqlite as a choice.
-But for real production environments, postgresql is simply hard to beat.
+Before November 2023, Pothole supported two databases (sqlite and postgres) but now I think this might be a bad idea.
+I have always promised that maybe someday there will be a postgres backend in the future, all the while, I keep on optimizing the 
+development engine (sqlite)
 
-Instead of employing runtime checks, we will simply use compile-time checks to switch between these backends:
+If I want pothole to be stable in 2024, I will have to nuke the sqlite engine and *only* work on postgres.
+I would no longer have to test two different engines, only one and everything would be simpler when it comes
+to the structure of the codebase.
 
-1.  `potholepkg/db/sqlite.nim`: This contains the sqlite engine.
-2.  `potholepkg/db/postgres.nim`: This contains the postgres engine.
+Users no longer have to worry about which database engine their binary is compiled for. And the whole setup process becomes way simpler
+I plan eventually on making friendly setup instructions for Pothole, if we kept on with this flawed idea then we would have to write 2 pages per distro.
+Package maintainers working with binary-only or hybrid software such as `apt`, `guix`, `dnf`, `pacman` and so on would have to provide 2 packages (Or maybe even 4 because of `phPrivate`)
 
-The compile-time checks and stuff are in `potholepkg/database.nim`
-
-This approach saves us from weird and ugly code
-
+So, from now on, pothole only supports postgres irregardless of the `dbEngine` compile-time option.
 ### Database migrations
 
 Pothole is versioned, so it would be easy to just say to include a database migration function in potholectl for every new version.
@@ -258,11 +259,12 @@ An example of Heavy inefficiency is the `load()` function in `potholepkg/conf.ni
 The parser code is simply a mess, it works but it's just unreadable
 and it's a pain to look at. You can easily take a look at it and tell that it needs to be re-written.
 
+### Major inefficiency
+
 Major inefficiencies are not everywhere in the codebase thankfully.
 But it's still important to look out for them,
 since they can present a significant bottleneck in performance
 
-### Major inefficiency
 
 Common *past* examples of Major inefficiency include:
 

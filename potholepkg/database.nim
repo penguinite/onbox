@@ -1,4 +1,4 @@
-# Copyright © Leo Gavilieau 2022-2023
+# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 #
 # This file is part of Pothole.
 # 
@@ -14,26 +14,85 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# db.nim:
-## This module only provides a couple of compile-time code to switch between
-## Postgres and sqlite. The functions between those two modules are mostly the same
-## so you do not have to worry about it for the most part.
-## 
-## Though, you should check the dbEngine constant. You can simply import this
-## module and use check what database engine dbEngine is pointing to at compile
-## time
-## 
-## Do not write code under the assumption that only one database engine will be
-## used unless you have configured all your build systems to explicitly use only
-## one database.
+# database.nim:
+## Database backend for pothole, this engine is powered via postgres
+## (more specifically, the standard db_connector/db_postgres module)
+## This backend is still not working yet.
 
+# From somewhere in Pothole
+import ../[lib, conf]
 
-const dbEngine* {.strdefine.}: string = "sqlite" ## The dbEngine constant is used to signify what database engine the user wants at compile-time.
+# From somewhere in the standard library
 
-when dbEngine == "sqlite":
-  import db/sqlite
-  export sqlite
+# Export these:
+#import postgres/[users, posts, reactions, boosts, common]
+#export DbConn, isOpen, users, posts, reactions, boosts
+import db/common
 
-when dbEngine == "postgres":
-  import db/postgres
-  export postgres
+when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
+  include db_connector/db_postgres
+else:
+  include db_postgres
+
+proc init*(config: Table[string, string], schemaCheck: bool = true): DbConn  =
+  # Some checks to run before we actually open the database
+
+  if not hasDbHost(config):
+    log "Couldn't retrieve database host. Using \"127.0.0.1:5432\" as default"
+    log ""
+
+  if not hasDbName(config):
+    log "Couldn't retrieve database name. Using \"pothole\" as default"
+
+  if not hasDbUser(config):
+    log "Couldn't retrieve database user login. Using \"pothole\" as default"
+  
+  if not hasDbPass(config):
+    log "Couldn't find database user password from the config file or environment, did you configure pothole correctly?"
+    error "Database user password couldn't be found."
+
+  let
+    host = getDbHost(config)
+    name = getDbName(config)
+    user = getDbUser(config)
+    password = getDbPass(config)
+
+  log "Opening database \"", name ,"\"at \"", host, "\" with user \"", user, "\""
+
+  if host.startsWith("__eat_flaming_death"):
+    log "Someone or something used the forbidden code. Quietly returning... Stuff might break!"
+    return
+
+  # Open database and initialize the users and posts table.
+  result = open(host, user, password, name)
+  
+  # Create the tables first
+  if not createDbTableWithColsTable(result, "users", usersCols): error "Couldn't create users table"
+  if not createDbTableWithColsTable(result, "posts", postsCols): error "Couldn't create posts table"
+  if not createDbTableWithColsTable(result, "reactions", reactionsCols): error "Couldn't create reactions table"
+  if not createDbTableWithColsTable(result, "boosts", boostsCols): error "Couldn't create boosts table"
+
+  # Now we check the schema to make sure it matches the hard-coded one.
+  if schemaCheck:
+    isDbTableSameAsColsTable(result, "users", usersCols)
+    isDbTableSameAsColsTable(result, "posts", postsCols)
+
+  return result
+
+proc quickInit*(config: Table[string, string]): DbConn = 
+  ## This procedure quickly initializes the database by skipping a bunch of checks.
+  ## It assumes that you have done these checks on startup by running the regular init() proc once.
+  return open(
+    getDbHost(),
+    getDbUser(),
+    getDbPass(),
+    getDbName()
+  )
+
+proc uninit*(db: DbConn): bool =
+  ## Uninitialize the database.
+  ## Or close it basically...
+  try:
+    db.close()
+  except CatchableError as err:
+    error "Couldn't close the database: " & err.msg

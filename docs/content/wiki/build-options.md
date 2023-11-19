@@ -5,14 +5,6 @@ description: "This page documents all the different build options that are avail
 
 This page documents all the different build options we have. You should be able to just append this directly to the `nimble build` command and have it work.
 
-1. `-d:dbEngine=`, optional (defaults to "sqlite"), Accepts a string.
-
-*Note*: You should append your value after the equal sign. Like so `-d:dbEngine=YOUR_CHOICE_HERE`
-
-This flag tells Pothole what type of database backend to use, currently only two options are supported: sqlite or postgres.
-
-The sqlite database backend is the most mature as of yet.
-
 2. `-d:phLang`, optional (defaults to "en"), Accepts a string.
 
 This flag tells Pothole what language to use for its instance pages. 

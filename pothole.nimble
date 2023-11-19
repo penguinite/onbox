@@ -39,7 +39,4 @@ after build:
 requires "nim >= 1.6.10"
 requires "nimcrypto >= 0.5.4"
 requires "prologue >= 0.6.4"
-
-const dbEngine{.strdefine.} = "sqlite"
-when dbEngine == "sqlite":
-  requires "tiny_sqlite >= 0.2.0"
+requires "db_connector >= 0.1.0"
