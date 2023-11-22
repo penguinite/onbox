@@ -17,7 +17,7 @@
 # db/sqlite/reactions.nim:
 ## This module contains all database logic for handling reactions.
 
-import ../../crypto
+import ../crypto
 
 # From somewhere in the standard library
 import std/tables

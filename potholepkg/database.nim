@@ -20,12 +20,12 @@
 ## This backend is still not working yet.
 
 # From somewhere in Pothole
-import ../[lib, conf]
+import lib, conf
 
 # From somewhere in the standard library
 
 # Export these:
-#import postgres/[users, posts, reactions, boosts, common]
+import db/[users, posts, reactions, boosts, common]
 #export DbConn, isOpen, users, posts, reactions, boosts
 import db/common
 
@@ -74,8 +74,11 @@ proc init*(config: Table[string, string], schemaCheck: bool = true): DbConn  =
 
   # Now we check the schema to make sure it matches the hard-coded one.
   if schemaCheck:
-    isDbTableSameAsColsTable(result, "users", usersCols)
-    isDbTableSameAsColsTable(result, "posts", postsCols)
+    matchTableSchema(result, "users", usersCols)
+    matchTableSchema(result, "posts", postsCols)
+    matchTableSchema(result, "posts", postsCols)
+    matchTableSchema(result, "reactions", reactionsCols)
+    matchTableSchema(result, "boosts", boostsCols)
 
   return result
 
@@ -83,10 +86,10 @@ proc quickInit*(config: Table[string, string]): DbConn =
   ## This procedure quickly initializes the database by skipping a bunch of checks.
   ## It assumes that you have done these checks on startup by running the regular init() proc once.
   return open(
-    getDbHost(),
-    getDbUser(),
-    getDbPass(),
-    getDbName()
+    getDbHost(config),
+    getDbUser(config),
+    getDbPass(config),
+    getDbName(config)
   )
 
 proc uninit*(db: DbConn): bool =

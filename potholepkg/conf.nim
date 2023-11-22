@@ -23,6 +23,8 @@ import std/[tables, os]
 import std/strutils except isEmptyOrWhitespace
 import lib
 
+export tables
+
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
 const requiredConfigOptions*: seq[string] = @[

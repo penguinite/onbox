@@ -17,7 +17,7 @@
 # db/sqlite/common.nim:
 ## This module contains all the common procedures used across the entire database.
 
-import ../../[lib, conf]
+import ../[lib, conf]
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace
@@ -60,7 +60,7 @@ proc update*(db: DbConn, table, condition, column, value: string): bool =
   except:
     return false
 
-proc matchTableSchema(db: DbConn, tablename: string, table: OrderedTable[string, string]) =
+proc matchTableSchema*(db: DbConn, tablename: string, table: OrderedTable[string, string]) =
   ## We use this procedure to compare two tables against each other and see if there are any mismatches.
   ## A mismatch could signify someone forgetting to complete the migration instructions.
   var cols: seq[string] = @[] # To store the columns that are currently in the database

@@ -18,7 +18,7 @@
 ## This module contains all database logic for handling users.
 
 # From somewhere in Pothole
-import ../../[user, lib]
+import ../[user, lib]
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace
@@ -51,11 +51,11 @@ proc addUser*(db: DbConn, user: User): bool =
   
   ## Add a user to the database
   ## This procedure expects an escaped user to be handed to it.
-  if has(db.one("SELECT local FROM users WHERE handle = " & user.handle & ";")):
+  if has(db.exec("SELECT local FROM users WHERE handle = " & user.handle & ";")):
     log "User with handle " & user.handle & " already exists!"
     return false # Simply exit
 
-  if has(db.one("SELECT local FROM users WHERE id = " & user.id & ";")):
+  if has(db.exec("SELECT local FROM users WHERE id = " & user.id & ";")):
     log "User with id " & user.id & " already exists!"
     return false # Return false if id already exists
 
