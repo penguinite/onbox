@@ -1,15 +1,13 @@
 echo "Test 02 - Configuration Parsing"
 
 import potholepkg/conf
-import std/strutils
 
 var exampleConfig = ""
 
-for x in requiredConfigOptions:
-  exampleConfig.add("\n[" & x.split(":")[0] & "]\n")
-  exampleConfig.add(x.split(":")[1] & "=\"Test value\"\n")
-
-exampleConfig.add("\n[db]\nfilename=\"main.db\"")
+for section, preKey in requiredConfigOptions.pairs:
+  exampleConfig.add("\n[" & section & "]\n")
+  for key in preKey:
+    exampleConfig.add(key & "=\"Test value\"\n")
 
 echo exampleConfig
 
