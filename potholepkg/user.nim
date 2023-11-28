@@ -61,6 +61,7 @@ type
     kdf*: int # Key derivation function version number
     admin*: bool # A boolean indicating if the user is an admin.
     is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
+    is_approved*: bool # A boolean indicating if the user hs been approved by an administrator
 
 
 proc sanitizeHandle*(handle: string): string =
@@ -77,14 +78,17 @@ proc sanitizeHandle*(handle: string): string =
 
   return result
 
-proc newUser*(handle: string, name: string = "", password: string = "", local: bool = false): User =
+proc newUser*(handle: string, local: bool = false, password: string = ""): User =
   ## This procedure just creates a user and that's it
   ## We will fill out some basic details, like if you supply a password, name
   
   # First off let's do the things that are least likely to create an error in any way possible.
   result = User()
   result.id = randomString()
-  result.salt = randomString(32)
+  
+  result.salt = ""
+  if local:
+    result.salt = randomString(12)
 
   result.kdf = lib.kdf # Always assume user is using latest KDF because why not?
   result.local = local
@@ -98,10 +102,8 @@ proc newUser*(handle: string, name: string = "", password: string = "", local: b
     return # We can't use the error template for some reason.
   result.handle = newhandle
     
-  # Use handle as name if name isn't supplied
-  result.name = name
-  if isEmptyOrWhitespace(name):
-    result.name = newhandle
+  # Use handle as name
+  result.name = newhandle
   
   result.password = ""
   if local and not isEmptyOrWhitespace(password):

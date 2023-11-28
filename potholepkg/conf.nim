@@ -33,6 +33,7 @@ const requiredConfigOptions*: seq[string] = @[
   "instance:uri"
 ]
 
+
 const specialCharset: set[char] = {' ', '\t', '\v', '\r', '\l', '\f', '"'}
 
 # These types are used when parsing the config file.
@@ -41,6 +42,10 @@ const specialCharset: set[char] = {' ', '\t', '\v', '\r', '\l', '\f', '"'}
 # Value is the stuff following the equal sign. Confusingly, the "Key" is parsed in the "None" stage.
 # Multi is any multi-line object such as an array or table.
 type
+  ConfigValueKind = 
+  ConfigValue =
+
+  ConfigTable = Table[string, string]
   ParsingMode = enum
     None, Section, Value, Multi
 
@@ -211,39 +216,20 @@ func load*(input: string): Table[string,string] =
 proc setupInput*(input: string, check: bool = true): Table[string, string] =
   ## This procedure does the same thing as setup() but it accepts the input it gets
   ## in the parameter as the actual config file. This is basically a wrapper over load()
-  result = load(input) # Open the config file
-  # Now... We have to check if our required configuration
-  # options are actually there
-  if check:
-    for x in requiredConfigOptions:
-      if not result.hasKey(x):
-        var list = x.quickSplit(':')
-        error "Config file is missing essential key \"$#\" in section \"$#\"" % [list[1], list[0]]
-  return result
+  
 
 proc setup*(filename:string, check: bool = true): Table[string,string] =
   ## A procedure that readies the config table to be read.
-  ## The actual parsing is done in the load() function.
-  ## Array splitting is done in split()
-  if not fileExists(filename):
-    error "File \"$#\" does not exist." % [filename]
-  
   return setupInput(open(filename).readAll(), check) 
 
 proc exists*(table: Table[string, string], section, key: string): bool =
-  if table.hasKey(section & ":" & key):
-    return true
-  return false # Return nothing
+  
 
 ## Functions for fetching specific datatypes
 func getString*(table: Table[string, string], section, key: string): string =
-  return table[section & ":" & key]
 
 func getStringOrDefault*(table: Table[string, string], section, key, default: string): string =
-  if table.hasKey(section & ":" & key):
-    return table[section & ":" & key]
-  else:
-    return default
+
 
 func getInt*(table: Table[string, string], section, key: string): int =
   return parseInt(table[section & ":" & key])
@@ -258,33 +244,6 @@ func getArray*(table: Table[string, string], section, key: string): seq[string] 
 
 func getTable*(table: Table[string, string], section, key: string): Table[string, string] =
   return convertRawTable(table.getString(section, key))
-
-proc getMRFConfig*(table: Table[string, string], keyword:string = ""): Table[string,string] =
-  ## This proc takes a regular config table and then returns a table containing only the MRF policy requested.
-  ## This is not as simple as just getTable("mrf.KEYWORD")
-  ## 
-  ## We do not want MRF policies outside of Pothole to have access to database settings for security and performance reasons.
-  ## Even if they could easily get the file themselves. Such as by importing this file and running setup(getConfigFilename())
-  ## And also! The config file could point to a separate config file as the MRF policy configuration.
-  ## So this proc just handles everything for us, so we dont worry about it.
-  var mrfTable: Table[string, string] = initTable[string,string]()
-
-  if table.exists("mrf","config") and not isEmptyOrWhitespace(table.getString("mrf","config")) and keyword != "":
-    mrfTable = setup(table.getString("mrf","config"), false)
-  else:
-    mrfTable = table
-
-  var head = "mrf:"
-  if keyword != "":
-    head = "mrf." & keyword & ":"
-
-  for key in mrfTable.keys:
-    if key.startsWith(head):
-      var tail = key.quickSplit(':')[1]
-      result[head & tail] = mrfTable[key]
-  
-  return result
-      
 
 proc getConfigFilename*(): string =
   result = "pothole.conf"

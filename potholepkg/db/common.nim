@@ -137,11 +137,15 @@ proc getDbPass*(config: Table[string, string]): string =
 
   return ""
 
-proc has*(row: Option[Row]): bool =
-  ## A quick helper function to check if a thing exists.
-  if isNone(row):  
-    return false
-  return true
+proc has*(row: Row): bool =
+  ## A quick helper function to check if a rowthing exists.
+  var i = 0
+  for col in row:
+    inc(i)
+
+  if i > 1: return true
+  else: return false
+  
 
 # TODO: Write this.
 proc isOpen*(db: DbConn): bool = return false

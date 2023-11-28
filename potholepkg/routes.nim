@@ -29,26 +29,26 @@ var
   staticFolder {.threadvar.}: string
   db {.threadvar.}: DbConn
 
+proc renderError(error: string): string =
+  # One liner to generate an error webpage.
+  return renderTemplate(
+    getAsset(staticFolder,"error.html"),
+    {"error": error}.toTable,
+  )
+
+proc renderSuccess(str: string): string =
+  # One liner to generate a "Success!" webpage.
+  return renderTemplate(
+    getAsset(staticFolder, "success.html"),
+    {"result": str}.toTable,
+  )
+
 proc preRouteInit() =
   ## This route is ran before every single request.
   ## It has very little overhead yet it ensures that all the data we need is available for every request.
   if config.isNil(): config = setup(getConfigFilename())
   if staticFolder == "": staticFolder = initStatic(config)
   if not db.isOpen(): db = quickInit(config)
-
-
-#! Actual prologue routes
-
-# our serveStatic route reads from static/FILENAME and renders it as a template.
-# This helps keep everything simpler, since we just add our route to the string, it's asset and
-# Bingo! We've got a proper route that also does templating!
-
-# But this won't work for /auth/ routes!
-
-const staticURLs*: Table[string,string] = {
-  "/": "index.html", 
-  "/about": "about.html", "/about/more": "about.html", # About pages, they run off of the same template.
-}.toTable
 
 proc prepareTable(config: Table[string, string], db: DbConn): Table[string,string] =
   var table = { # Config table for the templating library.
@@ -84,6 +84,20 @@ proc prepareTable(config: Table[string, string], db: DbConn): Table[string,strin
 
   return table
 
+#! Actual prologue routes
+
+# our serveStatic route reads from static/FILENAME and renders it as a template.
+# This helps keep everything simpler, since we just add our route to the string, it's asset and
+# Bingo! We've got a proper route that also does templating!
+
+# But this won't work for /auth/ routes!
+
+const staticURLs*: Table[string,string] = {
+  "/": "index.html", 
+  "/about": "about.html", "/about/more": "about.html", # About pages, they run off of the same template.
+}.toTable
+
+
 proc serveStatic*(ctx: Context) {.async.} =
   preRouteInit()
 
@@ -115,22 +129,16 @@ proc get_auth_signup*(ctx: Context) {.async.} =
     prepareTable(config, db)
   )
 
-proc renderError(error: string): string =
-  # One liner to generate an error webpage.
-  return renderTemplate(
-    getAsset(staticFolder,"error.html"),
-    {"error": error}.toTable,
-  )
-
-proc renderSuccess(str: string): string =
-  # One liner to generate a "Success!" webpage.
-  return renderTemplate(
-    getAsset(staticFolder, "success.html"),
-    {"result": str}.toTable,
-  )
 
 proc post_auth_signup*(ctx: Context) {.async.} =
   preRouteInit()
+  # First... As an absolute must.
+  # Check if the registrations are open.
+  # I don't know how I missed this obvious flaw
+  # the first time I wrote this route.
+  if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == true:
+    resp renderError("This instance has disabled user registrations.")
+
   proc isInvalidParam(str: string): bool =
     ## Returns true if the parameter is invalid (It doesnt exist or it's nearly empty)
     let param = ctx.getPostParamsOption(str)
@@ -149,6 +157,10 @@ proc post_auth_signup*(ctx: Context) {.async.} =
 
   if isInvalidParam("pass"):
     resp renderError("Missing or invalid password.")
+
+  # Then let's check if the username exists.
+  if db.userHandleExists(getParam("user")):
+    resp renderError("Another user with the same handle already exists")
 
   # Email is a bit special since we have the phPrivate feature.
   var email = ""
@@ -169,6 +181,67 @@ proc post_auth_signup*(ctx: Context) {.async.} =
   user.name = toLowerAscii(user.handle)
   if not isInvalidParam("name"):
     user.name = getParam("name")
+  
+  # Make user non-approved if instance requires approval for registration.
+  if config.getBool("user","require_approval"):
+    user.is_approved = false # User isn't allowed to login until their account is approved.
+
+  if db.addUser(user):
+    resp renderSuccess("Your account has been successfully registered.")
+
+proc get_auth_signin*(ctx:Context) {.async.} =
+  preRouteInit()
+
+  resp renderTemplate(
+    getAsset(staticFolder, "signin.html"),
+    prepareTable(config, db)
+  )
+
+proc post_auth_signin*(ctx: Context) {.async.} =
+  preRouteInit()
+  proc isInvalidParam(str: string): bool =
+    ## Returns true if the parameter is invalid (It doesnt exist or it's nearly empty)
+    let param = ctx.getPostParamsOption(str)
+    if isNone(param) or isEmptyOrWhitespace(param.get()):
+      return true
+    return false
+
+  proc getParam(str: string): string =
+    # I just hate writing ctx.getPostParamsOption().get() everywhere
+    return ctx.getPostParamsOption(str).get()
+  
+  # Let's first check for required options.
+  # Everything else will come later.
+  if isInvalidParam("user"):
+    resp renderError("Missing or invalid username.")
+
+  if isInvalidParam("pass"):
+    resp renderError("Missing or invalid password.")
+
+  # Check if user exists
+  if not db.userHandleExists(sanitizeHandle(getParam("user"))):
+    resp renderError("User does not exist.")
+
+  let user = db.getUserByHandle(sanitizeHandle(getParam("user")))
+
+  # Disable login if account is frozen or not yet approved.
+  if user.is_frozen: resp renderError("Your account has been frozen, contact the admin>
+  if not user.is_approved and config.getBool("user","require_approval") == true:
+    resp renderError("Your account has not been approved yet. Contact the administrato>
+  
+
+  # TODO: Implement this once postgres is stable
+  # Session tokens will be stored in a separate table.
+  # consisting of the following schema:
+  # {"user": BLOB NOT NULL, # Id of token's user.
+  # "token": "BLOB NOT NULL", # The actual token itself.
+  # "written": "TIMESTAMP NOT NULL", # Timestamp of when the token was last used. Anyt>
+  # "ip": "BLOB NOT NULL" # A hash of the user's IP address. on phPrivate, we shouldn'>
+  # "salt": "BLOB UNIQUE NOT NULL" # A small salt used to hash the user's IP address a>
+  
+  
+  resp renderError("Login is not implemented yet... Sorry! ;(")
+
 
 proc randomPosts*(ctx:Context) {.async.} =
   preRouteInit()
