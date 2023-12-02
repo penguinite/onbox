@@ -8,3 +8,4 @@ nimbledeps/
 *.patch
 *.so
 *.scm
+.db_pid

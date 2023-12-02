@@ -64,6 +64,7 @@ proc addUser*(db: DbConn, user: User): bool =
   
   # TODO: Likewise with the addPost() proc, there has to be a better way than this.
   # It's just too ugly.
+  #[
   try:
     db.exec(
       db.prepare("insertUser", sql"INSERT OR REPLACE INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,is_frozen,is_approved) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",12),
@@ -83,6 +84,7 @@ proc addUser*(db: DbConn, user: User): bool =
     )
   except CatchableError as err:
     log "Failed to insert user: ", err.msg
+  ]#
 
   return true
 
@@ -143,7 +145,7 @@ proc getUserById*(db: DbConn, id: string): User =
   if not db.userIdExists(id):
     error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
 
-  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE id = ?;").get)
+  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE id = ?;"))
 
 proc getUserByHandle*(db: DbConn, handle: string): User =
   ## Retrieve a user from the database using their handle

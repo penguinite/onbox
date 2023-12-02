@@ -40,13 +40,20 @@ func genArg(short,long,desc: string): string =
   return "-$#,--$#\t\t;; $#" % [short, long, desc]
 
 func genCmd(cmd,desc: string): string =
-  return "$#\t\t-- $#" % [cmd, desc]
+  var i = 20
+  i = i - len(cmd)
+  result.add(cmd)
+  for x in 0..i:
+    result.add(' ')
+  result.add("-- " & desc)
+  return result
 
 const helpDialog* = @[
   prefix,
   "Available subsystems: ",
   genCmd("db","Database-related operations"),
   genCmd("mrf","MRF-related operations"),
+  genCmd("dev","Local development stuff"),
   "",
   "Universal arguments: ",
   genArg("h","help","Displays help prompt for any given command and exits."),
@@ -107,4 +114,78 @@ It does not make any changes, it merely points out errors and potential fixes.
 Available arguments:
   """,
   genArg("c","config","Path to configuration file.")
+]
+
+const devEnvVarNotice = """
+Note: *Environment variables are generated from the config file in the root directory.*
+If a config file cannot be found then potholectl will simply use default values.
+"""
+
+helpTable["dev"] = @[
+  prefix,
+  """
+This subsystem is specifically intended for developers, it helps create postgres
+containers for local development and stuff.
+Right now this only supports docker, I might add podman support later.
+  """,
+  devEnvVarNotice,
+  """
+Available commands:
+  """,
+  genCmd("setup", "Initializes everything for local development"),
+  genCmd("setup_db", "Creates a postgres container for local development"),
+  genCmd("setup_env", "Initializes environment variables."),
+  genCmd("clean", "Removes all tables inside of a postgres database container"),
+  genCmd("purge_env", "Cleans up environment variables"),
+  genCmd("purge", "Cleans up everything, including images, envvars and build folders")
+]
+
+helpTable["dev:setup"] = @[
+  prefix,
+  """
+This command basically just runs every setup command. It creates containers,
+initializes environment variables and everything else it needs.
+  """,
+  devEnvVarNotice
+]
+
+helpTable["dev:setup_db"] = @[
+  prefix,
+  """
+This command only initializes the database container, it only supports Docker.
+Might add podman support later, idk.
+  """
+]
+
+helpTable["dev:setup_env"] = @[
+  prefix,
+  """
+This command only initializes the environment variables required for Pothole
+to read the database, so like, it creates PHDB_HOST, PHDB_USER, PHDB_NAME and PHDB_PASS.
+  """,
+  devEnvVarNotice
+]
+
+helpTable["dev:clean"] = @[
+  prefix,
+  """
+This command clears every table inside the postgres container, useful for when
+you need a blank slate inbetween tests.
+  """
+]
+
+helpTable["dev:purge_env"] = @[
+  prefix,
+  """
+This command unsets the environment variables created by the setup_env command.
+  """
+]
+
+helpTable["dev_purge"] = @[
+  """
+This command purges everything, everything from environment variables to container
+images to build folders. Only use this if you need a really, *really* blank slate.
+Running this inbetween tests is very wasteful as it also removes the container
+image.
+  """
 ]

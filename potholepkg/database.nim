@@ -25,7 +25,7 @@ import lib, conf
 # From somewhere in the standard library
 
 # Export these:
-import db/[users, posts, reactions, boosts, common]
+#import db/[users, posts, reactions, boosts, common]
 #export DbConn, isOpen, users, posts, reactions, boosts
 import db/common
 
@@ -67,18 +67,17 @@ proc init*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
   result = open(host, user, password, name)
   
   # Create the tables first
-  if not createDbTableWithColsTable(result, "users", usersCols): error "Couldn't create users table"
-  if not createDbTableWithColsTable(result, "posts", postsCols): error "Couldn't create posts table"
-  if not createDbTableWithColsTable(result, "reactions", reactionsCols): error "Couldn't create reactions table"
-  if not createDbTableWithColsTable(result, "boosts", boostsCols): error "Couldn't create boosts table"
+  #if not createDbTable(result, "users", usersCols): error "Couldn't create users table"
+  #if not createDbTable(result, "posts", postsCols): error "Couldn't create posts table"
+  #if not createDbTable(result, "reactions", reactionsCols): error "Couldn't create reactions table"
+  #if not createDbTable(result, "boosts", boostsCols): error "Couldn't create boosts table"
 
   # Now we check the schema to make sure it matches the hard-coded one.
-  if schemaCheck:
-    matchTableSchema(result, "users", usersCols)
-    matchTableSchema(result, "posts", postsCols)
-    matchTableSchema(result, "posts", postsCols)
-    matchTableSchema(result, "reactions", reactionsCols)
-    matchTableSchema(result, "boosts", boostsCols)
+  #if schemaCheck:
+  #  matchTableSchema(result, "users", usersCols)
+  #  matchTableSchema(result, "posts", postsCols)
+  #  matchTableSchema(result, "reactions", reactionsCols)
+  #  matchTableSchema(result, "boosts", boostsCols)
 
   return result
 

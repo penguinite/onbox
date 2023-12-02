@@ -21,7 +21,7 @@
 import help
 
 # From elsewhere in Pothole
-import ../[lib, database]
+import ../[lib, database, conf]
 
 # From standard library
 import std/[tables]
@@ -55,8 +55,6 @@ proc helpPrompt*(subsystem:string = "", command: string = "") =
   for x in helpTable[subsystem & ":" & command]:
     echo(x)
   quit()
-
-  
 
 proc check*(args: Table[string, string], short, long: string): bool =
   ## Checks if an argument has been given.

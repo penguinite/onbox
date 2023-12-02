@@ -23,14 +23,14 @@
 import potholepkg/lib
 
 # From Pothole (ctl folder)
-import potholepkg/ctl/[shared, db, mrf]
+import potholepkg/ctl/[shared, db, mrf, dev]
 
 # From standard library
 import std/[os, parseopt, strutils, tables]
 
 # Leave if no parameters were provided
 if paramCount() < 1:
-  echo "Type -h or --help for help"
+  echo "Run with -h or --help for help"
   quit(0)
 
 #! Functions and procedures are declared here or somewhere in the ctl/ folder
@@ -74,10 +74,9 @@ if args.check("v","version"):
   quit(0)
 
 case subsystem
-of "db":
-  db.processCmd(command, data, args)
-of "mrf":
-  mrf.processCmd(command, data, args)
+of "db": db.processCmd(command, data, args)
+of "mrf": mrf.processCmd(command, data, args)
+of "dev": dev.processCmd(command, data,args)
 else:
   # Just check the args as-is
   if args.check("h","help"):

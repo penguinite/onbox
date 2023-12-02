@@ -29,7 +29,7 @@ when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
 else:
   include db_postgres
 
-proc createDbTableWithColsTable*(db: DbConn, tablename: string, cols: OrderedTable[string,string]):  bool =
+proc createDbTable*(db: DbConn, tablename: string, cols: OrderedTable[string,string]):  bool =
   ## We use this procedure to create a SQL statement that creates a table using the hard-coded rules
   # We build the sql statement slowly.
   var sqlStatement = "CREATE TABLE IF NOT EXISTS " & tablename & " ("
@@ -65,6 +65,7 @@ proc matchTableSchema*(db: DbConn, tablename: string, table: OrderedTable[string
   ## A mismatch could signify someone forgetting to complete the migration instructions.
   var cols: seq[string] = @[] # To store the columns that are currently in the database
   var missing: seq[string] = @[] # To store the columns missing from the database.
+  
 
 proc hasDbHost*(config: ConfigTable): bool =
   if config.exists("db","host") or existsEnv("PHDB_HOST"):

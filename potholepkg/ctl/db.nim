@@ -32,7 +32,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   if args.check("h","help"):
     helpPrompt("db",cmd)
 
-  var config: Table[string,string]
+  var config: ConfigTable
   if args.check("c", "config"):
     config = conf.setup(args.get("c","config"))
   else:
@@ -44,5 +44,4 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     discard init(config,true)
   of "setup":
     # TODO: Spit out a config file and postgres script.
-    
-    
+    return
