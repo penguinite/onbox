@@ -6,7 +6,7 @@ import std/strutils
 
 {.push cdecl, dynlib, exportc.}
 
-proc filterIncomingPost*(post: Post, config: Table[string, string]): Post =
+proc filterIncomingPost*(post: Post, config: ConfigTable): Post =
   # Do stuff here.
   # Additionally, you can return a completely empty object if
   # you wish the MRF facility to reject it.

@@ -81,6 +81,6 @@ proc versionPrompt*() =
   echo help.prefix
   quit()
 
-proc initDb*(config: Table[string, string], schemaCheck: bool = false): DbConn = 
+proc initDb*(config: ConfigTable, schemaCheck: bool = false): DbConn = 
   ## Returns an initialized database connection.
   return init(config, false)

@@ -66,12 +66,12 @@ proc matchTableSchema*(db: DbConn, tablename: string, table: OrderedTable[string
   var cols: seq[string] = @[] # To store the columns that are currently in the database
   var missing: seq[string] = @[] # To store the columns missing from the database.
 
-proc hasDbHost*(config: Table[string, string]): bool =
+proc hasDbHost*(config: ConfigTable): bool =
   if config.exists("db","host") or existsEnv("PHDB_HOST"):
     return true
   return false
 
-proc getDbHost*(config: Table[string, string]): string =
+proc getDbHost*(config: ConfigTable): string =
   ## This procedure returns a string containing the name of the database we want to use.
   ## It has a default value of "127.0.0.1:5432" but overrides it based on the config or environment variables (In that order)
   result = "127.0.0.1:5432"
@@ -84,12 +84,12 @@ proc getDbHost*(config: Table[string, string]): string =
 
   return result
 
-proc hasDbName*(config: Table[string, string]): bool =
+proc hasDbName*(config: ConfigTable): bool =
   if config.exists("db","name") or existsEnv("PHDB_NAME"):
     return true
   return false
 
-proc getDbName*(config: Table[string, string]): string =
+proc getDbName*(config: ConfigTable): string =
   ## This procedure returns a string containing the name of the database we want to use.
   ## It has a default value of "pothole" but overrides it based on the config or environment variables (In that order)
   result = "pothole"
@@ -102,12 +102,12 @@ proc getDbName*(config: Table[string, string]): string =
   
   return result
 
-proc hasDbUser*(config: Table[string, string]): bool =
+proc hasDbUser*(config: ConfigTable): bool =
   if config.exists("db","user") or existsEnv("PHDB_USER"):
     return true
   return false
 
-proc getDbUser*(config: Table[string, string]): string =
+proc getDbUser*(config: ConfigTable): string =
   ## This procedure returns a string containing the name of the database we want to use.
   ## It has a default value of "pothole" but overrides it based on the config or environment variables (In that order)
   result = "pothole"
@@ -120,12 +120,12 @@ proc getDbUser*(config: Table[string, string]): string =
   
   return result
 
-proc hasDbPass*(config: Table[string, string]): bool =
+proc hasDbPass*(config: ConfigTable): bool =
   if config.exists("db","pass") or existsEnv("PHDB_PASS"):
     return true
   return false
 
-proc getDbPass*(config: Table[string, string]): string =
+proc getDbPass*(config: ConfigTable): string =
   ## This procedure returns a string containing the name of the database we want to use.
   ## It has no default value but overrides it based on the config or environment variables (In that order)
   ## 

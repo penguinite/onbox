@@ -34,7 +34,7 @@ when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
 else:
   include db_postgres
 
-proc init*(config: Table[string, string], schemaCheck: bool = true): DbConn  =
+proc init*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
   # Some checks to run before we actually open the database
 
   if not hasDbHost(config):
@@ -82,7 +82,7 @@ proc init*(config: Table[string, string], schemaCheck: bool = true): DbConn  =
 
   return result
 
-proc quickInit*(config: Table[string, string]): DbConn = 
+proc quickInit*(config: ConfigTable): DbConn = 
   ## This procedure quickly initializes the database by skipping a bunch of checks.
   ## It assumes that you have done these checks on startup by running the regular init() proc once.
   return open(
