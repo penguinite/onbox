@@ -9,3 +9,4 @@ nimbledeps/
 *.so
 *.scm
 .db_pid
+pothole_envs

@@ -35,21 +35,32 @@ const envVars = {
   "PHDB_PASS": "SOMETHING_SECRET"
 }.toTable
 
-proc initEnv(config: ConfigTable) =
+proc initEnv(config: ConfigTable,outputfile: string = "pothole_envs") =
+  var data = ""
   for env, val in envVars.pairs:
     # Woah! A powerful oneliner!
     let key = env.split('_')[1][0..3].toLower()
-    try:
-      putEnv(env, config.getStringOrDefault("db",key,val))
-    except CatchableError as err:
-      log "Couldn't set environment variable \"", env, "\" to its value: ", err.msg
+    data.add "export " & env & "=\"" & config.getStringOrDefault("db",key,val)  & "\"\n"
+  
+  # Write to file
+  log "Writing script to ", outputfile
+  var file = open(outputfile, fmWrite)
+  file.write(data)
+  file.close()
 
-proc cleanEnv() =
+proc cleanEnv(outputfile: string = "pothole_envs") =
+  var data = ""
   for env in envVars.keys:
     try:
-      delEnv(env)
+      data.add("unset " & env & "\n")
     except CatchableError as err:
       log "Couldn't delete environment variables \"", env, "\": ", err.msg
+  
+  # Write to file
+  log "Writing script to ", outputfile
+  var file = open(outputfile, fmWrite)
+  file.write(data)
+  file.close()
 
 proc initDb(config: ConfigTable) =
   proc exec(cmd: string): string =
@@ -57,26 +68,31 @@ proc initDb(config: ConfigTable) =
       log "Executing: ", cmd
       let (output,exitCode) = execCmdEx(cmd)
       if exitCode != 0:
-        log "Command returns ", exitCode
+        log "Command returns code: ", exitCode
+        log "command returns output: ", output
         return ""
       return output
     except CatchableError as err:
       log "Couldn't run command:", err.msg
 
-  discard exec "docker pull postgres"
+  discard exec "docker pull postgres:alpine"
 
-  let id = exec "docker run --name potholeDb -p 5455:5432 -e POSTGRES_USER=$1 -e POSTGRES_PASSWORD=$2 -e POSTGRES_DB=$3 -d postgres" % [getDbUser(config), getDbPass(config), getDbName(config)]
+  let id = exec "docker run --name potholeDb -d -p 5432:5432 -e POSTGRES_USER=$1 -e POSTGRES_PASSWORD=$2 -e POSTGRES_DB=$3 postgres:alpine" % [getDbUser(config), getDbPass(config), getDbName(config)]
 
   if id == "":
     error "Please investigate the above errors before trying again."
-  else:
-    log "Saving id to .db_pid"
-    var file = open(".db_pid", fmWrite)
-    file.write(id)
-    file.close()
 
 proc cleanDb(config: ConfigTable) =
-  return
+  let db = open(
+    getDbHost(config),
+    getDbUser(config),
+    getDbPass(config),
+    getDbName(config)
+  )
+
+  for table in @["users","posts","reactions","boosts"]:
+    let sql = sql("DROP TABLE IF EXISTS " & table)
+    db.exec(sql)
 
 proc purgeDb() =
   proc exec(cmd: string) =
@@ -86,15 +102,8 @@ proc purgeDb() =
     except CatchableError as err:
       log "Couldn't run command:", err.msg
   
-  if not fileExists(".db_pid"):
-    error "Couldn't find file \".db_pid\", did you setup the server?"
-
-  let id = readFile(".db_pid")
-
-  exec "docker kill " & id
-  exec "docker rm " & id
-  exec "docker rmi postgres"
-
+  exec "docker kill potholeDb"
+  exec "docker rm potholeDb"
 
 proc envvarsDontExist(): bool =
   for env in envVars.keys:
@@ -120,15 +129,23 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "You might be able to recover from this error by running the setup_env command first"
       return
     initDb(config)
-  of "setup_db":
+  of "db":
     if config.isNil() and envvarsDontExist():
       log "No way to get the login details required to clean the database."
       log "Either you have no readable config file or no environment variables"
       log "You might be able to recover from this error by running the setup_env command first"
       return
-    initDb(config)
-  of "setup_env":
-    initEnv(config)
+    if args.check("d","delete"):
+      purgeDb()
+    else:
+      initDb(config)
+  of "env":
+    let outputFile = args.getOrDefault("o","output","pothole_envs")
+    if args.check("d","delete"):
+      cleanEnv(outputFile)
+    else:
+      
+      config.initEnv(outputFile)
   of "clean":
     if config.isNil() and envvarsDontExist():
       log "No way to get the login details required to clean the database."
@@ -136,22 +153,15 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "You might be able to recover from this error by running the setup_env command first"
       return
     cleanDb(config)
-  of "purge_env":
-    cleanEnv()
   of "purge":
-    cleanDb(config)
     cleanEnv()
     purgeDb()
+  
+    log "Executing: docker rmi postgres"
+    discard execCmd "docker rmi postgres"
+
     for dir in @["static/","uploads/","build/","docs/public/"]:
       if dirExists(dir): removeDir(dir)
   else:
     log "Unknown command: \"", cmd, "\""
     helpPrompt("dev")
-
-    
-#  genCmd("setup", "Initializes everything for local development"),
-#  genCmd("setup_db", "Creates a postgres container for local development"),
-#  genCmd("setup_env", "Initializes environment variables."),
-#  genCmd("clean", "Removes all tables inside of a postgres database container"),
-#  genCmd("purge_env", "Cleans up environment variables"),
-#  genCmd("purge", "Cleans up everything, including images, envvars and build folders")

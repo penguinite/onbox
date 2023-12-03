@@ -21,7 +21,7 @@
 import help
 
 # From elsewhere in Pothole
-import ../[lib, database, conf]
+import ../[lib, conf]
 
 # From standard library
 import std/[tables]
@@ -65,9 +65,18 @@ proc check*(args: Table[string, string], short, long: string): bool =
 proc get*(args: Table[string, string], short, long: string): string =
   ## Gets a command-line argument value. If there is no value to be retrieved then an empty string is returned.
   for key,val in args.pairs:
+    if val.isEmptyOrWhitespace():
+      continue
     if short == key or long == key: return val
   return ""
 
+proc getOrDefault*(args: Table[string,string], short, long, default: string): string = 
+  ## Gets a command-line argument value. If there is no value to be retrieved then the "default" string is returned.
+  for key,val in args.pairs:
+    if val.isEmptyOrWhitespace():
+      continue
+    if short == key or long == key: return val
+  return default
 
 proc isSubsystem*(sys: string): bool =
   return sys in subsystems
@@ -78,7 +87,3 @@ proc isCommand*(sys, cmd: string): bool =
 proc versionPrompt*() =
   echo help.prefix
   quit()
-
-proc initDb*(config: ConfigTable, schemaCheck: bool = false): DbConn = 
-  ## Returns an initialized database connection.
-  return init(config, false)

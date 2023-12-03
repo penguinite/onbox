@@ -122,7 +122,7 @@ proc getDbUser*(config: ConfigTable): string =
   return result
 
 proc hasDbPass*(config: ConfigTable): bool =
-  if config.exists("db","pass") or existsEnv("PHDB_PASS"):
+  if config.exists("db","password") or existsEnv("PHDB_PASS"):
     return true
   return false
 
@@ -133,8 +133,8 @@ proc getDbPass*(config: ConfigTable): string =
   if existsEnv("PHDB_PASS"):
     return getEnv("PHDB_PASS")
 
-  if config.exists("db","pass"):
-    return config.getString("db","pass")
+  if config.exists("db","password"):
+    return config.getString("db","password")
 
   return ""
 
