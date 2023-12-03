@@ -17,6 +17,10 @@
 # db/sqlite/boosts.nim:
 ## This module contains all database logic for handling boosts.
 
+import ../crypto
+
+import common
+
 # From somewhere in the standard library
 import std/tables
 
@@ -34,7 +38,32 @@ const boostsCols*: OrderedTable[string, string] = {"id": "BLOB PRIMARY KEY UNIQU
 }.toOrderedTable
 
 proc getBoosts*(db: DbConn, id: string): Table[string, seq[string]] =
-  # TODO: Finish this
-  let stmt = prepare(db, "getboosts", sql"SELECT uid,level FROM boosts WHERE pid = $1;", 1)
-  
+  ## Retrieves a Table of boosts for a post.
+  let preResult = db.getRow(sql"SELECT uid,level FROM boosts WHERE pid = ?;", id)
+  echo preResult
   return
+
+proc addBoost*(db: DbConn, pid,uid,level: string): bool =
+  ## Adds an individual boost
+  # Check for ID first.
+  var id = randomString(8)
+  while has(db.getRow(sql"SELECT id FROM boosts WHERE id = ?;", id)):
+    id = randomString(8)
+
+  db.exec(sql"INSERT OR REPLACE INTO boosts (id, pid, uid, level) VALUES (?,?,?,?);",id,pid,uid,level)
+
+proc addBulkBoosts*(db: DbConn, id: string, table: Table[string, seq[string]]) =
+  ## Adds an entire table of boosts to the database
+  for boost,list in table.pairs:
+    for user in list:
+      discard db.addBoost(id, user, boost)
+
+proc removeBoost*(db: DbConn, pid,uid: string) =
+  ## Removes a boost from the database
+  db.exec("DELETE FROM boosts WHERE pid = ? AND uid = ?;",pid,uid)
+
+proc hasBoost*(db: DbConn, pid,uid,level: string): bool =
+  ## Checks if a post has a boost. Everything must match.
+  if has(db.getRow(sql"SELECT id FROM boosts WHERE pid = ? AND uid = ? AND level = ?;", pid, uid, level)):
+    return true
+  return false

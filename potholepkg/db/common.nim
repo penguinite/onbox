@@ -139,14 +139,9 @@ proc getDbPass*(config: ConfigTable): string =
   return ""
 
 proc has*(row: Row): bool =
-  ## A quick helper function to check if a rowthing exists.
-  var i = 0
-  for col in row:
-    inc(i)
-
-  if i > 1: return true
+  ## A quick helper function to check if a Row is valid.
+  if len(row) > 1: return true
   else: return false
-  
 
-# TODO: Write this.
+
 proc isOpen*(db: DbConn): bool = return false
