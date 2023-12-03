@@ -38,42 +38,32 @@ const reactionsCols*: OrderedTable[string, string] = {"id": "BLOB PRIMARY KEY UN
 }.toOrderedTable
 
 proc getReactions*(db: DbConn, id: string): Table[string, seq[string]] =
-  let statement = db.stmt("SELECT uid,reaction FROM reactions WHERE pid = ?;")
-  echo statement.all(id)
-  statement.finalize()
+  ## Retrieves a Table of reactions for a post.
+  let preResult = db.getRow(sql"SELECT uid,reaction FROM reactions WHERE pid = ?;", id)
+  echo preResult
+  return
 
 proc addReaction*(db: DbConn, pid,uid,reaction: string): bool =
   ## Adds an individual reaction
-  let
-    testStatement = db.stmt("SELECT id FROM reactions WHERE id = ?;")
-    statement = db.stmt("INSERT OR REPLACE INTO reactions (id, pid, uid, reaction) VALUES (?,?,?,?);")
-  try:
-    var id = randomString()
-    while has(testStatement.one(id)):
-      id = randomString()
+  # Check for ID first.
+  var id = randomString(8)
+  while has(db.getRow(sql"SELECT id FROM reactions WHERE id = ?;", id)):
+    id = randomString(8)
 
-    statement.exec(id, pid, uid, reaction)
-    statement.finalize()
-  except:
-    statement.finalize()
+  db.exec(sql"INSERT OR REPLACE INTO reactions (id, pid, uid, reaction) VALUES (?,?,?,?);",id,pid,uid,reaction)
 
 proc addBulkReactions*(db: DbConn, id: string, table: Table[string, seq[string]]) =
-  ## Adds an entire table of reactions to a post.
+  ## Adds an entire table of reactions to the database
   for reaction,list in table.pairs:
     for user in list:
       discard db.addReaction(id, user, reaction)
 
 proc removeReaction*(db: DbConn, pid,uid: string) =
-  ## Removes a reaction from the database
-  let statement = db.stmt("DELETE FROM reactions WHERE pid = ? AND uid = ?;")
-  statement.exec(pid,uid)
-  statement.finalize()
+  ## Removes a reactions from the database
+  db.exec("DELETE FROM reactions WHERE pid = ? AND uid = ?;",pid,uid)
 
 proc hasReaction*(db: DbConn, pid,uid,reaction: string): bool =
   ## Checks if a post has a reaction. Everything must match.
-  let statement = db.stmt("SELECT id FROM reactions WHERE pid = ? AND uid = ? AND reaction = ?;")
-  if has(statement.one(pid, uid, reaction)):
-    statement.finalize()
+  if has(db.getRow(sql"SELECT id FROM reactions WHERE pid = ? AND uid = ? AND reaction = ?;", pid, uid, reaction)):
     return true
-  statement.finalize()
   return false
