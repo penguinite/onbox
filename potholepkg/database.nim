@@ -27,7 +27,9 @@ import lib, conf
 # Export these:
 #import db/[users, posts, reactions, boosts, common]
 #export DbConn, isOpen, users, posts, reactions, boosts
-import db/common
+import db/[common, boosts, reactions]
+
+export isOpen
 
 when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
   include db_connector/db_postgres
@@ -69,15 +71,15 @@ proc init*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
   # Create the tables first
   #if not createDbTable(result, "users", usersCols): error "Couldn't create users table"
   #if not createDbTable(result, "posts", postsCols): error "Couldn't create posts table"
-  #if not createDbTable(result, "reactions", reactionsCols): error "Couldn't create reactions table"
-  #if not createDbTable(result, "boosts", boostsCols): error "Couldn't create boosts table"
+  if not createDbTable(result, "reactions", reactionsCols): error "Couldn't create reactions table"
+  if not createDbTable(result, "boosts", boostsCols): error "Couldn't create boosts table"
 
   # Now we check the schema to make sure it matches the hard-coded one.
-  #if schemaCheck:
+  if schemaCheck:
   #  matchTableSchema(result, "users", usersCols)
   #  matchTableSchema(result, "posts", postsCols)
-  #  matchTableSchema(result, "reactions", reactionsCols)
-  #  matchTableSchema(result, "boosts", boostsCols)
+    matchTableSchema(result, "reactions", reactionsCols)
+    matchTableSchema(result, "boosts", boostsCols)
 
   return result
 

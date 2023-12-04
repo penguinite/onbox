@@ -25,9 +25,9 @@ import std/strutils except isEmptyOrWhitespace
 import prologue
 
 var
-  config {.threadvar.}: Table[string, string]
+  config {.threadvar.}: ConfigTable
   staticFolder {.threadvar.}: string
-  db {.threadvar.}: DbConn
+  db {.threadvar.}: database.DbConn
 
 proc renderError(error: string): string =
   # One liner to generate an error webpage.
@@ -50,7 +50,7 @@ proc preRouteInit() =
   if staticFolder == "": staticFolder = initStatic(config)
   if not db.isOpen(): db = quickInit(config)
 
-proc prepareTable(config: Table[string, string], db: DbConn): Table[string,string] =
+proc prepareTable(config: ConfigTable, db: DbConn): Table[string,string] =
   var table = { # Config table for the templating library.
     "name":config.getString("instance","name"), # Instance name
     "description":config.getString("instance","description"), # Instance description
@@ -225,19 +225,19 @@ proc post_auth_signin*(ctx: Context) {.async.} =
   let user = db.getUserByHandle(sanitizeHandle(getParam("user")))
 
   # Disable login if account is frozen or not yet approved.
-  if user.is_frozen: resp renderError("Your account has been frozen, contact the admin>
+  if user.is_frozen: resp renderError("Your account has been frozen, contact the administrators of this instance.")
   if not user.is_approved and config.getBool("user","require_approval") == true:
-    resp renderError("Your account has not been approved yet. Contact the administrato>
+    resp renderError("Your account has not been approved yet. Contact the administrators of this instance.")
   
 
   # TODO: Implement this once postgres is stable
   # Session tokens will be stored in a separate table.
   # consisting of the following schema:
-  # {"user": BLOB NOT NULL, # Id of token's user.
+  # "user": BLOB NOT NULL, # Id of token's user.
   # "token": "BLOB NOT NULL", # The actual token itself.
-  # "written": "TIMESTAMP NOT NULL", # Timestamp of when the token was last used. Anyt>
-  # "ip": "BLOB NOT NULL" # A hash of the user's IP address. on phPrivate, we shouldn'>
-  # "salt": "BLOB UNIQUE NOT NULL" # A small salt used to hash the user's IP address a>
+  # "written": "TIMESTAMP NOT NULL", # Timestamp of when the token was last used. If it hasn't been used in more than two weeks then kill it with fire.
+  # "ip": "BLOB NOT NULL" # A hash of the user's IP address. On phPrivate, this is not used whatsoever.
+  # "salt": "BLOB UNIQUE NOT NULL" # A small salt used to hash the user's IP address
   
   
   resp renderError("Login is not implemented yet... Sorry! ;(")

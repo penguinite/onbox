@@ -65,6 +65,8 @@ proc matchTableSchema*(db: DbConn, tablename: string, table: OrderedTable[string
   ## A mismatch could signify someone forgetting to complete the migration instructions.
   var cols: seq[string] = @[] # To store the columns that are currently in the database
   var missing: seq[string] = @[] # To store the columns missing from the database.
+
+  echo db.getAllRows(sql"DESCRIBE TABLE posts;")
   
 
 proc hasDbHost*(config: ConfigTable): bool =
@@ -144,4 +146,7 @@ proc has*(row: Row): bool =
   else: return false
 
 
-proc isOpen*(db: DbConn): bool = return false
+proc isOpen*(db: DbConn): bool =
+  if db[].dbName == "":
+    return false
+  return true

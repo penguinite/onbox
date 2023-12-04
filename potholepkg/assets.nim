@@ -83,7 +83,7 @@ func renderTemplate*(input: string, vars: Table[string,string]): string =
     
   return result        
 
-proc initUploads*(config:Table[string,string]): string =
+proc initUploads*(config: ConfigTable): string =
   ## Initializes the upload folder by checking if the user has already defined where it should be
   ## and creating the folder if it doesn't exist.
   result = config.getStringOrDefault("folders", "uploads", "uploads/")
@@ -96,7 +96,7 @@ proc initUploads*(config:Table[string,string]): string =
 
   return result
 
-proc initStatic*(config:Table[string,string]): string =
+proc initStatic*(config: ConfigTable): string =
   ## Initializes the static folder by checking if the user has already defined where it should be
   ## and creating the folder if it doesn't exist.
   result = config.getStringOrDefault("folders", "static", "static/")
