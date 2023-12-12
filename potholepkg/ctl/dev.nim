@@ -144,7 +144,6 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     if args.check("d","delete"):
       cleanEnv(outputFile)
     else:
-      
       config.initEnv(outputFile)
   of "clean":
     if config.isNil() and envvarsDontExist():
@@ -153,6 +152,16 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "You might be able to recover from this error by running the setup_env command first"
       return
     cleanDb(config)
+  of "psql":
+    if config.isNil() and envvarsDontExist():
+      log "No way to get the login details required to access the database."
+      log "Either you have no readable config file or no environment variables"
+      log "You might be able to recover from this error by running the setup_env command first"
+      return
+
+    log "Executing: docker exec -it potholeDb psql -U ", config.getDbUser(), " ", config.getDbName()
+    discard execShellCmd "docker exec -it potholeDb psql -U " & config.getDbUser() & " " & config.getDbName()
+
   of "purge":
     cleanEnv()
     purgeDb()

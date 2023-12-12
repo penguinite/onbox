@@ -140,7 +140,8 @@ Available commands:
     genCmd("db", "Creates a postgres container for local development"),
     genCmd("env", "Initializes environment variables and also deletes them."),
     genCmd("clean", "Removes all tables inside of a postgres database container"),
-    genCmd("purge", "Cleans up everything, including images, envvars and build folders")
+    genCmd("purge", "Cleans up everything, including images, envvars and build folders"),
+    genCmd("psql", "Opens a psql shell inside of the docker container")
   ],
 
   "dev:setup": @[
@@ -192,6 +193,13 @@ This command purges everything, everything from environment variables to contain
 images to build folders. Only use this if you need a really, *really* blank slate.
 Running this inbetween tests is very wasteful as it also removes the container
 image.
+    """
+  ],
+  "dev:psql": @[
+    prefix,
+    """
+This command opens a psql shell in the database container. This is useful for 
+debugging operations and generally figuring out where we went wrong.
     """
   ]
 }.toTable
