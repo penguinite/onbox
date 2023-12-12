@@ -33,17 +33,16 @@ else:
 import common, reactions, boosts, users
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-# For this module to work, both database schemas and post object definitions must be similar
-const postsCols*: OrderedTable[string, string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The post Id
-"recipients":"VARCHAR(65535)", # A comma-separated list of recipients since sqlite3 does not support arrays by default
-"sender":"VARCHAR(65535) NOT NULL", # A string containing the sender handle
-"replyto": "VARCHAR(65535)", # A string containing the post that the sender is replying to, if at all.
-"content": "VARCHAR(65535)", # A string containing the actual post's contents.
+const postsCols*: OrderedTable[string, string] = {"id":"TEXT PRIMARY KEY", # The post Id
+"recipients":"TEXT", # A comma-separated list of recipients since sqlite3 does not support arrays by default
+"sender":"TEXT NOT NULL", # A string containing the sender handle
+"replyto": "TEXT", # A string containing the post that the sender is replying to, if at all.
+"content": "TEXT", # A string containing the actual post's contents.
 "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
 "updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
 "modified":"BOOLEAN NOT NULL", # A boolean indicating whether the post was modified or not.
 "local": "BOOLEAN NOT NULL", # A boolean indicating whether the post originated from this server or other servers.
-"revisions": "VARCHAR(65535)", # A string containing previous revisions of a post
+"revisions": "TEXT", # A string containing previous revisions of a post
 }.toOrderedTable
 
 proc constructPostFromRow*(db: DbConn, row: Row): Post =

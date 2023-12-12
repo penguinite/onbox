@@ -34,15 +34,15 @@ import common
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 # For this module to work, both database schemas and user object definitions must be similar
-const usersCols*: OrderedTable[string,string] = {"id":"BLOB PRIMARY KEY UNIQUE NOT NULL", # The user ID
-"kind":"VARCHAR(65535) NOT NULL", # The user type, see UserType object in user.nim
-"handle":"VARCHAR(65535) UNIQUE NOT NULL", # The user's actual username (Fx. alice@alice.wonderland)
-"name":"VARCHAR(65535)", # The user's display name (Fx. Alice)
+const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY", # The user ID
+"kind":"TEXT NOT NULL", # The user type, see UserType object in user.nim
+"handle":"TEXT UNIQUE NOT NULL", # The user's actual username (Fx. alice@alice.wonderland)
+"name":"TEXT", # The user's display name (Fx. Alice)
 "local":"BOOLEAN NOT NULL", # A boolean indicating whether the user originates from the local server or another one.
-"email":"VARCHAR(225)", # The user's email (Empty for remote users)
-"bio":"VARCHAR(65535)", # The user's biography 
-"password":"VARCHAR(65535)", # The user's hashed & salted password (Empty for remote users obv)
-"salt":"VARCHAR(65535)", # The user's salt (Empty for remote users obv)
+"email":"TEXT", # The user's email (Empty for remote users)
+"bio":"TEXT", # The user's biography 
+"password":"TEXT", # The user's hashed & salted password (Empty for remote users obv)
+"salt":"TEXT", # The user's salt (Empty for remote users obv)
 "kdf":"INTEGER NOT NULL", # The version of the key derivation function. See DESIGN.md's "Key derivation function table" for more.
 "admin":"BOOLEAN NOT NULL", # A boolean indicating whether or not this is user is an Admin.
 "is_frozen":"BOOLEAN NOT NULL", # A boolean indicating whether this user is frozen (Posts from this user will not be stored)

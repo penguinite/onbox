@@ -31,10 +31,10 @@ else:
 import common
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const reactionsCols*: OrderedTable[string, string] = {"id": "BLOB PRIMARY KEY UNIQUE NOT NULL",
-"pid": "BLOB NOT NULL", # ID of post that user reacted to
-"uid": "BLOB NOT NULL", # ID of user who reacted to post
-"reaction": "BLOB NOT NULL" # Specific reaction
+const reactionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY",
+"pid": "TEXT NOT NULL", # ID of post that user reacted to
+"uid": "TEXT NOT NULL", # ID of user who reacted to post
+"reaction": "TEXT NOT NULL" # Specific reaction
 }.toOrderedTable
 
 proc getReactions*(db: DbConn, id: string): Table[string, seq[string]] =

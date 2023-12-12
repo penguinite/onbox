@@ -31,10 +31,10 @@ else:
   include db_postgres
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const boostsCols*: OrderedTable[string, string] = {"id": "BLOB PRIMARY KEY UNIQUE NOT NULL",
-"pid": "BLOB NOT NULL", # ID of post that user boosted
-"uid": "BLOB NOT NULL", # ID of user that boosted post
-"level": "BLOB NOT NULL" # The "boost level", ie. is it followers-only or whatever.
+const boostsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY",
+"pid": "TEXT NOT NULL", # ID of post that user boosted
+"uid": "TEXT NOT NULL", # ID of user that boosted post
+"level": "TEXT NOT NULL" # The "boost level", ie. is it followers-only or whatever.
 }.toOrderedTable
 
 proc getBoosts*(db: DbConn, id: string): Table[string, seq[string]] =
