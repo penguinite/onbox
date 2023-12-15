@@ -23,14 +23,7 @@ import std/[tables, os]
 import conf,lib
 import std/strutils except isEmptyOrWhitespace
 
-when defined(noEmbeddingAssets):
-  {.warning: "Not embedding assets is a really bad idea.".}
-  proc getEmbeddedAsset*(fn: string): string = 
-    debug "This build does not embed assets, thus getEmbeddedAsset does not work."
-    error "Someone or something has attempted to fetch an asset with the filename " & fn & "\nUnfortunately assets were not embedded in this build, and so the only reasonable way out is to throw an error\nand force the administrator to setup the files properly for the next startup"
-else:
-  func getEmbeddedAsset*(fn: string): string = 
-    # We wrap it over a function so we dont immediately use up the RAM.
+when not defined(phNoEmbeddedAssets):
     const phLang{.strdefine.} = "en"
     const assets: Table[string, string] = {
       "index.html": staticRead("../assets/" & phLang & "/index.html"),
@@ -39,9 +32,17 @@ else:
       "signup_disabled.html": staticRead("../assets/" & phLang & "/signup_disabled.html"),
       "error.html": staticRead("../assets/" & phLang & "/error.html"),
       "success.html": staticRead("../assets/" & phLang & "/success.html"),
-      "style.css": staticRead("../assets/style.css") # CSS doesn't need language. Hopefully.
+    "style.css": staticRead("../assets/style.css") # CSS doesn't need language.
     }.toTable
+
+  func getEmbeddedAsset*(fn: string): string =     
     return assets[fn]
+else:
+  {.warning: "Not embedding assets is a really bad idea.".}
+  proc getEmbeddedAsset*(fn: string): string = 
+    log "This build does not embed assets, thus getEmbeddedAsset does not work."
+    log "The only reasonable way out is to throw an error and force the admin to setup the files properly"
+    error "Couldn't retrieve asset with filename: ", fn
 
 func renderTemplate*(input: string, vars: Table[string,string]): string =
   ## This function renders our template files. With simple string substitution.
