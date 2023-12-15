@@ -24,16 +24,16 @@ import conf,lib
 import std/strutils except isEmptyOrWhitespace
 
 when not defined(phNoEmbeddedAssets):
-    const phLang{.strdefine.} = "en"
-    const assets: Table[string, string] = {
-      "index.html": staticRead("../assets/" & phLang & "/index.html"),
-      "about.html": staticRead("../assets/" & phLang & "/about.html"),
-      "signup.html": staticRead("../assets/" & phLang & "/signup.html"),
-      "signup_disabled.html": staticRead("../assets/" & phLang & "/signup_disabled.html"),
-      "error.html": staticRead("../assets/" & phLang & "/error.html"),
-      "success.html": staticRead("../assets/" & phLang & "/success.html"),
+  const phLang{.strdefine.} = "en"
+  const assets: Table[string, string] = {
+    "index.html": staticRead("../assets/" & phLang & "/index.html"),
+    "about.html": staticRead("../assets/" & phLang & "/about.html"),
+    "signup.html": staticRead("../assets/" & phLang & "/signup.html"),
+    "signup_disabled.html": staticRead("../assets/" & phLang & "/signup_disabled.html"),
+    "error.html": staticRead("../assets/" & phLang & "/error.html"),
+    "success.html": staticRead("../assets/" & phLang & "/success.html"),
     "style.css": staticRead("../assets/style.css") # CSS doesn't need language.
-    }.toTable
+  }.toTable
 
   func getEmbeddedAsset*(fn: string): string =     
     return assets[fn]
@@ -126,6 +126,18 @@ proc getUploadFilename*(folder, id, name: string): string =
 
   return folder & id & "/" & name
 
+proc writeReason(fn, reason: string) =
+  ## Writes a user upload failure reason. Only used for setAsset
+  const name = lib.globalCrashDir & "/failedUploads.log"
+  try:
+    var previousContent = ""
+    if fileExists(name):
+      previousContent = readFile(name)
+    writeFile(lib.globalCrashDir & "/failedUploads.log", previousContent & "\n" & fn & ": " & reason)
+  except CatchableError as err:
+    log "Couldn't log user upload failure reason: ", err.msg
+
+
 proc setAsset*(folder, id, name: string, data: openArray[byte]): bool =
   if not dirExists(folder & id):
     createDir(folder & id)
@@ -134,23 +146,27 @@ proc setAsset*(folder, id, name: string, data: openArray[byte]): bool =
     return false # File exists, Maybe scramble the name and retry dear client.
 
   try:
-    var file = open(folder & id & "/" & name)
-    file.write(data)
-    file.close()
+    writeFile(folder & id & "/" & name, data)
   except CatchableError as err:
-    # Not being able to write to a file should be enough to error out and force
-    # the operator to troubleshoot
+    # In the past, pothole used to error out upon failing to write a user upload.
+    # But I was worried about users being able to remotely crash pothole servers
+    # By simply uploading a file. So I made them write the user data to a special
+    # location along with the reason so that administrators can debug on their own.
     
-    log "The user upload failed because of ", err.msg
-    log "Saving data as data.bin for later troubleshooting"
+    log "User upload failed: ", err.msg
+    log "Saving to failsafe directory for future debugging."
     try:
-      createDir(lib.globalCrashDir)
-      var file = open(lib.globalCrashDir & "/data.bin")
-      file.write(data)
-      file.close()
-    except:
-      log "The write failed? Okay, this environment is severely buggy. PLEASE INVESTIGATE BEFORE RE-LAUNCHING!"
+      if not dirExists(lib.globalCrashDir): createDir(lib.globalCrashDir)
+      if not dirExists(lib.globalCrashDir & "/failedUploads/"): createDir(lib.globalCrashDir & "/failedUploads/")
+
+      let fName = "$#/failedUploads/$#-$#-$#.bin" % [lib.globalCrashDir, folder, id, name]
+      # Storing reason for failed upload
+      writeReason(fName, err.msg)
+      # Writing user-uploaded data
+      writeFile(fName, data)
+    except CatchableError as err:
+      log "Write to failsafe directory failed: ", err.msg
     
-    error "Failed to write user-upload file, debugging data is in " & lib.globalCrashDir
+    return false # Let client come up with some reason as to why it failed.
 
   
