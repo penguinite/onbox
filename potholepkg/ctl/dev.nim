@@ -172,5 +172,4 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     for dir in @["static/","uploads/","build/","docs/public/"]:
       if dirExists(dir): removeDir(dir)
   else:
-    log "Unknown command: \"", cmd, "\""
     helpPrompt("dev")

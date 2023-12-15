@@ -81,5 +81,5 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   of "enable":
     return
   else:
-    return
+    helpPrompt("mrf")
     

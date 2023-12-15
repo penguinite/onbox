@@ -45,3 +45,5 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   of "setup":
     # TODO: Spit out a config file and postgres script.
     return
+  else:
+    helpPrompt("db")
