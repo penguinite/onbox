@@ -23,18 +23,14 @@
 import lib, conf
 
 # From somewhere in the standard library
+import std/strutils
 
 # Export these:
-#import db/[users, posts, reactions, boosts, common]
-#export DbConn, isOpen, users, posts, reactions, boosts
-import db/[common, boosts, reactions]
+import db/[users, posts, reactions, boosts, common]
+export DbConn, isOpen, users, posts, reactions, boosts
 
 export isOpen
 
-when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
-  include db_connector/db_postgres
-else:
-  include db_postgres
 
 proc init*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
   # Some checks to run before we actually open the database
@@ -59,7 +55,7 @@ proc init*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
     user = getDbUser(config)
     password = getDbPass(config)
 
-  log "Opening database \"", name ,"\"at \"", host, "\" with user \"", user, "\""
+  log "Opening database \"", name ,"\" at \"", host, "\" with user \"", user, "\""
 
   if host.startsWith("__eat_flaming_death"):
     log "Someone or something used the forbidden code. Quietly returning... Stuff might break!"

@@ -22,13 +22,7 @@ import ../[user, lib]
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace
-import std/[tables, options]
-
-# From somewhere else (nimble etc.)
-when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
-  include db_connector/db_postgres
-else:
-  include db_postgres
+import std/[tables]
 
 import common
 
@@ -64,10 +58,11 @@ proc addUser*(db: DbConn, user: User): bool =
   
   # TODO: Likewise with the addPost() proc, there has to be a better way than this.
   # It's just too ugly.
-  #[
+  
   try:
+    
     db.exec(
-      db.prepare("insertUser", sql"INSERT OR REPLACE INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,is_frozen,is_approved) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",12),
+      sql"INSERT OR REPLACE INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,is_frozen,is_approved) VALUES (?,?,?,?,?,?,?,?,?,?)",
       user.id,
       user.kind,
       user.handle,
@@ -84,7 +79,6 @@ proc addUser*(db: DbConn, user: User): bool =
     )
   except CatchableError as err:
     log "Failed to insert user: ", err.msg
-  ]#
 
   return true
 
@@ -143,7 +137,7 @@ proc getUserById*(db: DbConn, id: string): User =
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
   ## This procedure expects a regular ID, it will sanitize and escape it by default.
   if not db.userIdExists(id):
-    error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
+    error "Something or someone tried to get a non-existent user with the id \"", id, "\""
 
   return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE id = ?;"))
 
@@ -152,9 +146,9 @@ proc getUserByHandle*(db: DbConn, handle: string): User =
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
   ## This procedure expects a regular handle, it will sanitize and escape it by default.
   if not db.userHandleExists(handle):
-    error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\""
+    error "Something or someone tried to get a non-existent user with the handle \"", handle, "\""
     
-  return constructUserFromRow(db.one("SELECT * FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get)
+  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE handle = ?;", escape(sanitizeHandle(handle))))
 
 proc updateUserByHandle*(db: DbConn, handle: User.handle, column, value: string): bool =
   ## A procedure to update any user (The user is identified by their handle)
@@ -191,7 +185,7 @@ proc getIdFromHandle*(db: DbConn, handle: string): string =
   if not db.userHandleExists(handle):
     error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\""
   
-  return unescape(db.one("SELECT id FROM users WHERE handle = " & escape(sanitizeHandle(handle)) & ";").get()[0].strVal,"","")
+  return unescape(db.getRow(sql"SELECT id FROM users WHERE handle = ?;", escape(sanitizeHandle(handle)))[0],"","")
 
 proc getHandleFromId*(db: DbConn, id: string): string =
   ## A function to convert a  id to a handle.
@@ -199,4 +193,4 @@ proc getHandleFromId*(db: DbConn, id: string): string =
   if not db.userIdExists(id):
     error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
   
-  return unescape(db.one("SELECT handle FROm users WHERE id = " & escape(id) & ";").get()[0].strVal,"","")
+  return unescape(db.getRow(sql"SELECT handle FROm users WHERE id = ?;", escape(id))[0],"","")

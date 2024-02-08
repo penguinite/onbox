@@ -21,13 +21,14 @@ import ../[lib, conf]
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace
-import std/[tables, options, os]
+import std/[tables, os]
 
 # From somewhere else (nimble etc.)
 when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
-  include db_connector/db_postgres
+  import db_connector/db_postgres
 else:
-  include db_postgres
+  import db_postgres
+export db_postgres
 
 proc createDbTable*(db: DbConn, tablename: string, cols: OrderedTable[string,string]):  bool =
   ## We use this procedure to create a SQL statement that creates a table using the hard-coded rules

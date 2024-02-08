@@ -24,12 +24,6 @@ import common
 # From somewhere in the standard library
 import std/tables
 
-# From somewhere else (nimble etc.)
-when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
-  include db_connector/db_postgres
-else:
-  include db_postgres
-
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 const boostsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY",
 "pid": "TEXT NOT NULL", # ID of post that user boosted

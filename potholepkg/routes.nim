@@ -74,7 +74,7 @@ proc prepareTable(config: ConfigTable, db: DbConn): Table[string,string] =
     table["rules"] = "" # Again, clear whatever is in it first.
     # Build the list, item by item using data from the config file.
     table["rules"].add("<ol>")
-    for rule in config.getArray("instance","rules"):
+    for rule in config.getStringArray("instance","rules"):
       table["rules"].add("<li>" & rule & "</li>")
     table["rules"].add("</ol>")
 

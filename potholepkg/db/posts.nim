@@ -22,13 +22,7 @@ import ../[post, user, lib]
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace
-import std/[tables, options]
-
-# From somewhere else (nimble etc.)
-when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
-  include db_connector/db_postgres
-else:
-  include db_postgres
+import std/[tables]
 
 import common, reactions, boosts, users
 
@@ -87,16 +81,17 @@ proc addPost*(db: DbConn, post: Post): bool =
   ## This function uses parameterized substitution Aka. prepared statements.
   ## So escaping objects before sending them here is not a requirement.
   
-  let testStatement = db.stmt("SELECT local FROM posts WHERE id = ?;")
+  let testStatement = sql"SELECT local FROM posts WHERE id = ?;"
 
-  if testStatement.one(post.id).has():
+  if db.getRow(testStatement, post.id).has():
     return false # Someone has tried to add a post twice. We just won't add it.
   
   # TODO: Automate this some day.
   # I believe we can use a template or a macro to automate inserting this stuff in.
   try:
-    let statement = db.stmt("INSERT OR REPLACE INTO posts (id,recipients,sender,replyto,content,written,updated,modified,local,revisions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
-    statement.exec(
+    let statement = sql"INSERT OR REPLACE INTO posts (id,recipients,sender,replyto,content,written,updated,modified,local,revisions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+    db.exec(
+      statement,
       post.id,
       toString(post.recipients),
       post.sender,
@@ -108,31 +103,25 @@ proc addPost*(db: DbConn, post: Post): bool =
       post.local,
       toString(post.revisions)
     )
-    statement.finalize()
   except CatchableError as err:
     error "Failed to insert post: ", err.msg
-
-  
-
   return true
 
 proc postIdExists*(db: DbConn, id: string): bool =
   ## A function to see if a post id exists in the database
   ## The id supplied can be plain and un-escaped. It will be escaped and sanitized here.
-  return has(db.one("SELECT local FROM posts WHERE id = " & escape(id) & ";"))
+  return has(db.getRow(sql"SELECT local FROM posts WHERE id = ?;", escape(id)))
 
 proc updatePost*(db: DbConn, id, column, value: string): bool =
   ## A procedure to update a post using it's ID.
   ## Like with the updateUserByHandle and updateUserById procedures,
   ## the value parameter should be heavily sanitized and escaped to prevent a class of awful security holes.
   ## The id can be passed plain, it will be escaped.
-  let statement = db.stmt("UPDATE posts SET " & column & " = ? WHERE id = ?;")
+  let statement = sql("UPDATE posts SET " & column & " = ? WHERE id = ?;")
   try:
-    statement.exec(value, id)
-    statement.finalize()
+    db.exec(statement, value, id)
     return true
   except:
-    statement.finalize()
     return false
   
 
@@ -141,11 +130,11 @@ proc getPost*(db: DbConn, id: string): Post =
   ## The id can be passed plain, it will be escaped.
   ## The output will be an unescaped
   
-  var post = db.one("SELECT * FROM posts WHERE id = " & escape(id) & ";")
-  if isNone(post):
+  var post = db.getRow(sql"SELECT * FROM posts WHERE id = ?;", escape(id))
+  if not post.has():
     error "Something or someone tried to retrieve a non-existent post with the ID of \"" & id & "\""
 
-  result = db.constructPostFromRow(post.get)
+  result = db.constructPostFromRow(post)
 
   return result
 
@@ -154,16 +143,16 @@ proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post
   ## The handle can be passed plainly, it will be escaped later.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
   ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
-  var sqlStatement = "SELECT * FROM posts WHERE sender = " & escape(sanitizeHandle(handle)) & ";"
+  var sqlStatement = sql"SELECT * FROM posts WHERE sender = ?;"
   if limit != 0:
     var i = 0;
-    for post in db.all(sqlStatement):
+    for post in db.getAllRows(sqlStatement, escape(sanitizeHandle(handle))):
       inc(i)    
       if i > limit:
         break
       result.add(db.constructPostFromRow(post))
   else:
-    for post in db.all(sqlStatement):
+    for post in db.getAllRows(sqlStatement, escape(sanitizeHandle(handle))):
       result.add(db.constructPostFromRow(post))
   return result
 
@@ -177,21 +166,20 @@ proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
 proc getTotalPosts*(db: DbConn): int =
   ## A procedure to get the total number of local posts.
   result = 0
-  for x in db.all("SELECT local FROM posts;"):
+  for x in db.getAllRows(sql"SELECT local FROM posts;"):
     inc(result)
   return result
 
 proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Post] =
   ## A procedure to get posts from local users only.
   ## Set limit to 0 to disable the limit and get all posts from local users.
-  let statement = db.stmt("SELECT * FROM posts WHERE local = true;")
+  let statement = sql"SELECT * FROM posts WHERE local = true;"
   if limit != 0:
-    for row in statement.all():
+    for row in db.getAllRows(statement):
       if len(result) > limit:
         break
       result.add(db.constructPostFromRow(row))
   else:
-    for row in statement.all():
+    for row in db.getAllRows(statement):
       result.add(db.constructPostFromRow(row))
-  statement.finalize()
   return result
