@@ -14,7 +14,6 @@ switch("app","console")
 switch("opt","speed")
 switch("stackTrace","on")
 switch("mm","orc")
-switch("define","nimOldCaseObjects")
 
 task clean, "Removes build folder if it exists":
   if dirExists(binDir):
@@ -40,5 +39,5 @@ after build:
 requires "nim >= 1.6.10"
 requires "nimcrypto >= 0.5.4"
 requires "prologue >= 0.6.4"
-requires "iniplus >= 0.1.0"
+requires "iniplus >= 0.2.1"
 requires "db_connector >= 0.1.0"
