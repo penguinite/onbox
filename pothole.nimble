@@ -1,7 +1,7 @@
 # Package
 
 version       = "0.0.2"
-author        = "xmoo"
+author        = "penguinite"
 description   = "A lightweight and efficient microblogging server."
 license       = "AGPL-3.0-or-later"
 binDir        = "build"
@@ -36,7 +36,7 @@ after build:
   cpFile("pothole.conf",binDir & "/pothole.conf")
 
 # Dependencies
-requires "nim >= 1.6.10"
+requires "nim >= 2.0.0"
 requires "nimcrypto >= 0.5.4"
 requires "prologue >= 0.6.4"
 requires "iniplus >= 0.2.1"
