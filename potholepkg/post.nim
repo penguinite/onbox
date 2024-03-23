@@ -23,7 +23,7 @@
 import lib, crypto
 
 # From Nim's standard library
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[tables, times]
 
 export DateTime, parse, format, utc

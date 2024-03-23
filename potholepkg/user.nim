@@ -23,7 +23,7 @@
 import lib, crypto
 
 # From Nim's standard library
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 
 # A set of characters that you cannot use at all.
 # this filters anything that doesn't make a valid email.

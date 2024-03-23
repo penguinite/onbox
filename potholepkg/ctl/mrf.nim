@@ -25,7 +25,7 @@ import shared
 import ../mrf
 
 # From standard libraries
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[dynlib, os, tables, posix]
 
 proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =

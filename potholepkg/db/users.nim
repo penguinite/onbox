@@ -21,7 +21,7 @@
 import ../[user, lib]
 
 # From somewhere in the standard library
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool, parseBool
 import std/[tables]
 
 import common
@@ -31,7 +31,7 @@ import common
 const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY NOT NULL", # The user ID
 "kind":"TEXT NOT NULL", # The user type, see UserType object in user.nim
 "handle":"TEXT UNIQUE NOT NULL", # The user's actual username (Fx. alice@alice.wonderland)
-"name":"TEXT", # The user's display name (Fx. Alice)
+"name":"TEXT DEFAULT 'New User'", # The user's display name (Fx. Alice)
 "local":"BOOLEAN NOT NULL", # A boolean indicating whether the user originates from the local server or another one.
 "email":"TEXT", # The user's email (Empty for remote users)
 "bio":"TEXT", # The user's biography 
@@ -61,7 +61,6 @@ proc addUser*(db: DbConn, user: User): bool =
   # It's just too ugly.
   
   try:
-    
     db.exec(
       sql"INSERT INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,moderator,is_frozen,is_approved) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       user.id,
@@ -100,12 +99,12 @@ proc getTotalLocalUsers*(db: DbConn): int =
 proc userIdExists*(db: DbConn, id:string): bool =
   ## A procedure to check if a user exists by id
   ## This procedures does escape IDs by default.
-  return has(db.getRow(db.prepare("userIdExists",sql"SELECT local FROM users WHERE id = $1;",1),id))
+  return has(db.getRow(sql"SELECT local FROM users WHERE id = ?;", id))
 
 proc userHandleExists*(db: DbConn, handle:string): bool =
   ## A procedure to check if a user exists by handle
   ## This procedure does sanitize and escape handles by default
-  return has(db.getRow(db.prepare("userHandleExists",sql"SELECT local FROM users WHERE handle = $1;",1),handle))
+  return has(db.getRow(sql"SELECT local FROM users WHERE handle = ?;", sanitizeHandle(handle)))
 
 proc constructUserFromRow*(row: Row): User =
   ## A procedure that takes a database Row (From the users table)
@@ -150,7 +149,7 @@ proc getUserByHandle*(db: DbConn, handle: string): User =
   if not db.userHandleExists(handle):
     error "Something or someone tried to get a non-existent user with the handle \"", handle, "\""
     
-  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE handle = ?;", escape(sanitizeHandle(handle))))
+  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE handle = ?;", sanitizeHandle(handle)))
 
 proc updateUserByHandle*(db: DbConn, handle: User.handle, column, value: string): bool =
   ## A procedure to update any user (The user is identified by their handle)
@@ -165,7 +164,7 @@ proc updateUserByHandle*(db: DbConn, handle: User.handle, column, value: string)
     return false
   
   # Then update!
-  return db.update("users", "handle = " & escape(sanitizeHandle(handle)), column, value)
+  return db.update("users", "handle = " & sanitizeHandle(handle), column, value)
   
 proc updateUserById*(db: DbConn, id: User.id, column, value: string): bool = 
   ## A procedure to update any user (The user is identified by their ID)
@@ -179,7 +178,7 @@ proc updateUserById*(db: DbConn, id: User.id, column, value: string): bool =
   if not usersCols.hasKey(column):
     return false
 
-  return db.update("users", "id = " & escape(id), column, value)
+  return db.update("users", "id = " & id, column, value)
 
 proc getIdFromHandle*(db: DbConn, handle: string): string =
   ## A function to convert a user handle to an id.
@@ -187,7 +186,7 @@ proc getIdFromHandle*(db: DbConn, handle: string): string =
   if not db.userHandleExists(handle):
     error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\""
   
-  return unescape(db.getRow(sql"SELECT id FROM users WHERE handle = ?;", escape(sanitizeHandle(handle)))[0],"","")
+  return db.getRow(sql"SELECT id FROM users WHERE handle = ?;", sanitizeHandle(handle))[0]
 
 proc getHandleFromId*(db: DbConn, id: string): string =
   ## A function to convert a  id to a handle.
@@ -195,4 +194,4 @@ proc getHandleFromId*(db: DbConn, id: string): string =
   if not db.userIdExists(id):
     error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
   
-  return unescape(db.getRow(sql"SELECT handle FROm users WHERE id = ?;", escape(id))[0],"","")
+  return db.getRow(sql"SELECT handle FROm users WHERE id = ?;", id)[0]

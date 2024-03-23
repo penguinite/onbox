@@ -21,7 +21,7 @@
 ## (Ie. index.html, the pothole main webpage, will need to be compiled with the built-in quick template library.)
 import std/[tables, os]
 import conf,lib
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 
 when not defined(phNoEmbeddedAssets):
   const phLang{.strdefine.} = "en"

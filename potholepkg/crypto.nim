@@ -77,7 +77,7 @@ proc randomString*(limit: int = 16): string =
   return result
 
 
-proc pbkdf2_hmac_sha512_hash*(password: string, salt:string, iter: int = 210000, outlen: int = 32, genSafe:bool = true): string =
+proc pbkdf2_hmac_sha512_hash*(password: string, salt:string, iter: int = 210000, outlen: int = 24, genSafe:bool = true): string =
   ## We use PBKDF2-HMAC-SHA512 by default with 210000 iterations unless specified.
   ## This procedure is a wrapper over nimcrypto's PBKDF2 implementation
   ## This procedure returns a base64-encoded string. You can specify the safe parameter of 

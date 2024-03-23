@@ -20,7 +20,7 @@
 import ../[lib, conf]
 
 # From somewhere in the standard library
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[tables, os]
 
 # From somewhere else (nimble etc.)

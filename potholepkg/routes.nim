@@ -19,7 +19,7 @@ import lib,conf,database,assets,user,post,crypto
 
 # From stdlib
 import std/[tables, options]
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 
 # From nimble/other sources
 import prologue

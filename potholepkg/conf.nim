@@ -24,7 +24,7 @@ import lib
 
 # From standard library
 import std/[os, tables]
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 
 # From elsewhere
 import iniplus

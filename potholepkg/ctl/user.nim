@@ -27,7 +27,7 @@ import ../[database,lib,conf,user]
 
 # From standard libraries
 from std/tables import Table
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 
 proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   if args.check("h","help"):

@@ -21,7 +21,7 @@
 import ../[post, user, lib]
 
 # From somewhere in the standard library
-import std/strutils except isEmptyOrWhitespace
+import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[tables]
 
 import common, reactions, boosts, users

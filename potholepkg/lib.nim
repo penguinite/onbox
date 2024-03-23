@@ -23,7 +23,7 @@
 ## but these have been moved, and this module has been re-purposed.
 ## The User and Post definitions are now stored in pothole/user and pothole/post respectively.
 
-from std/strutils import Whitespace, `%`
+from std/strutils import Whitespace, `%`, toLowerAscii
 # For macro definition
 import std/macros
 
