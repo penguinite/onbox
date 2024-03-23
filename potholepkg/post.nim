@@ -37,7 +37,7 @@ type
   Post* = object
     id*: string # A unique id.
     recipients*: seq[string] # A sequence of recipient's handles.
-    sender*: string # Basically, the person sending the message
+    sender*: string # Basically, the person sending the message (Or more specifically, their ID.)
     replyto*: string # Resource/Post person was replying to,  
     content*: string # The actual content of the post
     written*: DateTime # A timestamp of when the Post was created

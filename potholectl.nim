@@ -78,6 +78,11 @@ of "mrf": mrf.processCmd(command, data, args)
 of "dev": dev.processCmd(command, data, args)
 of "user": user.processCmd(command, data, args)
 of "post": post.processCmd(command, data, args)
+
+# Extra educational material
+of "date": helpPrompt("date","")
+of "id","ids": helpPrompt("ids","")
+of "handle", "handles": helpPrompt("handles","")
 else:
   # Just check the args as-is
   if args.check("h","help"):

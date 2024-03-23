@@ -60,6 +60,11 @@ const helpDialog* = @[
   "Universal arguments: ",
   genArg("h","help","Displays help prompt for any given command and exits."),
   genArg("v","version","Display a version prompt and exits"),
+  "",
+  "There are also some extra helpful educational help prompts just incase you get stuck on something!",
+  genCmd("date", "Information about how pothole handles date parsing"),
+  genCmd("handles", "Information about user handles"),
+  genCmd("ids", "Information about user IDs")
 ]
 
 const devEnvVarNotice = """
@@ -296,4 +301,52 @@ This commad has the following arguments:
       genArg("c", "content", "Specifies the post's contents"),
       genArg("d","date", "Specifies the date of the post (See: potholectl date)")
   ],
+
+  # The following are educational materials for system maintainers
+  "date": @[
+    prefix,
+    """
+This is not exactly a subsystem but a help entry for people confused by dates in potholectl.
+Dates in potholectl are formatted like so: yyyy-MM-dd-HH:mm:sszzz
+This means the following:
+  1. 4 numbers for the year, and then a hyphen/dash (-)
+  2. 2 numbers for the month, and then a hyphen/dash (-)
+  3. 2 numbers for the day, and then a hyphen/dash (-)
+  4. 2 numbers for the hour and then a colon (:)
+  5. 2 numbers for the minute and then a colon (:)
+  6. 2 numbers for the second
+  7. finally, 3 numbers for the milisecond.
+
+Here are examples of dates in this format:
+UNIX Epoch starting date: 1970-01-01-00:00:00000
+Year 2000 problem date: 1999-12-31-23:59:59000
+Year 2038 problem date: 2038-01-19-03:14:07000
+Year 2106 problem date: 2106-02-07-06:28:15000
+The date this was written: 2024-03-23-13:09:26000
+    """
+  ],
+  "handles": @[
+    prefix,
+    """
+A handle is basically what pothole calls the "username"
+A handle can be as simple as "john" or "john@example.com"
+A handle is not the same thing as an email address.
+In pothole, the handle is used as a login name but also a user finding mechanism (for federation)
+    """
+  ],
+  "ids": @[
+    prefix,
+    """
+Pothole abstract nearly every single thing into some object with an "id"
+Users have IDs and posts have IDs.genCmd
+So do activities, media attachments, reactions, boosts and so on.
+
+Internally, pothole translates any human-readable data (such as a handle, see potholectl handles)
+into an id that it can use for manipulation, data retrieveal and so on.
+
+This slightly complicates everything but potholectl will try to make an educated guess.
+If you do know whether something is an ID or not, then you can use the -i flag to tell potholectl not to double check.
+Of course, this differs with every command but it should be possible.
+    """
+  ]
 }.toTable
