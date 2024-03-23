@@ -84,9 +84,25 @@ proc toString*(sequence: seq[string]): string =
   return sequence.join(",")
 
 proc toString*(date: DateTime): string = 
+  try:
   return format(date, "yyyy-MM-dd-HH:mm:sszzz")
+  except:
+    return now().format("yyyy-MM-dd-HH:mm:sszzz")
 
 proc toDate*(str: string): DateTime =
+  try:
   return parse(str, "yyyy-MM-dd-HH:mm:sszzz", utc())
+  except:
+    return now()
 
-proc formatDate*(dt: DateTime): string = dt.format("MMM d, YYYY HH:mm")
+proc formatDate*(dt: DateTime): string =
+  try:
+    dt.format("MMM d, YYYY HH:mm")
+  except:
+    return now().format("MMM d, YYYY HH:mm")
+
+proc toString*(revisions: seq[PostRevision]): string =
+  discard
+
+proc toPostRevisionsSeq*(str: string): seq[PostRevision] =
+  discard
