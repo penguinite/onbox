@@ -29,10 +29,7 @@ import std/strutils
 import db/[users, posts, reactions, boosts, common]
 export DbConn, isOpen, users, posts, reactions, boosts
 
-export isOpen
-
-
-proc init*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
+proc setup*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
   # Some checks to run before we actually open the database
 
   if not hasDbHost(config):
@@ -64,30 +61,36 @@ proc init*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
   # Open database and initialize the users and posts table.
   result = open(host, user, password, name)
   
+  for i in @[
+    ("users", usersCols),
+    ("posts", postsCols),
+    ("postsRevisions", postsRevisionsCols),
+    ("reactions", reactionsCols),
+    ("boosts", boostsCols)]:
   # Create the tables first
-  #if not createDbTable(result, "users", usersCols): error "Couldn't create users table"
-  #if not createDbTable(result, "posts", postsCols): error "Couldn't create posts table"
-  if not createDbTable(result, "reactions", reactionsCols): error "Couldn't create reactions table"
-  if not createDbTable(result, "boosts", boostsCols): error "Couldn't create boosts table"
+      if not createDbTable(result, i[0], i[1]):
+        error "Failed to create ", i[0], " table"
 
   # Now we check the schema to make sure it matches the hard-coded one.
   if schemaCheck:
-  #  matchTableSchema(result, "users", usersCols)
-  #  matchTableSchema(result, "posts", postsCols)
-    matchTableSchema(result, "reactions", reactionsCols)
-    matchTableSchema(result, "boosts", boostsCols)
+        matchTableSchema(result, i[0], i[1])
+
 
   return result
 
-proc quickInit*(config: ConfigTable): DbConn = 
+proc init*(config: ConfigTable): DbConn = 
   ## This procedure quickly initializes the database by skipping a bunch of checks.
-  ## It assumes that you have done these checks on startup by running the regular init() proc once.
+  ## It assumes that you have done these checks on startup by running the regular setup() proc once.
+  try:
   return open(
-    getDbHost(config),
-    getDbUser(config),
-    getDbPass(config),
-    getDbName(config)
+      config.getDbHost(),
+      config.getDbUser(),
+      config.getDbPass(),
+      config.getDbName()
   )
+  except CatchableError as err:
+    log "Did you forget to start the postgres database server?"
+    error "Couldn't connect to postgres: ", err.msg
 
 proc uninit*(db: DbConn): bool =
   ## Uninitialize the database.
