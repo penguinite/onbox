@@ -23,7 +23,7 @@
 import potholepkg/lib
 
 # From Pothole (ctl folder)
-import potholepkg/ctl/[shared, db, mrf, dev]
+import potholepkg/ctl/[shared, db, mrf, dev, user]
 
 # From standard library
 import std/[os, parseopt, strutils, tables]
@@ -75,7 +75,8 @@ if args.check("v","version"):
 case subsystem
 of "db": db.processCmd(command, data, args)
 of "mrf": mrf.processCmd(command, data, args)
-of "dev": dev.processCmd(command, data,args)
+of "dev": dev.processCmd(command, data, args)
+of "user": user.processCmd(command, data, args)
 else:
   # Just check the args as-is
   if args.check("h","help"):

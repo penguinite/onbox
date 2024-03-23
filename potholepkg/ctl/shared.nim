@@ -43,18 +43,18 @@ proc helpPrompt*(subsystem:string = "", command: string = "") =
   if subsystem.isEmptyOrWhitespace():
     for str in helpDialog:
       echo(str)
-    quit()
+    quit(0)
   
   # Print the subsystem help dialog
   if command.isEmptyOrWhitespace():
     for str in helpTable[subsystem]:
       echo(str)
-    quit()
+    quit(0)
   
   # Print the command help dialog
   for x in helpTable[subsystem & ":" & command]:
     echo(x)
-  quit()
+  quit(0)
 
 proc check*(args: Table[string, string], short, long: string): bool =
   ## Checks if an argument has been given.

@@ -211,5 +211,55 @@ image.
 This command opens a psql shell in the database container. This is useful for 
 debugging operations and generally figuring out where we went wrong.
     """
+  ],
+  "dev:delete": @[
+    prefix,
+    """
+This command basically does the same thing as potholectl dev db -d.
+It deletes the database docker container.
+    """
+  ],
+  "user": @[
+    """
+This subsystem contains user-related operations, it has command for adding new users, deleting old ones.
+And so on, and so forth.
+    """,
+    devEnvVarNotice,
+    """
+Available commands:
+    """,
+    genCmd("new", "Creates a new user and adds it to the database"),
+    genCmd("delete", "Deletes specified user"),
+    genCmd("del", "(Shorthand for delete)"),
+    genCmd("purge", "(Shorthand for delete -p)"),
+    genCmd("change", "A generic user modification command."),
+    genCmd("mod", "Changes a user's moderator status"),
+    genCmd("admin", "Changes a user's administrator status"),
+    genCmd("password", "Changes a user's password"),
+    genCmd("pw", "(Shorthand for password)"),
+    genCmd("freeze", " Change's a user's frozen status"),
+    genCmd("approve", "Approves a user's registration"),
+    genCmd("deny", "Denies a user's registration")
+  ],
+  "user:new": @[
+    prefix,
+    """
+This command creates a new user and adds it to the database.
+It uses the following format: NAME EMAIL PASSWORD
+Here is an example of a valid new user command: potholectl user new john johnson@world.gov johns_password123
+
+The users created by this command are approved by default.
+Although that can be changed with the require-approval CLI argument
+
+You can also use the following command-line arguments:
+    """,
+    genArg("a","admin","Makes the user an administrator"),
+    genArg("m","moderator", "Makes the user a moderator"),
+    genArg("r","require-approval","Requires approval for the user"),
+    genArg("n","name", "Specifies the username [Value required]"),
+    genArg("e","email", "Specifies the user's email [Value required]"),
+    genArg("d","display", "Specifies the user's display name [Value required]"),
+    genArg("p","password", "Specifies the user's password [Value required]"),
+    genArg("b","bio", "Specifies the user's biography [Value required]")
   ]
 }.toTable

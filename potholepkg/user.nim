@@ -42,11 +42,7 @@ const localInvalidHandle*: set[char] = {'@',':','.'}
 type 
   # What type of user, this is directly from ActivityStreams.
   UserType* = enum
-    Person = "Person",
-    Application = "Application",
-    Organization = "Organization",
-    Group = "Group",
-    Service = "Service"
+    Person, Application, Organization, Group, Service
 
   User* = object
     id*: string # An unique that represents the actual user
@@ -60,6 +56,7 @@ type
     salt*: string # The actual salt with which to hash the password.
     kdf*: int # Key derivation function version number
     admin*: bool # A boolean indicating if the user is an admin.
+    moderator*: bool # A boolean indicating if the user is a moderator.
     is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
     is_approved*: bool # A boolean indicating if the user hs been approved by an administrator
 
@@ -93,6 +90,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   result.kdf = lib.kdf # Always assume user is using latest KDF because why not?
   result.local = local
   result.admin = false # This is false by default.
+  result.moderator = false # This is false by default.
   result.is_frozen = false # Always assume user isn't frozen.
   result.kind = Person # Even if its a group, service or application then it doesn't matter.
 
@@ -154,32 +152,21 @@ proc unescape*(user: User): User =
 func toUserType*(s: string): UserType =
   ## Converts a plain string into a UserType
   case s:
-  of "Person":
-    return Person
-  of "Application":
-    return Application
-  of "Organization":
-    return Organization
-  of "Group":
-    return Group
-  of "Service":
-    return Service
-  else:
-    return Person
+  of "Person": return Person
+  of "Application": return Application
+  of "Organization": return Organization
+  of "Group": return Group
+  of "Service": return Service
+  else: return Person
 
 func fromUserType*(t: UserType): string =
   ## Converts a UserType to string.
   result = case t:
-    of Person:
-      "Person"
-    of Application:
-      "Application"
-    of Organization:
-      "Organization"
-    of Group:
-      "Group"
-    of Service:
-      "Service"
+    of Person: "Person"
+    of Application: "Application"
+    of Organization: "Organization"
+    of Group: "Group"
+    of Service: "Service"
 
 func `$`*(t: UserType): string =
   return fromUserType(t)

@@ -28,7 +28,7 @@ import common
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 # For this module to work, both database schemas and user object definitions must be similar
-const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY", # The user ID
+const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY NOT NULL", # The user ID
 "kind":"TEXT NOT NULL", # The user type, see UserType object in user.nim
 "handle":"TEXT UNIQUE NOT NULL", # The user's actual username (Fx. alice@alice.wonderland)
 "name":"TEXT", # The user's display name (Fx. Alice)
@@ -38,7 +38,8 @@ const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY", # The 
 "password":"TEXT", # The user's hashed & salted password (Empty for remote users obv)
 "salt":"TEXT", # The user's salt (Empty for remote users obv)
 "kdf":"INTEGER NOT NULL", # The version of the key derivation function. See DESIGN.md's "Key derivation function table" for more.
-"admin":"BOOLEAN NOT NULL", # A boolean indicating whether or not this is user is an Admin.
+"admin":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether or not this user is an Admin.
+"moderator":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether or not this user is a Moderator.
 "is_frozen":"BOOLEAN NOT NULL", # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
 "is_approved":"BOOLEAN NOT NULL"}.toOrderedTable  # A boolean indicating if the user hs been approved by an administrator
 
@@ -62,7 +63,7 @@ proc addUser*(db: DbConn, user: User): bool =
   try:
     
     db.exec(
-      sql"INSERT OR REPLACE INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,is_frozen,is_approved) VALUES (?,?,?,?,?,?,?,?,?,?)",
+      sql"INSERT INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,moderator,is_frozen,is_approved) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       user.id,
       user.kind,
       user.handle,
@@ -74,6 +75,7 @@ proc addUser*(db: DbConn, user: User): bool =
       user.salt,
       user.kdf,
       user.admin,
+      user.moderator,
       user.is_frozen,
       user.is_approved
     )
