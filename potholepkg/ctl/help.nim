@@ -151,7 +151,8 @@ Available commands:
     genCmd("env", "Initializes environment variables and also deletes them."),
     genCmd("clean", "Removes all tables inside of a postgres database container"),
     genCmd("purge", "Cleans up everything, including images, envvars and build folders"),
-    genCmd("psql", "Opens a psql shell inside of the docker container")
+    genCmd("psql", "Opens a psql shell inside of the docker container"),
+    genCmd("delete", "Deletes the postgres container (basically potholectl dev db -d)")
   ],
 
   "dev:setup": @[

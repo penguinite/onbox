@@ -39,11 +39,8 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     config = conf.setup(getConfigFilename())
 
   case cmd:
-  of "schema_check":
+  of "schema_check", "init":
     log "Re-running database initialization with schema checking enabled."
-    discard init(config,true)
-  of "setup":
-    # TODO: Spit out a config file and postgres script.
-    return
+    discard setup(config,true)
   else:
     helpPrompt("db")

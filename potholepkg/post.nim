@@ -47,30 +47,24 @@ type
     boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post. (Along with what level)
     revisions*: seq[PostRevision] # A sequence of past revisions, this is basically copies of post.content
 
-proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: DateTime = now().utc, contexts: seq[string] = @[]): Post =
-  var post: Post = Post()
+proc newPost*(sender,content: string, replyto: string = "", recipients: seq[string] = @[], local: bool = false, written: DateTime = now().utc): Post =
   if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
     error "Missing critical fields for post." 
 
   # Generate post id
-  post.id = randomString(18)
+  result .id = randomString(18)
   
   # Just do this stuff...
-  post.sender = sender
-  post.recipients = recipients
-  post.local = local
-  post.modified = false
-  post.content = content
+  result.sender = sender
+  result.recipients = recipients
+  result.local = local
+  result.modified = false
+  result.content = content
+  result.replyto = replyto
+  result.written = written
+  result.revisions = @[]
 
-  if isEmptyOrWhitespace(replyto):
-    post.replyto = ""
-  else:
-    post.replyto = replyto
-
-  post.written = written
-  post.updated = now().utc
-
-  return post
+  return result
 
 func `$`*(obj: Post): string =
   ## Turns a Post object into a human-readable string
@@ -134,13 +128,13 @@ proc toSeq*(str: string): seq[string] =
 
 proc toString*(date: DateTime): string = 
   try:
-  return format(date, "yyyy-MM-dd-HH:mm:sszzz")
+    return format(date, "yyyy-MM-dd-HH:mm:sszzz")
   except:
     return now().format("yyyy-MM-dd-HH:mm:sszzz")
 
 proc toDate*(str: string): DateTime =
   try:
-  return parse(str, "yyyy-MM-dd-HH:mm:sszzz", utc())
+    return parse(str, "yyyy-MM-dd-HH:mm:sszzz", utc())
   except:
     return now()
 

@@ -152,6 +152,8 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "You might be able to recover from this error by running the setup_env command first"
       return
     cleanDb(config)
+  of "delete":
+    purgeDb()
   of "psql":
     if config.isNil() and envvarsDontExist():
       log "No way to get the login details required to access the database."

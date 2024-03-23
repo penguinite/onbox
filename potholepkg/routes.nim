@@ -48,7 +48,7 @@ proc preRouteInit() =
   ## It has very little overhead yet it ensures that all the data we need is available for every request.
   if config.isNil(): config = setup(getConfigFilename())
   if staticFolder == "": staticFolder = initStatic(config)
-  if not db.isOpen(): db = quickInit(config)
+  db = init(config)
 
 proc prepareTable(config: ConfigTable, db: DbConn): Table[string,string] =
   var table = { # Config table for the templating library.
