@@ -80,8 +80,57 @@ func `$`*(obj: Post): string =
   result = result[0 .. len(result) - 2]
   result.add("]")
 
+proc escapeCommas*(str: string): string = 
+  ## A proc that escapes away commas only.
+  ## Use toString, toSeq or whatever else you need.
+  ## This is a bit low-level
+  if isEmptyOrWhitespace(str): return str
+  for ch in str:
+    # Comma handling
+    case ch:
+    of ',': result.add("\\,")
+    else: result.add(ch)
+  return result
+
+proc unescapeCommas*(str: string): seq[string] =
+  ## A proc that unescapes commas only.
+  var
+    tmp = ""
+    backslash = false
+  for ch in str:
+    case ch:
+    of '\\':
+      if backslash:
+        tmp.add(ch)
+      else:
+        backslash = true
+    of ',':
+      if backslash:
+        tmp.add(",")
+        backslash = false
+      else:
+        result.add(tmp)
+        tmp = ""
+    else:
+      if backslash:
+        tmp.add("\\")
+        backslash = false
+      tmp.add(ch)
+
+  if len(tmp) > 0:
+    result.add(tmp)
+    tmp = ""
+  
+  return result
+
 proc toString*(sequence: seq[string]): string =
-  return sequence.join(",")
+  for item in sequence:
+    result.add(escapeCommas(item) & ",")
+  result = result[0..^2]
+  return result
+
+proc toSeq*(str: string): seq[string] =
+  return unescapeCommas(str)
 
 proc toString*(date: DateTime): string = 
   try:
