@@ -26,6 +26,7 @@ import std/[tables, strutils]
 const prefix* = """
 Potholectl $#
 Copyright (c) Leo Gavilieau 2023
+Copyright (c) penguinite <penguinite@tuta.io> 2024
 Licensed under the GNU Affero GPL License under version 3 or later.
 """ % [lib.version]
 
@@ -75,10 +76,19 @@ const helpTable*: Table[string, seq[string]] = {
   "db": @[
     prefix,
     "Available commands:",
-    genCmd("schema_check","Checks the database schema against the hardcoded values")
+    genCmd("schema_check","Checks the database schema against the hardcoded values"),
+    genCmd("init", "Initializes the database according to config values")
   ],
 
   "db:schema_check": @[
+    prefix,
+    "This command initializes a database with schema checking enabled.",
+    "You can use it to test if the database needs migration.",
+    "Available arguments:",
+    genArg("c","config","Specify a config file to use")
+  ],
+
+  "db:init": @[
     prefix,
     "This command initializes a database with schema checking enabled.",
     "You can use it to test if the database needs migration.",

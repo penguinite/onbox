@@ -29,6 +29,7 @@ import prologue
 
 echo "Pothole version ", lib.version 
 echo "Copyright © Leo Gavilieau 2022-2023." 
+echo "Copyright © penguinite <penguinite@tuta.io> 2024." 
 echo "Licensed under the GNU Affero General Public License version 3 or later" 
 
 # Catch Ctrl+C so we can exit without causing a stacktrace

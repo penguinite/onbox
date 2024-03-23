@@ -24,6 +24,18 @@ Install [nim](https://nim-lang.org/), your favorite C compiler (we recommend gcc
 
 Pothole expects a configuration file in its current working directory (or in an environment variable), it should be present in the build folder where you can simply modify it and then run the pothole executable to get a working server.
 
+In addition, you will need to have a Postgres database server running. You can quickly start up a server (for developmental or testing purposes) with potholectl, like so:
+
+```sh
+nimble run potholectl dev setup
+
+# To clear the database, you can run:
+nimble run potholectl dev clean
+
+# For more dev-related commands, run:
+nimble run potholectl dev
+```
+
 Assuming you did not change the port that pothole uses in the configuration file, head over to [127.0.0.1:3500](http://127.0.0.1:3500) and experience its glory!
 
 ## Copyright
