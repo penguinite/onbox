@@ -240,7 +240,10 @@ Available commands:
     genCmd("delete", "Deletes specified user"),
     genCmd("del", "(Shorthand for delete)"),
     genCmd("purge", "(Shorthand for delete -p)"),
-    genCmd("change", "A generic user modification command."),
+    #genCmd("change", "A generic user modification command."),
+    genCmd("info", "Displays generic information about the provided user."),
+    genCmd("id", "Gets the user ID when given a handle"),
+    genCmd("handle", "Gets the handle when given a user ID"),
     genCmd("mod", "Changes a user's moderator status"),
     genCmd("admin", "Changes a user's administrator status"),
     genCmd("password", "Changes a user's password"),
@@ -269,6 +272,56 @@ You can also use the following command-line arguments:
     genArg("d","display", "Specifies the user's display name [Value required]"),
     genArg("p","password", "Specifies the user's password [Value required]"),
     genArg("b","bio", "Specifies the user's biography [Value required]")
+  ],
+  "user:delete": @[
+    prefix,
+    """
+This command deletes a user from the database, you can either specify a handle or user id.
+
+You can also use the following command-line arguments:
+    """,
+    genArg("n","name", "Supply a username to be deleted [Value Required]"),
+    genArg("i","id", "Supply an ID to be deleted [Value Required]"),
+    genArg("p","purge", "Purge everything from this user")
+  ],
+  "user:del": @[
+    prefix,
+    "This command is an alias to the delete command"
+  ],
+  "user:purge": @[
+    prefix,
+    "This command is an alias to the delete command with the purge flag"
+  ],
+  "user:id": @[
+    prefix,
+    "This command is a shorthand for user info -i",
+    "It basically prints the user id of whoever's handle we just got"
+  ],
+  "user:handle": @[
+    prefix, 
+    "This command is a shorthand for user info -h",
+    "It basically prints the user handle of whoever's id we just got"
+  ],
+  "user:info": @[
+    prefix,
+    """
+This command retrieves information about users.
+By default it will display all information!
+You can also choose to see specific bits with these flags:
+    """,
+    genArg("i","id","Print only user's ID"),
+    genArg("h","handle","Print only user's handle"),
+    genArg("d","display","Print only user's display name"),
+    genArg("a","admin", "Print user's admin status"),
+    genArg("m","moderator", "Print user's moderator status"),
+    genArg("r","request", "Print user's approval request"),
+    genArg("f","frozen", "Print user's frozen status"),
+    genArg("e","email", "Print user's email"),
+    genArg("b","bio","Print user's biography"),
+    genArg("p","password", "Print user's password (hashed)"),
+    genArg("s","salt", "Print user's salt"),
+    genArg("t","type", "Print user type")
+  ],
   "post": @[
     prefix,
     """

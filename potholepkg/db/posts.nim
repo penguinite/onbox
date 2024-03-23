@@ -129,7 +129,6 @@ proc updatePost*(db: DbConn, id, column, value: string): bool =
     return true
   except:
     return false
-  
 
 proc getPost*(db: DbConn, id: string): Post =
   ## A procedure to get a post object using it's ID.
@@ -144,30 +143,46 @@ proc getPost*(db: DbConn, id: string): Post =
 
   return result
 
-proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post] =
-  ## A procedure to get any user's posts using the users handle
-  ## The handle can be passed plainly, it will be escaped later.
-  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
-  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
-  var sqlStatement = sql"SELECT * FROM posts WHERE sender = ?;"
+proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[string] = 
+  ## A procedure that only fetches the IDs of posts made by a specific user.
+  ## This is used to quickly get a list over every post made by a user, for, say,
+  ## potholectl or a pothole admin frontend.
+  let sqlStatement = sql"SELECT id FROM posts WHERE sender = ?;"
   if limit != 0:
     var i = 0;
-    for post in db.getAllRows(sqlStatement, escape(sanitizeHandle(handle))):
-      inc(i)    
+    for post in db.getAllRows(sqlStatement, id):
+      inc(i)
+      result.add(post[0])
       if i > limit:
         break
-      result.add(db.constructPostFromRow(post))
   else:
-    for post in db.getAllRows(sqlStatement, escape(sanitizeHandle(handle))):
-      result.add(db.constructPostFromRow(post))
+    for post in db.getAllRows(sqlStatement, id):
+      result.add(post[0])
   return result
 
 proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
-  ## A procedure to get any user's posts using the User's ID.
-  ## This behaves exactly like the getPostsByUserHandle procedure.
-  
-  # This procedure will piggy-back off of getHandleFromId and getPostsByUserId.
-  return db.getPostsByUserHandle(db.getHandleFromId(id),limit)
+  ## A procedure to get any user's posts using the user's id.
+  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
+  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  let sqlStatement = sql"SELECT * FROM posts WHERE id = ?;"
+  if limit != 0:
+    var i = 0;
+    for post in db.getAllRows(sqlStatement, id):
+      inc(i)
+      result.add(db.constructPostFromRow(post))
+      if i > limit:
+        break
+  else:
+    for post in db.getAllRows(sqlStatement, id):
+      result.add(db.constructPostFromRow(post))
+  return result
+
+proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post] =
+  ## A procedure to get any user's posts using the user's handle
+  ## The handle can be passed plainly, it will be escaped later.
+  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
+  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  return db.getPostsByUserId(db.getIdFromHandle(sanitizeHandle(handle)), limit)
 
 proc getTotalPosts*(db: DbConn): int =
   ## A procedure to get the total number of local posts.
@@ -175,6 +190,19 @@ proc getTotalPosts*(db: DbConn): int =
   for x in db.getAllRows(sql"SELECT local FROM posts;"):
     inc(result)
   return result
+
+proc deletePost*(db: DbConn, id: string): bool = 
+  try:
+    db.exec(sql"DELETE FROM posts WHERE id = ?;", id)
+    return true
+  except:
+    return false
+
+proc deletePosts*(db: DbConn, sequence: seq[string]): bool =
+  for id in sequence:    
+    if not db.deletePost(id):
+      return false
+  return true
 
 proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Post] =
   ## A procedure to get posts from local users only.

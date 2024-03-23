@@ -195,3 +195,19 @@ proc getHandleFromId*(db: DbConn, id: string): string =
     error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
   
   return db.getRow(sql"SELECT handle FROm users WHERE id = ?;", id)[0]
+
+proc deleteUser*(db: DbConn, id: string): bool = 
+  if not db.userIdExists(id):
+    error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
+  
+  try:
+    db.exec(sql"DELETE FROM users WHERE id = ?;", id)
+    return true
+  except:
+    return false
+
+proc deleteUsers*(db: DbConn, ids: seq[string]): bool = 
+  for id in ids:
+    if not db.deleteUser(id):
+      return false
+  return true

@@ -173,8 +173,7 @@ func `$`*(t: UserType): string =
 
 func `$`*(obj: User): string =
   ## Turns a User object into a human-readable string
-  result.add("[")
   for key,val in obj.fieldPairs:
-    result.add("\"" & key & "\": \"" & $val & "\",")
+    result.add(key & ": \"" & $val & "\" \n")
   result = result[0 .. len(result) - 2]
-  result.add("]")
+  return result
