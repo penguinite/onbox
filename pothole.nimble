@@ -21,15 +21,6 @@ task clean, "Removes build folder if it exists":
   if dirExists("uploads/"):
     rmdir("uploads/")
 
-before build:
-  if dirExists(binDir):
-    rmdir(binDir)
-  mkDir(binDir)
-  if dirExists("static/"):
-    rmdir("static/")
-  if dirExists("uploads/"):
-    rmdir("uploads/")
-
 after build:
   cpFile("pothole.conf",binDir & "/pothole.conf")
 
