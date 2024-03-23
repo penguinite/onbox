@@ -30,8 +30,7 @@ import std/[os, parseopt, strutils, tables]
 
 # Leave if no parameters were provided
 if paramCount() < 1:
-  echo "Run with -h or --help for help"
-  quit(0)
+  helpPrompt()
 
 #! Functions and procedures are declared here or somewhere in the ctl/ folder
 
