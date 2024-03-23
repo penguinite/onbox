@@ -47,9 +47,10 @@ discard setup(config)
 
 echo "Running on http://localhost:" & $port
 
-const debugMode = false
 when defined(debug):
   const debugMode = true
+else:
+  const debugMode = false
 
 let settings = newSettings(
   debug = debugMode,
