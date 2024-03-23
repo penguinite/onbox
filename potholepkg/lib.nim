@@ -76,6 +76,13 @@ func isEmptyOrWhitespace*(ch: char, charset: set[char] = Whitespace): bool =
     return false
   return true
 
+func parseBool*(str: string): bool = 
+  ## I'll have to add this.
+  ## TODO: Submit a PR to nim upstream to add "t" and "f" in parseBool()
+  case str.toLowerAscii():
+  of "y", "yes", "true", "1", "on", "t": return true
+  of "n", "no", "false", "0", "off", "f": return false
+
 func cleanString*(str: string, charset: set[char] = Whitespace): string =
   ## A procedure to clean a string of whitespace characters.
   var startnum = 0;

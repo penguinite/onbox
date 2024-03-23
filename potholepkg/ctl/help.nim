@@ -53,7 +53,9 @@ const helpDialog* = @[
   "Available subsystems: ",
   genCmd("db","Database-related operations"),
   genCmd("mrf","MRF-related operations"),
-  genCmd("dev","Local development stuff"),
+  genCmd("dev","Local development operations"),
+  genCmd("post", "Post-related operations"),
+  genCmd("user", "User-related operations"),
   "",
   "Universal arguments: ",
   genArg("h","help","Displays help prompt for any given command and exits."),
@@ -262,5 +264,36 @@ You can also use the following command-line arguments:
     genArg("d","display", "Specifies the user's display name [Value required]"),
     genArg("p","password", "Specifies the user's password [Value required]"),
     genArg("b","bio", "Specifies the user's biography [Value required]")
-  ]
+  "post": @[
+    prefix,
+    """
+This subsystem has post-related commands, fx. you can create posts and add them to the database.
+Or you can delete posts, and so on and so forth.
+
+The following commands are available:
+    """,
+    genCmd("new", "Creates a new post and adds it to the database"),
+    genCmd("delete", "Deletes a post from the database"),
+    genCmd("del", "(Shorthand for delete)")
+  ],
+  "post:new": @[
+    prefix,
+    """
+This command creates a new post and adds it to the database.
+By default, it follows this format: SENDER [REPLYTO] CONTENT
+(REPLYTO is optional and can be omitted.)
+Here is an example: potholectl post new john "Hello World!"
+And here is another potholectl post new john2 "Hello John!"
+
+This command requires that the user's you'll be sending from are real and exist in the database.
+Otherwise, you'll be in database hell.
+
+This commad has the following arguments:
+      """,
+      genArg("s","sender", "Specifies the sender of the post"),
+      genArg("m","mentioned", "Specifies the list of people mentioned (Comma-separated)"),
+      genArg("r", "replyto", "Specifies the post we are replying to"),
+      genArg("c", "content", "Specifies the post's contents"),
+      genArg("d","date", "Specifies the date of the post (See: potholectl date)")
+  ],
 }.toTable

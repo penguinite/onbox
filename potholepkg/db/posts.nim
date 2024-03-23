@@ -30,7 +30,7 @@ import common, reactions, boosts, users
 const postsCols*: OrderedTable[string, string] = {
   "id": "TEXT PRIMARY KEY NOT NULL", #The Post id
   "recipients":"TEXT", # A comma-separated list of recipients since sqlite3 does not support arrays by default
-  "sender":"TEXT NOT NULL", # A string containing the sender handle
+  "sender":"TEXT NOT NULL", # A string containing the sender's id
   "replyto": "TEXT DEFAULT ''", # A string containing the post that the sender is replying to, if at all.
   "content": "TEXT NOT NULL DEFAULT ''", # A string containing the latest content of the post.
   "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
