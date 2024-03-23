@@ -43,7 +43,7 @@ if config.exists("web","port"):
   port = config.getInt("web","port")
 
 # Initialize database
-discard init(config)
+discard setup(config)
 
 echo "Running on http://localhost:" & $port
 
