@@ -10,10 +10,8 @@ installDirs    = @["potholepkg"]
 backend       = "c"
 
 # Add different switches depending on if we are in debug/release mode
-switch("app","console")
-switch("opt","speed")
 switch("stackTrace","on")
-switch("mm","orc")
+switch("mm", "orc")
 
 task clean, "Removes build folder if it exists":
   if dirExists(binDir):
