@@ -30,6 +30,10 @@ export DateTime, parse, format, utc
 
 # ActivityPub Object/Post
 type
+  PostRevision* = object
+    published*: DateTime # The timestamp of when then Post was last edited
+    content*: string # The content that this specific revision had.
+
   Post* = object
     id*: string # A unique id.
     recipients*: seq[string] # A sequence of recipient's handles.
@@ -37,12 +41,11 @@ type
     replyto*: string # Resource/Post person was replying to,  
     content*: string # The actual content of the post
     written*: DateTime # A timestamp of when the Post was created
-    updated*: DateTime # A timestamp of when then Post was last edited
     modified*: bool # A boolean indicating whether the Post was edited or not.
     local*:bool # A boolean indicating whether or not the post came from the local server or external servers
     reactions*: Table[string, seq[string]] # A sequence of reactions this post has.
-    boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post.
-    revisions*: seq[string] # A sequence of past revisions, this is basically copies of post.content
+    boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post. (Along with what level)
+    revisions*: seq[PostRevision] # A sequence of past revisions, this is basically copies of post.content
 
 proc newPost*(sender,replyto,content: string, recipients: seq[string] = @[], local: bool = false, written: DateTime = now().utc, contexts: seq[string] = @[]): Post =
   var post: Post = Post()

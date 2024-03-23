@@ -26,8 +26,8 @@ import lib, conf
 import std/strutils
 
 # Export these:
-import db/[users, posts, reactions, boosts, common]
-export DbConn, isOpen, users, posts, reactions, boosts
+import db/[users, posts, reactions, boosts, common, postrevisions]
+export DbConn, isNil, users, posts, reactions, boosts, postrevisions
 
 proc setup*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
   # Some checks to run before we actually open the database
@@ -67,12 +67,12 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
     ("postsRevisions", postsRevisionsCols),
     ("reactions", reactionsCols),
     ("boosts", boostsCols)]:
-  # Create the tables first
+      # Create the tables first
       if not createDbTable(result, i[0], i[1]):
         error "Failed to create ", i[0], " table"
 
-  # Now we check the schema to make sure it matches the hard-coded one.
-  if schemaCheck:
+      # Now we check the schema to make sure it matches the hard-coded one.
+      if schemaCheck:
         matchTableSchema(result, i[0], i[1])
 
 
@@ -82,12 +82,12 @@ proc init*(config: ConfigTable): DbConn =
   ## This procedure quickly initializes the database by skipping a bunch of checks.
   ## It assumes that you have done these checks on startup by running the regular setup() proc once.
   try:
-  return open(
+    return open(
       config.getDbHost(),
       config.getDbUser(),
       config.getDbPass(),
       config.getDbName()
-  )
+    )
   except CatchableError as err:
     log "Did you forget to start the postgres database server?"
     error "Couldn't connect to postgres: ", err.msg
