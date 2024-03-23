@@ -26,18 +26,25 @@ import std/[tables]
 
 import common, reactions, boosts, users
 
-# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const postsCols*: OrderedTable[string, string] = {"id":"TEXT PRIMARY KEY", # The post Id
-"recipients":"TEXT", # A comma-separated list of recipients since sqlite3 does not support arrays by default
-"sender":"TEXT NOT NULL", # A string containing the sender handle
-"replyto": "TEXT", # A string containing the post that the sender is replying to, if at all.
-"content": "TEXT", # A string containing the actual post's contents.
-"written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
-"updated":"TIMESTAMP", # An optional timestamp containing the date that the post was updated
-"modified":"BOOLEAN NOT NULL", # A boolean indicating whether the post was modified or not.
-"local": "BOOLEAN NOT NULL", # A boolean indicating whether the post originated from this server or other servers.
-"revisions": "TEXT", # A string containing previous revisions of a post
+
+const postsCols*: OrderedTable[string, string] = {
+  "id": "TEXT PRIMARY KEY NOT NULL", #The Post id
+  "recipients":"TEXT", # A comma-separated list of recipients since sqlite3 does not support arrays by default
+  "sender":"TEXT NOT NULL", # A string containing the sender handle
+  "replyto": "TEXT DEFAULT ''", # A string containing the post that the sender is replying to, if at all.
+  "content": "TEXT NOT NULL DEFAULT ''", # A string containing the latest content of the post.
+  "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
+  "modified":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether the post was modified or not.
+  "local": "BOOLEAN NOT NULL", # A boolean indicating whether the post originated from this server or other servers.
+  # TODO: This __A/__B hack is really, well, hacky. Maybe replace it?
+  "__A": "foreign key (replyto) references posts(id)", # Some foreign key for integrity
+  "__B": "foreign key (sender) references users(id)", # Same as above
 }.toOrderedTable
+
+## Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
+#const postsCols*: OrderedTable[string, string] = {"id":"TEXT PRIMARY KEY NOT NULL", # The post Id
+
+#}.toOrderedTable
 
 proc constructPostFromRow*(db: DbConn, row: Row): Post =
   ## A procedure that takes a database Row (From the Posts table)
@@ -78,7 +85,7 @@ proc constructPostFromRow*(db: DbConn, row: Row): Post =
 
 proc addPost*(db: DbConn, post: Post): bool =
   ## A function add a post into the database
-  ## This function uses parameterized substitution Aka. prepared statements.
+  ## This function uses parameterized substitution
   ## So escaping objects before sending them here is not a requirement.
   
   let testStatement = sql"SELECT local FROM posts WHERE id = ?;"
@@ -98,7 +105,6 @@ proc addPost*(db: DbConn, post: Post): bool =
       post.replyto,
       post.content,
       toString(post.written),
-      toString(post.updated),
       post.modified,
       post.local,
       toString(post.revisions)

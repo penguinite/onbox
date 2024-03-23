@@ -25,10 +25,12 @@ import std/tables
 import common
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const reactionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY",
+const reactionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL",
 "pid": "TEXT NOT NULL", # ID of post that user reacted to
 "uid": "TEXT NOT NULL", # ID of user who reacted to post
-"reaction": "TEXT NOT NULL" # Specific reaction
+"reaction": "TEXT NOT NULL", # Specific reaction
+"__A": "foreign key (pid) references posts(id)", # Some foreign key for integrity
+"__B": "foreign key (uid) references users(id)", # Same as above
 }.toOrderedTable
 
 proc getReactions*(db: DbConn, id: string): Table[string, seq[string]] =

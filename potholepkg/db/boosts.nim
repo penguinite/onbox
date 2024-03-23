@@ -25,10 +25,12 @@ import common
 import std/tables
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const boostsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY",
+const boostsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL",
 "pid": "TEXT NOT NULL", # ID of post that user boosted
 "uid": "TEXT NOT NULL", # ID of user that boosted post
-"level": "TEXT NOT NULL" # The "boost level", ie. is it followers-only or whatever.
+"level": "TEXT NOT NULL", # The "boost level", ie. is it followers-only or whatever.
+"__A": "foreign key (pid) references posts(id)", # Some foreign key for integrity
+"__B": "foreign key (uid) references users(id)", # Same as above
 }.toOrderedTable
 
 proc getBoosts*(db: DbConn, id: string): Table[string, seq[string]] =

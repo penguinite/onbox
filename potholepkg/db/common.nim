@@ -35,7 +35,10 @@ proc createDbTable*(db: DbConn, tablename: string, cols: OrderedTable[string,str
   # We build the sql statement slowly.
   var sqlStatement = "CREATE TABLE IF NOT EXISTS " & tablename & " ("
   for key, value in cols.pairs:
-    sqlStatement.add("$# $#," % [key, value])
+    if key.startsWith("__"):
+      sqlStatement.add("$#," % [value])
+    else:
+      sqlStatement.add("$# $#," % [key, value])
   sqlStatement = sqlStatement[0 .. ^2] # Remove last comma
   sqlStatement.add(");") # Add final two characters
 
@@ -67,8 +70,6 @@ proc matchTableSchema*(db: DbConn, tablename: string, table: OrderedTable[string
   var cols: seq[string] = @[] # To store the columns that are currently in the database
   var missing: seq[string] = @[] # To store the columns missing from the database.
 
-  echo db.getAllRows(sql"DESCRIBE TABLE posts;")
-  
 
 proc hasDbHost*(config: ConfigTable): bool =
   if config.exists("db","host") or existsEnv("PHDB_HOST"):
@@ -146,8 +147,5 @@ proc has*(row: Row): bool =
   if len(row) > 1: return true
   else: return false
 
-
-proc isOpen*(db: DbConn): bool =
-  if db[].dbName == "":
-    return false
-  return true
+proc isNil*(db: DbConn): bool =
+  return false
