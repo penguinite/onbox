@@ -77,6 +77,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     # Then we check if our essential data is empty.
     # If it is, then we error out and tell the user to RTFM (but kindly)
     if name.isEmptyOrWhitespace() or email.isEmptyOrWhitespace() or password.isEmptyOrWhitespace():
+      if args.check("q","quiet"): quit(1)
       log "Invalid command usage"
       log "You can always freshen up your knowledge on the CLI by re-running the same command with -h or --help"
       log "In fact, for your convenience! That's what we will be doing! :D"
@@ -98,13 +99,16 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     if args.check("r","require-approval"): user.is_approved = false
     
     if db.addUser(user):
-      log "Successfully inserted user"
-      echo "Login details:"
+      if not args.check("q","quiet"):
+        log "Successfully inserted user"
+        echo "Login details:"
       echo "name: ", user.handle
       echo "email: ", user.email
       echo "password: ", password
     else:
-      log "Failed to insert user"
+      if not args.check("q","quiet"):
+        log "Failed to insert user"
+      quit(1)
   of "delete", "del", "purge":
     var
       thing = ""
@@ -141,7 +145,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     # We simply cannot delete it otherwise we will be in database hell.
     if id == "null":
       error "Deleting the null user is not allowed."
-    
+
     if args.check("p", "purge") or cmd == "purge":
       # Delete every post first.
       if not db.deletePosts(db.getPostIDsByUserWithID(id)):
@@ -160,42 +164,58 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     echo "If you're seeing this then there's a high chance your command succeeded."
   of "id":
     if len(data) == 0:
+      if args.check("q","quiet"): quit(1)
       log "You must provide an argument to this command"
       helpPrompt("user","id")
 
     if not db.userHandleExists(data[0]):
+      if args.check("q","quiet"): quit(1)
       log "You must provide a valid user handle to this command"
       helpPrompt("user","id")
     
-    echo "ID of \"", data[0], "\": ", db.getIdFromHandle(data[0])
+    if args.check("q","quiet"):
+      echo db.getIdFromHandle(data[0])
+    else:
+      echo "ID of \"", data[0], "\": ", db.getIdFromHandle(data[0])
   of "handle":
     if len(data) == 0:
+      if args.check("q","quiet"): quit(1)
       log "You must provide an argument to this command"
       helpPrompt("user","handle")
     
     if not db.userIdExists(data[0]):
+      if args.check("q","quiet"): quit(1)
       log "You must provide a valid user ID to this command"
       helpPrompt("user","handle")
     
-    echo "Handle of \"", data[0], "\": ", db.getHandleFromId(data[0])
+    if args.check("q","quiet"):
+      echo db.getHandleFromId(data[0])
+    else:
+      echo "Handle of \"", data[0], "\": ", db.getHandleFromId(data[0])
   of "info":
     if len(data) == 0:
+      if args.check("q","quiet"): quit(1)
       log "You must provide an argument to this command"
       helpPrompt("user", "info")
     
     var user: User
     if db.userHandleExists(data[0]):
-      log "Using provided data as a user handle"
+      if not args.check("q","quiet"):
+        log "Using provided data as a user handle"
       user = db.getUserByHandle(data[0])
     elif db.userIdExists(data[0]):
-      log "Using provided data as a user ID"
+      if not args.check("q","quiet"):
+        log "Using provided data as a user ID"
       user = db.getUserById(data[0])
     else:
       error "No valid user handle or id exists for the provided data..."
     
     proc printSpecificInfo(short, long, name, data: string) = 
       if args.check(short, long):
-        echo name, ": \"", data , "\""
+        if args.check("q","quiet"):
+          echo data
+        else:
+          echo name, ": \"", data , "\""
     
     if len(args) > 0:
       printSpecificInfo("i","id", "ID", user.id)

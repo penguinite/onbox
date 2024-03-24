@@ -295,12 +295,18 @@ You can also use the following command-line arguments:
   "user:id": @[
     prefix,
     "This command is a shorthand for user info -i",
-    "It basically prints the user id of whoever's handle we just got"
+    "It basically prints the user id of whoever's handle we just got",
+    "",
+    "The following arguments are available:",
+    genArg("q","quiet", "Makes the program a whole lot less noisy.")
   ],
   "user:handle": @[
     prefix, 
     "This command is a shorthand for user info -h",
-    "It basically prints the user handle of whoever's id we just got"
+    "It basically prints the user handle of whoever's id we just got",
+    "",
+    "The following arguments are available:",
+    genArg("q","quiet", "Makes the program a whole lot less noisy.")
   ],
   "user:info": @[
     prefix,
@@ -309,6 +315,7 @@ This command retrieves information about users.
 By default it will display all information!
 You can also choose to see specific bits with these flags:
     """,
+    genArg("q","quiet", "Makes the program a whole lot less noisy."),
     genArg("i","id","Print only user's ID"),
     genArg("h","handle","Print only user's handle"),
     genArg("d","display","Print only user's display name"),
