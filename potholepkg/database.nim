@@ -20,7 +20,7 @@
 ## This backend is still not working yet.
 
 # From somewhere in Pothole
-import lib, conf
+import lib, conf, user
 
 # From somewhere in the standard library
 import std/strutils
@@ -74,7 +74,24 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
       # Now we check the schema to make sure it matches the hard-coded one.
       if schemaCheck:
         matchTableSchema(result, i[0], i[1])
-
+  
+  # Add `null` user
+  # `null` is used by pothole to signify a deleted user.
+  # Fx. imagine a user deletes their account, the database schema requires that we 
+  # have a valid sender in every single post.
+  # And so `null` acts a sender in that scenario.
+  var null = newUser(
+    "null",
+    true,
+    ""
+  )
+  # The `null` user must have a "null" id.
+  null.id = "null"
+  null.is_frozen = true
+  null.salt = ""
+  null.name = "Deleted User"
+  if not result.addUser(null):
+    error "Couldn't add essential \"null\" user"
 
   return result
 

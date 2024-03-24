@@ -204,6 +204,19 @@ proc deletePosts*(db: DbConn, sequence: seq[string]): bool =
       return false
   return true
 
+proc reassignSenderPost*(db: DbConn, post_id, sender: string): bool =
+  try:
+    db.exec(sql"UPDATE posts SET sender = ? WHERE id = ?;", sender, post_id)
+    return true
+  except:
+    return false
+
+proc reassignSenderPosts*(db: DbConn, post_ids: seq[string], sender: string): bool =
+  for post_id in post_ids:
+    if not db.reassignSenderPost(post_id, sender):
+      return false
+  return true
+
 proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Post] =
   ## A procedure to get posts from local users only.
   ## Set limit to 0 to disable the limit and get all posts from local users.

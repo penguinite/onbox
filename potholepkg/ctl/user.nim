@@ -137,10 +137,21 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
         error "User id doesn't exist"
       id = thing
     
+    # The `null` user is important.
+    # We simply cannot delete it otherwise we will be in database hell.
+    if id == "null":
+      error "Deleting the null user is not allowed."
+    
     if args.check("p", "purge") or cmd == "purge":
       # Delete every post first.
       if not db.deletePosts(db.getPostIDsByUserWithID(id)):
         error "Failed to delete posts by user"
+    else:
+      # We must reassign every post made this user to the `null` user
+      # Otherwise the database will freakout.
+      if not db.reassignSenderPosts(db.getPostIDsByUserWithID(id), "null"):
+        log "There's probably some database error somewhere..."
+        error "Failed to reassign posts by user"
     
     # Delete the user
     if not db.deleteUser(id):

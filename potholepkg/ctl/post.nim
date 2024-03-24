@@ -154,5 +154,12 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       error "Failed to delete user"
     
     echo "If you're seeing this then there's a high chance your command succeeded."
+  of "purge":
+    try:
+      if not db.deletePosts(db.getPostIDsByUserWithID("null")):
+        error "Couldn't purge old posts"
+    except CatchableError as err:
+      error "Couldn't purge old posts: ", err.msg
+    echo "If you're seeing this then there's a high chance your command succeeded."
   else:
     helpPrompt("db")

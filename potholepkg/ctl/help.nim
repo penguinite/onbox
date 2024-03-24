@@ -333,6 +333,11 @@ The following commands are available:
     genCmd("new", "Creates a new post and adds it to the database"),
     genCmd("delete", "Deletes a post from the database"),
     genCmd("del", "(Shorthand for delete)")
+    genCmd("purge", "Purges old posts by deleted users")
+  ],
+  "post:purge": @[
+    prefix,
+    "Purge deletes old posts made by deleted users, more specifically it deletes any post made by the \"null\" user"
   ],
   "post:new": @[
     prefix,
