@@ -79,7 +79,7 @@ proc addUser*(db: DbConn, user: User): bool =
       user.is_approved
     )
   except CatchableError as err:
-    log "Failed to insert user: ", err.msg
+    error "Failed to insert user: ", err.msg
 
   return true
 

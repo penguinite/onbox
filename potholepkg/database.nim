@@ -90,8 +90,8 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
   null.is_frozen = true
   null.salt = ""
   null.name = "Deleted User"
-  if not result.addUser(null):
-    error "Couldn't add essential \"null\" user"
+  if not result.userIdExists("null"):
+    discard result.addUser(null)
 
   return result
 
