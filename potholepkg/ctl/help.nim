@@ -342,8 +342,20 @@ The following commands are available:
     """,
     genCmd("new", "Creates a new post and adds it to the database"),
     genCmd("delete", "Deletes a post from the database"),
-    genCmd("del", "(Shorthand for delete)")
+    genCmd("del", "(Shorthand for delete)"),
+    genCmd("id", "Allows you to identify a post very easily"),
     genCmd("purge", "Purges old posts by deleted users")
+  ],
+  "post:delete": @[
+    prefix,
+    """
+When given a post ID, this command will try to delete it.
+Fx. potholectl post delete POST_ID_HERE
+    """
+  ],
+  "post:del": @[
+    prefix,
+    "This command is an alias to the delete command"
   ],
   "post:purge": @[
     prefix,

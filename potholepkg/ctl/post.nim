@@ -95,13 +95,10 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     # Some extra checks
     # replyto must be an existing post.
     # sender must be an existing user.
-    var isSenderId = true
-    let db = database.setup(config, true)
     if not db.userIdExists(sender):
       log "Assuming sender is a handle and not an id..."
       if not db.userHandleExists(sender):
         error "Sender doesn't exist in the database at all"
-      isSenderId = false
       log "Converting sender's handle into an ID."
       post.sender = db.getIdFromHandle(sender)
     
@@ -111,57 +108,16 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     if db.addPost(post):
       log "Successfully inserted post"
     else:
-      log "Failed to insert user"
-  of "delete", "del", "purge":
-    var
-      thing = ""
-      idOrhandle = false # True means it's an id, False means it's a handle.
-    if len(data) > 0:
-      thing = data[0]
-    
-    let db = database.setup(config, true)
+      log "Failed to insert post"
+  of "delete", "del":
+    if len(data) == 0:
+      error "Arguments must be provided for this command to work"
 
-    if db.userIdExists(thing) and db.userHandleExists(thing) and "@" notin thing:
-      error "Potholectl can't infer whether this is an ID or a handle, please re-run with either -i or -n"
-    
-    # If there's an @ symbol then it's highly likely it's a handle
-    if args.check("i", "id"):
-      idOrhandle = true
-    
-    if args.check("n", "name") or "@" in thing:
-      idOrhandle = false
-
-    # Try to convert the thing we received into an ID.
-    # So it's easier    
-    var id = ""
-    case idOrhandle:
-    of false:
-      # It's a handle
-      if not db.userHandleExists(thing):
-        error "User handle doesn't exist"
-      id = db.getIdFromHandle(thing)
-    of true:
-      # It's an id
-      if not db.userIdExists(thing):
-        error "User id doesn't exist"
-      id = thing
-    
-    if args.check("p", "purge") or cmd == "purge":
-      # Delete every post first.
-      if not db.deletePosts(db.getPostIDsByUserWithID(id)):
-        error "Failed to delete posts by user"
-    
-    # Delete the user
-    if not db.deleteUser(id):
-      error "Failed to delete user"
+ 
     
     echo "If you're seeing this then there's a high chance your command succeeded."
   of "purge":
-    try:
-      if not db.deletePosts(db.getPostIDsByUserWithID("null")):
-        error "Couldn't purge old posts"
-    except CatchableError as err:
-      error "Couldn't purge old posts: ", err.msg
+
     echo "If you're seeing this then there's a high chance your command succeeded."
   else:
     helpPrompt("db")
