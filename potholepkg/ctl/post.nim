@@ -39,6 +39,8 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   else:
     config = conf.setup(getConfigFilename())
 
+  let db = database.setup(config, true, args.check("q","quiet"))
+
   case cmd:
   of "new":
     var

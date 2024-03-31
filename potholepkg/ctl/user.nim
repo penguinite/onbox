@@ -38,7 +38,8 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     config = conf.setup(args.get("c","config"))
   else:
     config = conf.setup(getConfigFilename())
-  let db = database.setup(config, true)
+
+  let db = database.setup(config, true, args.check("q","quiet"))
 
   case cmd:
   of "new":
@@ -84,12 +85,12 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     # Then we check if our essential data is empty.
     # If it is, then we error out and tell the user to RTFM (but kindly)
     when not defined(phPrivate):
-    if name.isEmptyOrWhitespace() or email.isEmptyOrWhitespace() or password.isEmptyOrWhitespace():
-      if args.check("q","quiet"): quit(1)
-      log "Invalid command usage"
-      log "You can always freshen up your knowledge on the CLI by re-running the same command with -h or --help"
-      log "In fact, for your convenience! That's what we will be doing! :D"
-      helpPrompt("user", cmd)
+      if name.isEmptyOrWhitespace() or email.isEmptyOrWhitespace() or password.isEmptyOrWhitespace():
+        if args.check("q","quiet"): quit(1)
+        log "Invalid command usage"
+        log "You can always freshen up your knowledge on the CLI by re-running the same command with -h or --help"
+        log "In fact, for your convenience! That's what we will be doing! :D"
+        helpPrompt("user", cmd)
     else:
       if name.isEmptyOrWhitespace() or password.isEmptyOrWhitespace():
         if args.check("q","quiet"): quit(1)
@@ -119,7 +120,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
         echo "Login details:"
       echo "name: ", user.handle
       when not defined(phPrivate):
-      echo "email: ", user.email
+        echo "email: ", user.email
       echo "password: ", password
     else:
       if not args.check("q","quiet"):
@@ -189,10 +190,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "You must provide a valid user handle to this command"
       helpPrompt("user","id")
     
-    if args.check("q","quiet"):
-      echo db.getIdFromHandle(data[0])
-    else:
-      echo "ID of \"", data[0], "\": ", db.getIdFromHandle(data[0])
+    echo db.getIdFromHandle(data[0])
   of "handle":
     if len(data) == 0:
       if args.check("q","quiet"): quit(1)
@@ -204,10 +202,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "You must provide a valid user ID to this command"
       helpPrompt("user","handle")
     
-    if args.check("q","quiet"):
-      echo db.getHandleFromId(data[0])
-    else:
-      echo "Handle of \"", data[0], "\": ", db.getHandleFromId(data[0])
+    echo db.getHandleFromId(data[0])
   of "info":
     if len(data) == 0:
       if args.check("q","quiet"): quit(1)

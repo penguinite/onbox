@@ -29,20 +29,20 @@ import std/strutils
 import db/[users, posts, reactions, boosts, common, postrevisions]
 export DbConn, isNil, users, posts, reactions, boosts, postrevisions
 
-proc setup*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
+proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false): DbConn  =
   # Some checks to run before we actually open the database
 
-  if not hasDbHost(config):
+  if not hasDbHost(config) and not quiet:
     log "Couldn't retrieve database host. Using \"127.0.0.1:5432\" as default"
     log ""
 
-  if not hasDbName(config):
+  if not hasDbName(config) and not quiet:
     log "Couldn't retrieve database name. Using \"pothole\" as default"
 
-  if not hasDbUser(config):
+  if not hasDbUser(config) and not quiet:
     log "Couldn't retrieve database user login. Using \"pothole\" as default"
   
-  if not hasDbPass(config):
+  if not hasDbPass(config) and not quiet:
     log "Couldn't find database user password from the config file or environment, did you configure pothole correctly?"
     error "Database user password couldn't be found."
 
@@ -52,9 +52,9 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
     user = getDbUser(config)
     password = getDbPass(config)
 
-  log "Opening database \"", name ,"\" at \"", host, "\" with user \"", user, "\""
+  if not quiet: log "Opening database \"", name ,"\" at \"", host, "\" with user \"", user, "\""
 
-  if host.startsWith("__eat_flaming_death"):
+  if host.startsWith("__eat_flaming_death") and not quiet:
     log "Someone or something used the forbidden code. Quietly returning... Stuff might break!"
     return
 
@@ -69,6 +69,7 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true): DbConn  =
     ("boosts", boostsCols)]:
       # Create the tables first
       if not createDbTable(result, i[0], i[1]):
+        if quiet: quit(1)
         error "Failed to create ", i[0], " table"
 
       # Now we check the schema to make sure it matches the hard-coded one.
