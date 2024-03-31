@@ -29,20 +29,6 @@ var
   staticFolder {.threadvar.}: string
   db {.threadvar.}: database.DbConn
 
-proc renderError(error: string): string =
-  # One liner to generate an error webpage.
-  return renderTemplate(
-    getAsset(staticFolder,"error.html"),
-    {"error": error}.toTable,
-  )
-
-proc renderSuccess(str: string): string =
-  # One liner to generate a "Success!" webpage.
-  return renderTemplate(
-    getAsset(staticFolder, "success.html"),
-    {"result": str}.toTable,
-  )
-
 proc preRouteInit() =
   ## This route is ran before every single request.
   ## It has very little overhead yet it ensures that all the data we need is available for every request.
@@ -56,7 +42,8 @@ proc prepareTable(config: ConfigTable, db: DbConn): Table[string,string] =
     "description":config.getString("instance","description"), # Instance description
     "version":"", # Pothole version
     "staff": "<p>None</p>", # Instance staff (Any user with the admin attribute)
-    "rules": "<p>None</p>" # Instance rules (From config)
+    "rules": "<p>None</p>", # Instance rules (From config)
+    "error_embedded": "" # This is used for embedding errors within pages. It should always be empty.
   }.toTable
 
    # Add admins and other staff
@@ -83,6 +70,48 @@ proc prepareTable(config: ConfigTable, db: DbConn): Table[string,string] =
       table["version"] = lib.phVersion
 
   return table
+
+proc renderError(error: string): string =
+  # One liner to generate an error webpage.
+  return renderTemplate(
+    getAsset(staticFolder,"error.html"),
+    {"error": error}.toTable,
+  )
+
+proc renderError(error, fn: string): string =
+  var table = prepareTable(config, db)
+  table["result"] = "<div class=\"error\"><p>" & error & "</p></div>"
+  return renderTemplate(
+    getAsset(staticFolder, fn),
+    table
+  )
+
+proc renderSuccess(str: string): string =
+  # One liner to generate a "Success!" webpage.
+  return renderTemplate(
+    getAsset(staticFolder, "success.html"),
+    {"result": str}.toTable,
+  )
+
+proc renderSuccess(msg, fn: string): string =
+  var table = prepareTable(config, db)
+  table["result"] = "<div class=\"success\"><p>" & msg & "</p></div>"
+  return renderTemplate(
+    getAsset(staticFolder, fn),
+    table
+  )
+
+# Some more handler procs for doing some quick things.
+proc isInvalidParam(ctx: Context, str: string): bool =
+  ## Returns true if the parameter is invalid (It doesnt exist or it's nearly empty)
+  let param = ctx.getPostParamsOption(str)
+  if isNone(param) or isEmptyOrWhitespace(param.get()):
+    return true
+  return false
+
+proc getParam(ctx: Context, str: string): string =
+  # I just hate writing ctx.getPostParamsOption().get() everywhere
+  return ctx.getPostParamsOption(str).get()
 
 #! Actual prologue routes
 
@@ -123,44 +152,32 @@ proc get_auth_signup*(ctx: Context) {.async.} =
 
   if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == false:
     filename = "signup_disabled.html"
-
   resp renderTemplate(
     getAsset(staticFolder, filename),
     prepareTable(config, db)
   )
 
-
 proc post_auth_signup*(ctx: Context) {.async.} =
   preRouteInit()
+
   # First... As an absolute must.
   # Check if the registrations are open.
   # I don't know how I missed this obvious flaw
   # the first time I wrote this route.
-  if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == true:
+  if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == false:
     resp renderError("This instance has disabled user registrations.")
-
-  proc isInvalidParam(str: string): bool =
-    ## Returns true if the parameter is invalid (It doesnt exist or it's nearly empty)
-    let param = ctx.getPostParamsOption(str)
-    if isNone(param) or isEmptyOrWhitespace(param.get()):
-      return true
-    return false
-
-  proc getParam(str: string): string =
-    # I just hate writing ctx.getPostParamsOption().get() everywhere
-    return ctx.getPostParamsOption(str).get()
 
   # Let's first check for required options.
   # Everything else will come later.
-  if isInvalidParam("user"):
-    resp renderError("Missing or invalid username.")
+  if ctx.isInvalidParam("user"):
+    resp renderError("Missing or invalid username.","signup.html")
 
-  if isInvalidParam("pass"):
-    resp renderError("Missing or invalid password.")
+  if ctx.isInvalidParam("pass"):
+    resp renderError("Missing or invalid password.","signup.html")
 
   # Then let's check if the username exists.
-  if db.userHandleExists(getParam("user")):
-    resp renderError("Another user with the same handle already exists")
+  if db.userHandleExists(ctx.getParam("user")):
+    resp renderError("Another user with the same handle already exists","signup.html")
 
   # Email is a bit special since we have the phPrivate feature.
   var email = ""
@@ -169,25 +186,25 @@ proc post_auth_signup*(ctx: Context) {.async.} =
     if not isInvalidParam("email"):
       email = getParam("email")
   else:
-    if isInvalidParam("email"):
-      resp renderError("Missing or invalid email.")
-    email = getParam("email")
+    if ctx.isInvalidParam("email"):
+      resp renderError("Missing or invalid email.","signup.html")
+    email = ctx.getParam("email")
 
-  var user = newUser(getParam("user"))
-  user.local = true # newUser() sets this as false.
-  user.password = pbkdf2_hmac_sha512_hash(getParam("pass"),user.salt)
+  var user = newUser(ctx.getParam("user"), true, ctx.getParam("pass"))
   user.email = email
 
   user.name = toLowerAscii(user.handle)
-  if not isInvalidParam("name"):
-    user.name = getParam("name")
+  if not ctx.isInvalidParam("name"):
+    user.name = ctx.getParam("name")
   
   # Make user non-approved if instance requires approval for registration.
   if config.getBool("user","require_approval"):
     user.is_approved = false # User isn't allowed to login until their account is approved.
 
   if db.addUser(user):
-    resp renderSuccess("Your account has been successfully registered.")
+    resp renderSuccess("Your account has been successfully registered. " & crypto.randomString(),"signup.html")
+  else:
+    resp renderError("Account registration failed! Ask for help from administrator!","signup.html")
 
 proc get_auth_signin*(ctx:Context) {.async.} =
   preRouteInit()
