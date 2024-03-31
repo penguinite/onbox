@@ -262,6 +262,9 @@ Here is an example of a valid new user command: potholectl user new john johnson
 The users created by this command are approved by default.
 Although that can be changed with the require-approval CLI argument
 
+If pothole has been built with phApproved then, the following format is used instead: NAME PASSWORD
+So, here's another example: potholectl user new john johns_password
+
 You can also use the following command-line arguments:
     """,
     genArg("a","admin","Makes the user an administrator"),
