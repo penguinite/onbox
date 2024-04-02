@@ -145,6 +145,3 @@ proc getDbPass*(config: ConfigTable): string =
 proc has*(row: Row): bool =
   ## A quick helper function to check if a Row is valid.
   return len(row) != 0 and row[0] != ""
-
-proc isNil*(db: DbConn): bool =
-  return false

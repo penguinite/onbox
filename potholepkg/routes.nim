@@ -22,19 +22,17 @@ import std/[tables, options]
 import std/strutils except isEmptyOrWhitespace, parseBool
 
 # From nimble/other sources
-import prologue
+import mummy, mummy/[routers, multipart]
 
-var
-  config {.threadvar.}: ConfigTable
-  staticFolder {.threadvar.}: string
-  db {.threadvar.}: database.DbConn
+
+{.gcsafe.}:
+  let
+    config: ConfigTable = setup(getConfigFilename())
+    staticFolder: string = initStatic(config)
+    db: database.DbConn = init(config)
 
 proc preRouteInit() =
-  ## This route is ran before every single request.
-  ## It has very little overhead yet it ensures that all the data we need is available for every request.
-  if config.isNil(): config = setup(getConfigFilename())
-  if staticFolder == "": staticFolder = initStatic(config)
-  db = init(config)
+  discard
 
 proc prepareTable(config: ConfigTable, db: DbConn): Table[string,string] =
   var table = { # Config table for the templating library.
@@ -43,7 +41,7 @@ proc prepareTable(config: ConfigTable, db: DbConn): Table[string,string] =
     "version":"", # Pothole version
     "staff": "<p>None</p>", # Instance staff (Any user with the admin attribute)
     "rules": "<p>None</p>", # Instance rules (From config)
-    "error_embedded": "" # This is used for embedding errors within pages. It should always be empty.
+    "result": "" # This is used for embedding errors within pages. It should always be empty.
   }.toTable
 
    # Add admins and other staff
@@ -101,17 +99,38 @@ proc renderSuccess(msg, fn: string): string =
     table
   )
 
-# Some more handler procs for doing some quick things.
-proc isInvalidParam(ctx: Context, str: string): bool =
-  ## Returns true if the parameter is invalid (It doesnt exist or it's nearly empty)
-  let param = ctx.getPostParamsOption(str)
-  if isNone(param) or isEmptyOrWhitespace(param.get()):
-    return true
-  return false
+proc isValidQueryParam(req: Request, param: string): bool =
+  if isEmptyOrWhitespace(req.queryParams[param]):
+    return false
+  return true
 
-proc getParam(ctx: Context, str: string): string =
-  # I just hate writing ctx.getPostParamsOption().get() everywhere
-  return ctx.getPostParamsOption(str).get()
+proc decodeMultipartEx(req: Request): Table[string, string] {.raises: [MummyError].} =
+  ## Mummy's built-in Multipart handling is stupid and difficult to use.
+  ## So this procedure takes a Mummy request object and transforms it into a lovely Table[string, string]
+  ## Note: Empty or whitespace-only data (Anything that will be thrown out by lib.isEmptyOrWhitespace) will not be added into the table.
+  ## TODO: Maybe investigate what entry.filename is supposed to be? We throw that away as of now.
+  let entries = req.decodeMultipart()
+  for entry in entries:
+    if isEmptyOrWhitespace(entry.name):
+      continue # Skip if entry name is mostly empty
+    if isNone(entry.data):
+      continue # Skip if entry data isn't provided
+    let
+      (start, last) = entry.data.get
+      data = req.body[start .. last]
+
+    if isEmptyOrWhitespace(data):
+      continue
+    
+    result[entry.name] = data
+  return result
+
+template htmlResponse(req: Request, html: string) =
+  ## Quick template that initializes headers with text/html content type and responds with a 200 code.
+  ## Very useful for cutting down on unneeded code.
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/html"
+  req.respond(200, headers, html)
 
 #! Actual prologue routes
 
@@ -127,37 +146,40 @@ const staticURLs*: Table[string,string] = {
 }.toTable
 
 
-proc serveStatic*(ctx: Context) {.async.} =
+proc serveStatic*(req: Request) =
   preRouteInit()
+  var path = req.path
 
-  var path = ctx.request.path
-
-  if path.endsWith("/") and path != "/": path = path[0..^2]
   # If the path has a slash at the end, remove it.
   # Except if the path is the root, aka. literally just a slash
+  if path.endsWith("/") and path != "/": path = path[0..^2]
 
-  resp renderTemplate(
-    getAsset(staticFolder, staticURLs[path]),
-    prepareTable(config, db)
+  req.htmlResponse(
+    renderTemplate(
+      getAsset(staticFolder, staticURLs[path]),
+      prepareTable(config, db)
+    )
   )
 
-proc serveCSS*(ctx: Context) {.async.} = 
+proc serveCSS*(req: Request) = 
   preRouteInit()
-  ctx.response.setHeader("Content-Type","text/css")
-  resp getAsset(staticFolder, "style.css")
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/css"
+  req.respond(200, headers, getAsset(staticFolder, "style.css"))
 
-proc get_auth_signup*(ctx: Context) {.async.} =
+proc get_auth_signup*(req: Request) =
   preRouteInit()
   var filename = "signup.html"
 
   if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == false:
     filename = "signup_disabled.html"
-  resp renderTemplate(
+
+  req.htmlResponse(renderTemplate(
     getAsset(staticFolder, filename),
     prepareTable(config, db)
-  )
+  ))
 
-proc post_auth_signup*(ctx: Context) {.async.} =
+proc post_auth_signup*(req: Request) =
   preRouteInit()
 
   # First... As an absolute must.
@@ -165,86 +187,82 @@ proc post_auth_signup*(ctx: Context) {.async.} =
   # I don't know how I missed this obvious flaw
   # the first time I wrote this route.
   if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == false:
-    resp renderError("This instance has disabled user registrations.")
+    req.htmlResponse renderError("This instance has disabled user registrations.")
+  
+  let multiData = req.decodeMultipartEx()
 
   # Let's first check for required options.
   # Everything else will come later.
-  if ctx.isInvalidParam("user"):
-    resp renderError("Missing or invalid username.","signup.html")
+  if not multiData.hasKey("user"):
+    req.htmlResponse renderError("Missing or invalid username.","signup.html")
 
-  if ctx.isInvalidParam("pass"):
-    resp renderError("Missing or invalid password.","signup.html")
+  if not multiData.hasKey("pass"):
+    req.htmlResponse renderError("Missing or invalid password.","signup.html")
 
   # Then let's check if the username exists.
-  if db.userHandleExists(ctx.getParam("user")):
-    resp renderError("Another user with the same handle already exists","signup.html")
-
-  # Email is a bit special since we have the phPrivate feature.
+  if db.userHandleExists(multiData["user"]):
+    req.htmlResponse renderError("Another user with the same handle already exists","signup.html")
+  
   var email = ""
-
-  when defined(phPrivate):
-    if not isInvalidParam("email"):
-      email = getParam("email")
+  when not defined(phPrivate):
+    if not multiData.hasKey("email"):
+      req.htmlResponse renderError("Missing or invalid email.","signup.html")
   else:
-    if ctx.isInvalidParam("email"):
-      resp renderError("Missing or invalid email.","signup.html")
-    email = ctx.getParam("email")
+    if multiData.hasKey("email"):
+      email = multiData["email"]
 
-  var user = newUser(ctx.getParam("user"), true, ctx.getParam("pass"))
+  var user = newUser(multiData["user"], true, multiData["pass"])
   user.email = email
 
-  user.name = toLowerAscii(user.handle)
-  if not ctx.isInvalidParam("name"):
-    user.name = ctx.getParam("name")
+  # Set bio
+  user.bio = ""
+  if multiData.hasKey("bio"):
+    user.bio = multiData["bio"]
+
+  # Set display name
+  user.name = sanitizeHandle(multiData["user"])
+  if multiData.hasKey("name"):
+    user.bio = multiData["name"]
   
   # Make user non-approved if instance requires approval for registration.
   if config.getBool("user","require_approval"):
     user.is_approved = false # User isn't allowed to login until their account is approved.
 
   if db.addUser(user):
-    resp renderSuccess("Your account has been successfully registered. " & crypto.randomString(),"signup.html")
+    req.htmlResponse renderSuccess("Your account has been successfully registered. " & crypto.randomString(),"signup.html")
   else:
-    resp renderError("Account registration failed! Ask for help from administrator!","signup.html")
+    req.htmlResponse renderError("Account registration failed! Ask for help from administrator!","signup.html")
 
-proc get_auth_signin*(ctx:Context) {.async.} =
+proc get_auth_signin*(req: Request) =
   preRouteInit()
 
-  resp renderTemplate(
+  req.htmlResponse renderTemplate(
     getAsset(staticFolder, "signin.html"),
     prepareTable(config, db)
   )
 
-proc post_auth_signin*(ctx: Context) {.async.} =
+proc post_auth_signin*(req: Request) =
   preRouteInit()
-  proc isInvalidParam(str: string): bool =
-    ## Returns true if the parameter is invalid (It doesnt exist or it's nearly empty)
-    let param = ctx.getPostParamsOption(str)
-    if isNone(param) or isEmptyOrWhitespace(param.get()):
-      return true
-    return false
-
-  proc getParam(str: string): string =
-    # I just hate writing ctx.getPostParamsOption().get() everywhere
-    return ctx.getPostParamsOption(str).get()
+  let data = req.decodeMultipartEx()
   
   # Let's first check for required options.
   # Everything else will come later.
-  if isInvalidParam("user"):
-    resp renderError("Missing or invalid username.")
+  if not data.hasKey("user"):
+    req.htmlResponse renderError("Missing or invalid username.","signin.html")
 
-  if isInvalidParam("pass"):
-    resp renderError("Missing or invalid password.")
+  if not data.hasKey("pass"):
+    req.htmlResponse renderError("Missing or invalid password.","signin.html")
 
   # Check if user exists
-  if not db.userHandleExists(sanitizeHandle(getParam("user"))):
-    resp renderError("User does not exist.")
+  if not db.userHandleExists(sanitizeHandle(data["user"])):
+    req.htmlResponse renderError("User does not exist.","signin.html")
 
-  let user = db.getUserByHandle(sanitizeHandle(getParam("user")))
+  let user = db.getUserByHandle(sanitizeHandle(data["user"]))
 
   # Disable login if account is frozen or not yet approved.
-  if user.is_frozen: resp renderError("Your account has been frozen, contact the administrators of this instance.")
+  if user.is_frozen: req.htmlResponse renderError("Your account has been frozen, contact the administrators of this instance.","signin.html")
   if not user.is_approved and config.getBool("user","require_approval") == true:
-    resp renderError("Your account has not been approved yet. Contact the administrators of this instance.")
+    req.htmlResponse renderError("Your account has not been approved yet. Contact the administrators of this instance.","signin.html")
   
 
   # TODO: Implement this once postgres is stable
@@ -256,11 +274,10 @@ proc post_auth_signin*(ctx: Context) {.async.} =
   # "ip": "BLOB NOT NULL" # A hash of the user's IP address. On phPrivate, this is not used whatsoever.
   # "salt": "BLOB UNIQUE NOT NULL" # A small salt used to hash the user's IP address
   
-  
-  resp renderError("Login is not implemented yet... Sorry! ;(")
+  req.htmlResponse renderError("Login is not implemented yet... Sorry! ;( But here is some debugging ifno: " & $user,"signin.html")
 
 
-proc randomPosts*(ctx:Context) {.async.} =
+proc randomPosts*(req: Request) =
   preRouteInit()
   var response = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" coctx.getPostParamsOption("username").get()ntent="width=device-width, initial-scale=1"><title>Showing local posts</title><link rel="stylesheet" href="/css/style.css"/></head><body>"""
   for post in db.getLocalPosts(0):
@@ -302,4 +319,4 @@ proc randomPosts*(ctx:Context) {.async.} =
     #  response.add("</ul>")
     response.add("</article><hr>")
   response.add("</body></html>")
-  resp htmlResponse(response)
+  req.htmlResponse(response)

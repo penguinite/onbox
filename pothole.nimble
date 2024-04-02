@@ -9,9 +9,12 @@ bin           = @["pothole","potholectl"]
 installDirs    = @["potholepkg"]
 backend       = "c"
 
-# Add different switches depending on if we are in debug/release mode
+## The following options are required
 switch("stackTrace","on")
+
+# Mummy requires the following to be enabled
 switch("mm", "orc")
+switch("threads","on")
 
 task clean, "Removes build folder if it exists":
   if dirExists(binDir):
@@ -27,6 +30,6 @@ after build:
 # Dependencies
 requires "nim >= 2.0.0"
 requires "nimcrypto >= 0.5.4"
-requires "prologue >= 0.6.4"
-requires "iniplus >= 0.2.1"
+requires "mummy"
+requires "iniplus >= 0.2.2"
 requires "db_connector >= 0.1.0"

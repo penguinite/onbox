@@ -19,13 +19,14 @@ import potholepkg/[lib, conf, database, routes]
 
 # From standard library
 import std/tables
+from std/strutils import join
 
 proc exit() {.noconv.} =
   echo "Interrupted by Ctrl+C"
   quit(1)
 
 # From nimble
-import prologue
+import mummy, mummy/routers
 
 echo "Pothole version ", lib.version 
 echo "Copyright © Leo Gavilieau 2022-2023." 
@@ -45,25 +46,21 @@ if config.exists("web","port"):
 # Initialize database
 discard setup(config)
 
-echo "Running on http://localhost:" & $port
+log "Running on http://localhost:" & $port
 
-when defined(debug):
-  const debugMode = true
-else:
-  const debugMode = false
+proc basicLog(lvl: LogLevel, args: varargs[string,`$`]) =
+  case lvl:
+  of DebugLevel: log "WebDebug: ", args.join
+  of InfoLevel: log "WebInfo: ", args.join
+  of ErrorLevel: log "WebError: ", args.join
 
-let settings = newSettings(
-  debug = debugMode,
-  port = Port(port),
-  appName = "Pothole"
-)
-
-var app = newApp(settings)
+var router: Router
 for ur in staticURLs.keys: 
-  app.get(ur, serveStatic)
-app.get("/css/style.css", serveCSS)
-app.get("/showRandomPosts/", randomPosts)
-app.get("/auth/sign_up", get_auth_signup)
-app.post("/auth/sign_up", post_auth_signup)
+  router.get(ur, serveStatic)
+router.get("/css/style.css", serveCSS)
+router.get("/showRandomPosts/", randomPosts)
+router.get("/auth/sign_up", get_auth_signup)
+router.post("/auth/sign_up", post_auth_signup)
 
-app.run()
+var server = newServer(router, nil, basicLog)
+server.serve(Port(port))
