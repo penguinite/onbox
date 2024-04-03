@@ -26,7 +26,7 @@ proc exit() {.noconv.} =
   quit(1)
 
 # From nimble
-import mummy, mummy/routers
+import prologue
 
 echo "Pothole version ", lib.version 
 echo "Copyright © Leo Gavilieau 2022-2023." 
@@ -48,19 +48,18 @@ discard setup(config)
 
 log "Running on http://localhost:" & $port
 
-proc basicLog(lvl: LogLevel, args: varargs[string,`$`]) =
-  case lvl:
-  of DebugLevel: log "WebDebug: ", args.join
-  of InfoLevel: log "WebInfo: ", args.join
-  of ErrorLevel: log "WebError: ", args.join
 
-var router: Router
+let settings = newSettings(
+  debug = defined(debug),
+  port = Port(port),
+  appName = "Pothole"
+)
+var app = newApp(settings)
 for ur in staticURLs.keys: 
-  router.get(ur, serveStatic)
-router.get("/css/style.css", serveCSS)
+  app.get(ur, serveStatic)
+app.get("/css/style.css", serveCSS)
 #router.get("/showRandomPosts/", randomPosts)
-router.get("/auth/sign_up", get_auth_signup)
-router.post("/auth/sign_up", post_auth_signup)
+app.get("/auth/sign_up", get_auth_signup)
+app.post("/auth/sign_up", post_auth_signup)
 
-var server = newServer(router, nil, basicLog)
-server.serve(Port(port))
+app.run()

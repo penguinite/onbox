@@ -30,6 +30,6 @@ after build:
 # Dependencies
 requires "nim >= 2.0.0"
 requires "nimcrypto >= 0.5.4"
-requires "mummy"
+requires "prologue >= 0.6.4"
 requires "iniplus >= 0.2.2"
 requires "db_connector >= 0.1.0"
