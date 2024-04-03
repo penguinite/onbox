@@ -58,7 +58,7 @@ var router: Router
 for ur in staticURLs.keys: 
   router.get(ur, serveStatic)
 router.get("/css/style.css", serveCSS)
-router.get("/showRandomPosts/", randomPosts)
+#router.get("/showRandomPosts/", randomPosts)
 router.get("/auth/sign_up", get_auth_signup)
 router.post("/auth/sign_up", post_auth_signup)
 
