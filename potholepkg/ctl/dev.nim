@@ -22,8 +22,7 @@
 import shared
 
 # From elsewhere in Pothole
-import ../[lib, conf]
-import ../db/common
+import ../[lib, conf, database]
 
 # From standard libraries
 import std/[os, osproc, tables, strutils]
@@ -81,18 +80,6 @@ proc initDb(config: ConfigTable) =
 
   if id == "":
     error "Please investigate the above errors before trying again."
-
-proc cleanDb(config: ConfigTable) =
-  let db = open(
-    getDbHost(config),
-    getDbUser(config),
-    getDbPass(config),
-    getDbName(config)
-  )
-
-  for table in @["users","posts","reactions","boosts"]:
-    let sql = sql("DROP TABLE IF EXISTS " & table)
-    db.exec(sql)
 
 proc purgeDb() =
   proc exec(cmd: string) =

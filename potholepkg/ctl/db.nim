@@ -42,5 +42,8 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   of "schema_check", "init":
     log "Re-running database initialization with schema checking enabled."
     discard setup(config,true)
+  of "clean": 
+    log "Cleaning everything in database"
+    cleanDb(config)
   else:
     helpPrompt("db")

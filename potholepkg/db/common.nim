@@ -24,10 +24,7 @@ import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[tables, os]
 
 # From somewhere else (nimble etc.)
-when (NimMajor, NimMinor, NimPatch) >= (1, 7, 3):
-  import db_connector/db_postgres
-else:
-  import db_postgres
+import db_connector/db_postgres
 export db_postgres
 
 proc createDbTable*(db: DbConn, tablename: string, cols: OrderedTable[string,string]):  bool =

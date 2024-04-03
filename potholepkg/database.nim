@@ -27,7 +27,17 @@ import std/strutils
 
 # Export these:
 import db/[users, posts, reactions, boosts, common, postrevisions]
-export DbConn, isNil, users, posts, reactions, boosts, postrevisions
+export DbConn, isNil, users, posts, reactions, boosts, postrevisions, getDbHost, getDbName, getDbPass, getDbUser
+
+const databaseTables = @[
+  ## Add an extra field to this whenever you need to insert a new table.
+  ## + cleanDb() depends on this! So no need to add a new table there!
+  ("users", usersCols),
+  ("posts", postsCols),
+  ("postsRevisions", postsRevisionsCols),
+  ("reactions", reactionsCols),
+  ("boosts", boostsCols)
+]
 
 proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false): DbConn  =
   # Some checks to run before we actually open the database
@@ -61,20 +71,15 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false):
   # Open database and initialize the users and posts table.
   result = open(host, user, password, name)
   
-  for i in @[
-    ("users", usersCols),
-    ("posts", postsCols),
-    ("postsRevisions", postsRevisionsCols),
-    ("reactions", reactionsCols),
-    ("boosts", boostsCols)]:
-      # Create the tables first
-      if not createDbTable(result, i[0], i[1]):
-        if quiet: quit(1)
-        error "Failed to create ", i[0], " table"
-
-      # Now we check the schema to make sure it matches the hard-coded one.
-      if schemaCheck:
-        matchTableSchema(result, i[0], i[1])
+  for i in databaseTables:
+    # Create the tables first
+    if not createDbTable(result, i[0], i[1]):
+      if quiet: quit(1)
+      error "Failed to create ", i[0], " table"
+    
+    # Now we check the schema to make sure it matches the hard-coded one.
+    if schemaCheck:
+      matchTableSchema(result, i[0], i[1])
   
   # Add `null` user
   # `null` is used by pothole to signify a deleted user.
@@ -123,3 +128,13 @@ proc isNil*(db: DbConn): bool =
   # return db[].dbName.len() == 0
   # TODO: If this could be fixed then that would be great
   return false
+
+proc cleanDb*(db: DbConn) =
+  for i in databaseTables:
+    try:  
+      db.exec(sql("DROP TABLE IF EXISTS " & i[0] & " CASCADE;"))
+    except CatchableError as err:
+      error "Couldn't clean database ", i[0], ": ", err.msg
+  
+proc cleanDb*(config: ConfigTable) =
+  database.init(config).cleanDb()

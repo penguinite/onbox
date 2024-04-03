@@ -82,9 +82,16 @@ If a config file cannot be found then potholectl will simply use default values.
 const helpTable*: Table[string, seq[string]] = {
   "db": @[
     prefix,
+    """
+This subsystem contains various different database maintenance operations.
+User-related options are in the user subsystem and not here.
+Post-related options are in the post subsystem and not here as well.
+In general, anything "meta" to database maintenance (such as migration, db cleanup, schema checking and so on) can be found here.
+    """,
     "Available commands:",
     genCmd("schema_check","Checks the database schema against the hardcoded values"),
-    genCmd("init", "Initializes the database according to config values")
+    genCmd("init", "Initializes the database according to config values"),
+    genCmd("clean", "Cleans up everything in the database")
   ],
 
   "db:schema_check": @[
@@ -102,7 +109,13 @@ const helpTable*: Table[string, seq[string]] = {
     "Available arguments:",
     genArg("c","config","Specify a config file to use")
   ],
-
+  "db:clean": @[
+    prefix,
+    """
+This command cleans the entire database, it removes all tables and all the data within them.
+It's quite obvious but this command will erase any data you have, so be careful.
+    """
+  ],
   "mrf": @[
     prefix,
     """
