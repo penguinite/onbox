@@ -28,14 +28,10 @@ var
   config{.threadvar.}: ConfigTable 
   staticFolder{.threadvar.}: string 
   db{.threadvar.}: database.DbConn
+  templateTable{.threadvar.}: Table[string, string]
 
-proc preRouteInit() =
-  if config.isNil(): config = setup(getConfigFilename())
-  if staticFolder == "": staticFolder = initStatic(config)
-  db = init(config) # TODO: Fix database.isNil()
-
-preRouteInit()
-var templateTable: Table[string, string] = {
+proc prepareTable*(): Table[string, string] =
+  result = {
     "version":"", # Pothole version
     "staff": "<p>None</p>", # Instance staff (Any user with the admin attribute)
     "rules": "<p>None</p>", # Instance rules (From config)
@@ -45,34 +41,39 @@ var templateTable: Table[string, string] = {
   }.toTable
 
 if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
-  templateTable["staff"] = "" # Clear whatever is already in this.
+    result["staff"] = "" # Clear whatever is already in this.
   # Build a list of admins, by using data from the database.
-  templateTable["staff"].add("<ul>")
+    result["staff"].add("<ul>")
   for user in db.getAdmins():
-    templateTable["staff"].add("<li><a href=\"/@" & user & "\">" & user & "</a></li>") # Add every admin as a list item.
-  templateTable["staff"].add("</ul>")
+      result["staff"].add("<li><a href=\"/users/" & user & "\">" & user & "</a></li>") # Add every admin as a list item.
+    result["staff"].add("</ul>")
 
 if config.exists("instance","rules"):
-  templateTable["rules"] = "" # Again, clear whatever is in it first.
+    result["rules"] = "" # Again, clear whatever is in it first.
   # Build the list, item by item using data from the config file.
-  templateTable["rules"].add("<ol>")
+    result["rules"].add("<ol>")
   for rule in config.getStringArray("instance","rules"):
-    templateTable["rules"].add("<li>" & rule & "</li>")
-  templateTable["rules"].add("</ol>")
+      result["rules"].add("<li>" & rule & "</li>")
+    result["rules"].add("</ol>")
 
 when not defined(phPrivate):
   if config.getBool("web","show_version"):
-    templateTable["version"] = lib.phVersion
+      result["version"] = lib.phVersion
+  return result
+
+proc preRouteInit() =
+  if config.isNil(): config = setup(getConfigFilename())
+  if staticFolder == "": staticFolder = initStatic(config)
+  db = init(config) # TODO: Fix database.isNil()
+  templateTable = prepareTable()
 
 
 proc renderWithFullTable(fn: string, extras: openArray[(string,string)]): string {.gcsafe.} =
-  {.gcsafe.}:
     var table = templateTable
   
   for key, val in extras.items:
     table[key] = val
 
-  {.gcsafe.}:
     return renderTemplate(
       getAsset(staticFolder, fn),
       table
