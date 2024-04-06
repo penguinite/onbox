@@ -43,6 +43,7 @@ type
     written*: DateTime # A timestamp of when the Post was created
     modified*: bool # A boolean indicating whether the Post was edited or not.
     local*:bool # A boolean indicating whether or not the post came from the local server or external servers
+    client*: string # A string containing the client id used for writing this post.
     reactions*: Table[string, seq[string]] # A sequence of reactions this post has.
     boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post. (Along with what level)
     revisions*: seq[PostRevision] # A sequence of past revisions, this is basically copies of post.content
@@ -52,7 +53,7 @@ proc newPost*(sender,content: string, replyto: string = "", recipients: seq[stri
     error "Missing critical fields for post." 
 
   # Generate post id
-  result .id = randomString(18)
+  result.id = randomString(18)
   
   # Just do this stuff...
   result.sender = sender
@@ -63,6 +64,7 @@ proc newPost*(sender,content: string, replyto: string = "", recipients: seq[stri
   result.replyto = replyto
   result.written = written
   result.revisions = @[]
+  result.client = "0"
 
   return result
 
@@ -145,7 +147,7 @@ proc formatDate*(dt: DateTime): string =
     return now().format("MMM d, YYYY HH:mm")
 
 proc toString*(revisions: seq[PostRevision]): string =
-  discard
+  discard # TODO
 
 proc toPostRevisionsSeq*(str: string): seq[PostRevision] =
-  discard
+  discard # TODO
