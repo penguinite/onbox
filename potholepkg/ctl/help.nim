@@ -269,14 +269,11 @@ Available commands:
     prefix,
     """
 This command creates a new user and adds it to the database.
-It uses the following format: NAME EMAIL PASSWORD
-Here is an example of a valid new user command: potholectl user new john johnson@world.gov johns_password123
+It uses the following format: NAME PASSWORD
+Here is an example of a valid new user command: potholectl user new john johns_password123
 
 The users created by this command are approved by default.
 Although that can be changed with the require-approval CLI argument
-
-If pothole has been built with phApproved then, the following format is used instead: NAME PASSWORD
-So, here's another example: potholectl user new john johns_password
 
 You can also use the following command-line arguments:
     """,
