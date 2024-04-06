@@ -33,7 +33,7 @@ type
   PostRevision* = object
     published*: DateTime # The timestamp of when then Post was last edited
     content*: string # The content that this specific revision had.
-
+  
   PostPrivacyLevel* = enum
     Public, Unlisted, FollowersOnly, Private
 
@@ -128,7 +128,7 @@ proc toString*(sequence: seq[string]): string =
   for item in sequence:
     result.add(escapeCommas(item) & ",")
   if len(result) != 0:
-  result = result[0..^2]
+    result = result[0..^2]
   return result
 
 proc toSeq*(str: string): seq[string] =

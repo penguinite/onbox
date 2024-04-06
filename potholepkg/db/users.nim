@@ -47,7 +47,7 @@ const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY NOT NULL
 proc addUser*(db: DbConn, user: User): bool = 
   ## Add a user to the database
   ## This procedure expects an escaped user to be handed to it.
-  var testStmt = prepare(db, "checkForHandle", sql"SELECT local FROM users WHERE $1 = $2;", 2) 
+  var testStmt = sql"SELECT local FROM users WHERE ? = ?;"
 
   if has(db.getRow(testStmt, "handle", user.handle)):
     log "User with handle " & user.handle & " already exists!"

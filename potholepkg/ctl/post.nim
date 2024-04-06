@@ -31,7 +31,7 @@ import std/strutils except isEmptyOrWhitespace, parseBool
 
 proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   if args.check("h","help"):
-    helpPrompt("user",cmd)
+    helpPrompt("post",cmd)
 
   var config: ConfigTable
   if args.check("c", "config"):
@@ -81,7 +81,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "Invalid command usage"
       log "You can always freshen up your knowledge on the CLI by re-running the same command with -h or --help"
       log "In fact, for your convenience! That's what we will be doing! :D"
-      helpPrompt("user", cmd)
+      helpPrompt("post", cmd)
 
     var post = newPost(
       sender = sender,
@@ -120,4 +120,4 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
 
     echo "If you're seeing this then there's a high chance your command succeeded."
   else:
-    helpPrompt("db")
+    helpPrompt("post")
