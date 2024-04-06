@@ -7,12 +7,10 @@ license       = "AGPL-3.0-or-later"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
 installDirs    = @["potholepkg"]
-backend       = "c"
+backend       = "cpp"
 
 ## The following options are required
 switch("stackTrace","on")
-
-# Mummy requires the following to be enabled
 switch("mm", "orc")
 switch("threads","on")
 
