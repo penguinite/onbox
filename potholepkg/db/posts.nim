@@ -236,6 +236,11 @@ proc reassignSenderPost*(db: DbConn, post_id, sender: string): bool =
   except:
     return false
 
+proc getNumOfReplies*(db: DbConn, post_id: string): int =
+  for i in db.getAllRows(sql"SELECT id WHERE replyto = ?;", post_id):
+    inc(result)
+  return result
+
 proc reassignSenderPosts*(db: DbConn, post_ids: seq[string], sender: string): bool =
   for post_id in post_ids:
     if not db.reassignSenderPost(post_id, sender):
