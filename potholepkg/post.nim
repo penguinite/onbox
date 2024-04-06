@@ -122,6 +122,7 @@ proc unescapeCommas*(str: string): seq[string] =
 proc toString*(sequence: seq[string]): string =
   for item in sequence:
     result.add(escapeCommas(item) & ",")
+  if len(result) != 0:
   result = result[0..^2]
   return result
 
