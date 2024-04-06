@@ -24,7 +24,7 @@ import help
 import ../[lib, conf]
 
 # From standard library
-import std/[tables]
+import std/[tables, osproc]
 
 var subsystems*: seq[string] = @[]
 var commands*: seq[string] = @[]
@@ -35,6 +35,18 @@ proc initStuff*() =
       commands.add(key)
     else:
       subsystems.add(key)
+
+proc exec*(cmd: string): string {.discardable.} =
+  try:
+    log "Executing: ", cmd
+    let (output,exitCode) = execCmdEx(cmd)
+    if exitCode != 0:
+      log "Command returns code: ", exitCode
+      log "command returns output: ", output
+      return ""
+    return output
+  except CatchableError as err:
+    log "Couldn't run command:", err.msg
 
 proc helpPrompt*(subsystem:string = "", command: string = "") =
   ## A procedure to print the appropriate help dialog depending on subsystem and command.

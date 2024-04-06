@@ -23,10 +23,11 @@
 import shared
 
 # From elsewhere in Pothole
-import ../[database,lib,conf]
+import ../[database,lib,conf,crypto]
 
 # From standard libraries
 from std/tables import Table
+from std/strutils import split, `%`
 
 proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   if args.check("h","help"):
@@ -45,5 +46,42 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   of "clean": 
     log "Cleaning everything in database"
     cleanDb(config)
+  of "docker":
+    log "Setting up postgres docker container according to config file"
+    var
+      # Sick one liner to figure out the port we need to expose.
+      port = split(getDbHost(config), ":")[high(split(getDbHost(config), ":"))]
+      password = config.getDbPass()
+      containerName = "potholeDb"
+      name = config.getDbName()
+      user = config.getDbUser()
+      host = ""
+    
+    if args.check("n","name"):
+      containerName = args.get("n","name")
+
+    if port.isEmptyOrWhitespace():
+      port = "5432"
+
+    if not args.check("e","expose-externally"):
+      if args.check("6","ipv6"):
+        host.add("::1:")
+      else:
+        host.add("127.0.0.1:")
+    host.add(port & ":5432")
+    
+    if password == "SOMETHING_SECRET" and not args.check("a","allow-weak-password"):
+      log "Changing vulnerable database password to something more secure"
+      password = randomString(64)
+      echo "Please update the config file to reflect the following changes:"
+      echo "[db] password is now \"", password, "\""
+  
+    log "Pulling docker container"
+    discard exec "docker pull postgres:alpine"
+    log "Creating the container itself"
+    let id = exec "docker run --name $# -d -p $# -e POSTGRES_USER=$# -e POSTGRES_PASSWORD=$# -e POSTGRES_DB=$# postgres:alpine" % [containerName, host, user, password, name]
+    if id == "":
+      error "Please investigate the above errors before trying again."
+
   else:
     helpPrompt("db")

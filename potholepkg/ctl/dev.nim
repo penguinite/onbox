@@ -62,33 +62,12 @@ proc cleanEnv(outputfile: string = "pothole_envs") =
   file.close()
 
 proc initDb(config: ConfigTable) =
-  proc exec(cmd: string): string =
-    try:
-      log "Executing: ", cmd
-      let (output,exitCode) = execCmdEx(cmd)
-      if exitCode != 0:
-        log "Command returns code: ", exitCode
-        log "command returns output: ", output
-        return ""
-      return output
-    except CatchableError as err:
-      log "Couldn't run command:", err.msg
-
   discard exec "docker pull postgres:alpine"
-
   let id = exec "docker run --name potholeDb -d -p 5432:5432 -e POSTGRES_USER=$1 -e POSTGRES_PASSWORD=$2 -e POSTGRES_DB=$3 postgres:alpine" % [getDbUser(config), getDbPass(config), getDbName(config)]
-
   if id == "":
     error "Please investigate the above errors before trying again."
 
 proc purgeDb() =
-  proc exec(cmd: string) =
-    try:
-      log "Executing: ", cmd
-      discard execCmd(cmd)
-    except CatchableError as err:
-      log "Couldn't run command:", err.msg
-  
   exec "docker kill potholeDb"
   exec "docker rm potholeDb"
 
