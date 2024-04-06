@@ -139,6 +139,17 @@ proc isValidFormParam(ctx: Context, param: string): bool =
 proc getFormParam(ctx: Context, param: string): string =
   return ctx.getFormParamsOption(param).get()
 
+proc isValidPathParam(ctx: Context, param:string): bool =
+  let param = ctx.getPathParamsOption(param)
+  if isNone(param):
+    return false
+  if isEmptyOrWhitespace(param.get()):
+    return false
+  return true
+
+proc getPathParam(ctx: Context, param:string): string =
+  return ctx.getPathParamsOption(param).get()
+
 #! Actual prologue routes
 
 # our serveStatic route reads from static/FILENAME and renders it as a template.
