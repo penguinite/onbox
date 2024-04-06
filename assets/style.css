@@ -8,3 +8,13 @@ body {
 
 label { display: block; }
 a { text-decoration: none; }
+
+/* User page specific decor */
+.avatar img {
+  width: 50px;
+  height: auto;
+}
+.left {float: left;}
+.right {float: right;}
+.avatar { overflow:auto }
+.arrows { text-align: center; }

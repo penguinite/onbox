@@ -32,6 +32,9 @@ when not defined(phNoEmbeddedAssets):
     "signup_disabled.html": staticRead("../assets/" & phLang & "/signup_disabled.html"),
     "error.html": staticRead("../assets/" & phLang & "/error.html"),
     "success.html": staticRead("../assets/" & phLang & "/success.html"),
+    "reaction.html": staticRead("../assets/" & phLang & "/reaction.html"),
+    "user_post.html": staticRead("../assets/" & phLang & "/user_post.html"),
+    "user.html": staticRead("../assets/" & phLang & "/user.html"),
     "style.css": staticRead("../assets/style.css") # CSS doesn't need language.
   }.toTable
 
