@@ -116,6 +116,47 @@ proc getAsset*(folder, fn: string): string =
   else:
     return getEmbeddedAsset(fn)
 
+proc getUpload*(cnf: ConfigTable, id, name: string): string =
+  ## Get media asset.
+  result.add(cnf.getStringOrDefault("storage","upload_uri",cnf.getString("instance","uri")))
+
+  if result.endsWith("/"):
+    # Remove slash at end if detected
+    result = result[0..^2]
+  
+  if not cnf.exists("storage","upload_uri"):
+    result.add("/media/")
+  
+  if id != "":
+    result.add(id & "/" & name)
+  else:
+    result.add(name)
+
+  return result
+
+proc uploadExists*(cnf: ConfigTable, id, name: string): bool =
+  return fileExists(getUpload(cnf, id, name))
+
+proc getDefaultAvatar*(cnf: ConfigTable): string =
+  result.add(cnf.getStringOrDefault("storage","upload_uri",cnf.getString("instance","uri")))
+
+  if result.endsWith("/"):
+    # Remove slash at end if detected
+    result = result[0..^2]
+  
+  if not cnf.exists("storage","upload_uri"):
+    result.add("/media/")
+
+  return result & cnf.getStringOrDefault("storage","default_avatar_location","default_avatar.webp")
+
+proc getAvatar*(cnf: ConfigTable, id: string): string =
+  # TODO: Better avatar handling would be nice...
+  for ext in @["jpg","jpeg","webp","png","gif","heic","heif"]:
+    let file = getUpload(cnf, id, "avatar." & ext)
+    if fileExists(file):
+      return file
+  return getDefaultAvatar(cnf)
+
 proc getUploadFilename*(folder, id, name: string): string =
   ## Returns the filename of the user upload.
   if not dirExists(folder & id):
