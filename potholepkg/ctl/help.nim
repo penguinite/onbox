@@ -400,22 +400,26 @@ This commad has the following arguments:
     prefix,
     """
 This is not exactly a subsystem but a help entry for people confused by dates in potholectl.
-Dates in potholectl are formatted like so: yyyy-MM-dd-HH:mm:sszzz
+Dates in potholectl are formatted like so: yyyy-MM-dd HH:mm:ss
 This means the following:
   1. 4 numbers for the year, and then a hyphen/dash (-)
   2. 2 numbers for the month, and then a hyphen/dash (-)
   3. 2 numbers for the day, and then a hyphen/dash (-)
-  4. 2 numbers for the hour and then a colon (:)
-  5. 2 numbers for the minute and then a colon (:)
-  6. 2 numbers for the second
-  7. finally, 3 numbers for the milisecond.
+  4. A space
+  5. 2 numbers for the hour and then a colon (:)
+  6. 2 numbers for the minute and then a colon (:)
+  7. 2 numbers for the second
+
+
 
 Here are examples of dates in this format:
-UNIX Epoch starting date: 1970-01-01-00:00:00000
-Year 2000 problem date: 1999-12-31-23:59:59000
-Year 2038 problem date: 2038-01-19-03:14:07000
-Year 2106 problem date: 2106-02-07-06:28:15000
-The date this was written: 2024-03-23-13:09:26000
+UNIX Epoch starting date: "1970-01-01 00:00:00"
+Year 2000 problem date: "1999-12-31 23:59:59"
+Year 2038 problem date: "2038-01-19 03:14:07"
+Year 2106 problem date: "2106-02-07 06:28:15"
+The date this was written: "2024-03-23 13:09:26"
+
+Make sure to wrap the date around with double quotes, that way there won't be any mistakes!
     """
   ],
   "handles": @[

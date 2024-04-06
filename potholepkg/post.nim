@@ -134,15 +134,15 @@ proc toString*(sequence: seq[string]): string =
 proc toSeq*(str: string): seq[string] =
   return unescapeCommas(str)
 
-proc toString*(date: DateTime): string = 
+proc toDbString*(date: DateTime): string = 
   try:
-    return format(date, "yyyy-MM-dd-HH:mm:sszzz")
+    return format(date, "yyyy-MM-dd HH:mm:ss")
   except:
-    return now().format("yyyy-MM-dd-HH:mm:sszzz")
+    return now().format("yyyy-MM-dd HH:mm:ss")
 
-proc toDate*(str: string): DateTime =
+proc toDateFromDb*(str: string): DateTime =
   try:
-    return parse(str, "yyyy-MM-dd-HH:mm:sszzz", utc())
+    return parse(str, "yyyy-MM-dd HH:mm:ss", utc())
   except:
     return now()
 

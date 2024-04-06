@@ -73,7 +73,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       content = args.get("p", "password")
     
     if args.check("d", "date"):
-      date = toDate(args.get("date", "date"))
+      date = toDateFromDb(args.get("date", "date"))
     
     # Then we check if our essential data is empty.
     # If it is, then we error out and tell the user to RTFM (but kindly)

@@ -36,9 +36,10 @@ const postsCols*: OrderedTable[string, string] = {
   "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
   "modified":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether the post was modified or not.
   "local": "BOOLEAN NOT NULL", # A boolean indicating whether the post originated from this server or other servers.
-  # TODO: This __A/__B hack is really, well, hacky. Maybe replace it?
-  "__A": "foreign key (replyto) references posts(id)", # Some foreign key for integrity
-  "__B": "foreign key (sender) references users(id)", # Same as above
+  "client": "TEXT NOT NULL DEFAULT '0'",
+  "level": " smallint NOT NULL DEFAULT 0",
+  # TODO: This __A/__B hack is really, well... hacky. Maybe replace it?
+  "__A": "foreign key (sender) references users(id)", # Some foreign key for database integrity
 }.toOrderedTable
 
 ## Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
@@ -76,6 +77,7 @@ proc constructPostFromRow*(db: DbConn, row: Row): Post =
       if len(result.get(key)) == 1 and result.get(key)[0] == "":
         result.get(key) = @[]
     when result.get(key) is DateTime:
+      result.get(key) = toDateFromDb(row[i])
     when result.get(key) is PostPrivacyLevel:
       result.get(key) = toPostPrivacyLevel(row[i])
 
@@ -105,7 +107,7 @@ proc addPost*(db: DbConn, post: Post): bool =
       post.sender,
       post.replyto,
       post.content,
-      toString(post.written),
+      toDbString(post.written),
       post.modified,
       post.local,
       post.client,
@@ -199,7 +201,7 @@ proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
     for post in db.getAllRows(sqlStatement, id):
       # Check for if post is unlisted or public, only then can we add it into the list.
       if post[high(post)] == "0" or post[high(post)] == "1":
-      result.add(db.constructPostFromRow(post))
+        result.add(db.constructPostFromRow(post))
   return result
 
 proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post] =
