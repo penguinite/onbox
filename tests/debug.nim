@@ -106,7 +106,7 @@ const fakeStatuses* = @[
 <r`heaven> :(
   """,
   "* Porter is now known as PorterWITHGIRLFRIENDWHOISHOT\n<Strayed> he shot his girlfriend?",
-  "Mike3285: wtf is a palindrome\nMaroonSand: no its not dude"
+  "Mike3285: wtf is a palindrome\nMaroonSand: no its not dude",
   "I'm my own worst enemy but the enemy of my enemy is my friend so I'm also my own best friend it's just basic math"
 ]
 
