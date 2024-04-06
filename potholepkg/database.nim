@@ -26,8 +26,8 @@ import lib, conf, user
 import std/strutils
 
 # Export these:
-import db/[users, posts, reactions, boosts, common, postrevisions]
-export DbConn, isNil, users, posts, reactions, boosts, postrevisions, getDbHost, getDbName, getDbPass, getDbUser
+import db/[users, posts, reactions, boosts, common, postrevisions, apps]
+export DbConn, isNil, users, posts, reactions, boosts, postrevisions, apps, getDbHost, getDbName, getDbPass, getDbUser
 
 const databaseTables = @[
   ## Add an extra field to this whenever you need to insert a new table.
@@ -36,7 +36,8 @@ const databaseTables = @[
   ("posts", postsCols),
   ("postsRevisions", postsRevisionsCols),
   ("reactions", reactionsCols),
-  ("boosts", boostsCols)
+  ("boosts", boostsCols),
+  ("apps", appsCols)
 ]
 
 proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false): DbConn  =
@@ -99,6 +100,11 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false):
   if not result.userIdExists("null"):
     discard result.addUser(null)
 
+  # Add a default app just in case
+  if not result.clientExists("0"):
+    result.createClient(
+      "0", "", ""
+    )
   return result
 
 proc init*(config: ConfigTable): DbConn = 
