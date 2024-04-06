@@ -96,7 +96,7 @@ proc addPost*(db: DbConn, post: Post): bool =
   # TODO: Automate this some day.
   # I believe we can use a template or a macro to automate inserting this stuff in.
   try:
-    let statement = sql"INSERT OR REPLACE INTO posts (id,recipients,sender,replyto,content,written,updated,modified,local,revisions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+    let statement = sql"INSERT INTO posts (id,recipients,sender,replyto,content,written,modified,local,client,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
     db.exec(
       statement,
       post.id,

@@ -46,7 +46,7 @@ proc addBoost*(db: DbConn, pid,uid,level: string): bool =
   while has(db.getRow(sql"SELECT id FROM boosts WHERE id = ?;", id)):
     id = randomString(8)
 
-  db.exec(sql"INSERT OR REPLACE INTO boosts (id, pid, uid, level) VALUES (?,?,?,?);",id,pid,uid,level)
+  db.exec(sql"INSERT INTO boosts (id, pid, uid, level) VALUES (?,?,?,?);",id,pid,uid,level)
 
 proc addBulkBoosts*(db: DbConn, id: string, table: Table[string, seq[string]]) =
   ## Adds an entire table of boosts to the database

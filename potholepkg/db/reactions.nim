@@ -46,7 +46,7 @@ proc addReaction*(db: DbConn, pid,uid,reaction: string): bool =
   while has(db.getRow(sql"SELECT id FROM reactions WHERE id = ?;", id)):
     id = randomString(8)
 
-  db.exec(sql"INSERT OR REPLACE INTO reactions (id, pid, uid, reaction) VALUES (?,?,?,?);",id,pid,uid,reaction)
+  db.exec(sql"INSERT INTO reactions (id, pid, uid, reaction) VALUES (?,?,?,?);",id,pid,uid,reaction)
 
 proc addBulkReactions*(db: DbConn, id: string, table: Table[string, seq[string]]) =
   ## Adds an entire table of reactions to the database
