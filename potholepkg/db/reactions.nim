@@ -34,10 +34,10 @@ const reactionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NO
 }.toOrderedTable
 
 proc getReactions*(db: DbConn, id: string): Table[string, seq[string]] =
-  ## Retrieves a Table of reactions for a post.
-  let preResult = db.getRow(sql"SELECT uid,reaction FROM reactions WHERE pid = ?;", id)
-  echo preResult
-  return
+  ## Retrieves a Table of reactions for a post. Result consists of a table where the keys are the specific reaction and the value is a sequence of reactors.
+  for row in db.getAllRows(sql"SELECT uid,reaction FROM reactions WHERE pid = ?;", id):
+    result[row[1]].add(row[0])
+  return result
 
 proc addReaction*(db: DbConn, pid,uid,reaction: string): bool =
   ## Adds an individual reaction
