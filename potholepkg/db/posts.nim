@@ -116,7 +116,7 @@ proc addPost*(db: DbConn, post: Post): bool =
 proc postIdExists*(db: DbConn, id: string): bool =
   ## A function to see if a post id exists in the database
   ## The id supplied can be plain and un-escaped. It will be escaped and sanitized here.
-  return has(db.getRow(sql"SELECT local FROM posts WHERE id = ?;", escape(id)))
+  return has(db.getRow(sql"SELECT local FROM posts WHERE id = ?;", id))
 
 proc updatePost*(db: DbConn, id, column, value: string): bool =
   ## A procedure to update a post using it's ID.
@@ -135,7 +135,7 @@ proc getPost*(db: DbConn, id: string): Post =
   ## The id can be passed plain, it will be escaped.
   ## The output will be an unescaped
   
-  var post = db.getRow(sql"SELECT * FROM posts WHERE id = ?;", escape(id))
+  var post = db.getRow(sql"SELECT * FROM posts WHERE id = ?;", id)
   if not post.has():
     error "Something or someone tried to retrieve a non-existent post with the ID of \"" & id & "\""
 
