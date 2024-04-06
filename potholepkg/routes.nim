@@ -15,7 +15,7 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From potholepkg or pothole's server codebase
-import lib,conf,database,assets,user,crypto
+import lib,conf,database,assets,user,crypto,post
 
 # From stdlib
 import std/[tables, options]
@@ -40,24 +40,24 @@ proc prepareTable*(): Table[string, string] =
     "description": config.getString("instance","description") # Instance description
   }.toTable
 
-if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
+  if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
     result["staff"] = "" # Clear whatever is already in this.
-  # Build a list of admins, by using data from the database.
+    # Build a list of admins, by using data from the database.
     result["staff"].add("<ul>")
-  for user in db.getAdmins():
+    for user in db.getAdmins():
       result["staff"].add("<li><a href=\"/users/" & user & "\">" & user & "</a></li>") # Add every admin as a list item.
     result["staff"].add("</ul>")
 
-if config.exists("instance","rules"):
+  if config.exists("instance","rules"):
     result["rules"] = "" # Again, clear whatever is in it first.
-  # Build the list, item by item using data from the config file.
+    # Build the list, item by item using data from the config file.
     result["rules"].add("<ol>")
-  for rule in config.getStringArray("instance","rules"):
+    for rule in config.getStringArray("instance","rules"):
       result["rules"].add("<li>" & rule & "</li>")
     result["rules"].add("</ol>")
 
-when not defined(phPrivate):
-  if config.getBool("web","show_version"):
+  when not defined(phPrivate):
+    if config.getBool("web","show_version"):
       result["version"] = lib.phVersion
   return result
 
@@ -69,15 +69,15 @@ proc preRouteInit() =
 
 
 proc renderWithFullTable(fn: string, extras: openArray[(string,string)]): string {.gcsafe.} =
-    var table = templateTable
+  var table = templateTable
   
   for key, val in extras.items:
     table[key] = val
 
-    return renderTemplate(
-      getAsset(staticFolder, fn),
-      table
-    )
+  return renderTemplate(
+    getAsset(staticFolder, fn),
+    table
+  )
 
 proc renderWithFullTable(fn: string): string {.gcsafe.} =
   {.gcsafe.}:
@@ -288,3 +288,70 @@ proc post_auth_signin*(ctx: Context) {.async.} =
   # "salt": "BLOB UNIQUE NOT NULL" # A small salt used to hash the user's IP address
   
   resp renderError("Login is not implemented yet... Sorry! ;( But here is some debugging info: " & $user,"signin.html")
+
+proc render_reactions_html*(db: DbConn, folder: string, id: string): string =
+  ## This procedure renders a file named "reaction.html", it's used to provide the reaction stats for posts.
+  for reaction, reactors in db.getReactions(id).pairs:
+    let table = {
+      "post_link": "/notice/" & id,
+      "react_id": reaction,
+      "reactors": $len(reactors)
+    }.toTable
+
+    result.add(
+      renderTemplate(getAsset(folder, "reaction.html"), table)
+    )
+
+  return result
+
+proc render_profile_html*(ctx: Context) {.async.} =
+  preRouteInit()
+  # Some basic checks
+  if not ctx.isValidPathParam("user"):
+    resp renderError("Invalid user")
+    return
+
+  if db.userHandleExists(sanitizeHandle(ctx.getPathParam("user"))) == false:
+    resp renderError("User does not exist")
+    return
+  
+  let user = db.getUserByHandle(sanitizeHandle(ctx.getPathParam("user")))
+
+  # First off, we retrieve a list of posts made by the user
+  var posts = "<div class=\"posts\">"
+  for i in db.getPostsByUserId(user.id, 10):
+    # Start by getting reactions, boosts and so on.
+    posts.add("<div class=\"post\">")
+    var table = {
+      "user_link": "/users/" & user.handle,
+      "avatar": config.getAvatar(user.id),
+      "name": user.name,
+      "handle": user.handle,
+      "post_content": i.content,
+      "post_attachments": "TODO! Fix this, post_attachments",
+      "post_link": "/notice/" & i.id,
+      "post_date": formatDate(i.written),
+      "post_updated": "", # Will be filled later. TODO
+      "client_name": db.getClientName(i.client),
+      "client_link": db.getClientLink(i.client),
+      "reactions": render_reactions_html(db, staticFolder, i.id),
+      "boosts": $len(db.getBoostsQuickWithHandle(i.id)),
+      "replies_num": $db.getNumOfReplies(i.id)
+    }.toTable
+    posts.add(
+      renderTemplate(getAsset(staticFolder, "post.html"), table)
+    )
+    posts.add("</div>")
+  posts.add("</div>")
+
+  var table = {
+    "handle": user.handle,
+    "name": user.name,
+    "avatar": config.getAvatar(user.id),
+    "posts": posts,
+    "page_num": "TODO! Pagination",
+    "user_back": "TODO! Pagination",
+    "user_forward": "TODO! Pagination"
+  }.toTable
+
+  resp renderTemplate(getAsset(staticFolder, "user.html"), table)

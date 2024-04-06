@@ -61,5 +61,6 @@ app.get("/css/style.css", serveCSS)
 #router.get("/showRandomPosts/", randomPosts)
 app.get("/auth/sign_up", get_auth_signup)
 app.post("/auth/sign_up", post_auth_signup)
+app.get("/users/{user}", render_profile_html) # Render user profile in HTML as seen by a web browser pointing to INSTANCE/users/USER
 
 app.run()
