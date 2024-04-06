@@ -76,7 +76,8 @@ proc constructPostFromRow*(db: DbConn, row: Row): Post =
       if len(result.get(key)) == 1 and result.get(key)[0] == "":
         result.get(key) = @[]
     when result.get(key) is DateTime:
-      result.get(key) = toDate(row[i])
+    when result.get(key) is PostPrivacyLevel:
+      result.get(key) = toPostPrivacyLevel(row[i])
 
   result.reactions = db.getReactions(result.id)
   result.boosts = db.getBoosts(result.id)
@@ -107,7 +108,8 @@ proc addPost*(db: DbConn, post: Post): bool =
       toString(post.written),
       post.modified,
       post.local,
-      toString(post.revisions)
+      post.client,
+      toString(post.level)
     )
   except CatchableError as err:
     error "Failed to insert post: ", err.msg
@@ -160,10 +162,11 @@ proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[strin
       result.add(post[0])
   return result
 
-proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
+proc getEveryPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
   ## A procedure to get any user's posts using the user's id.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
   ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  ## *Note:* This procedure returns every post, even private ones. For public posts, use getPostByUserId()
   let sqlStatement = sql"SELECT * FROM posts WHERE id = ?;"
   if limit != 0:
     var i = 0;
@@ -174,6 +177,28 @@ proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
         break
   else:
     for post in db.getAllRows(sqlStatement, id):
+      result.add(db.constructPostFromRow(post))
+  return result
+
+proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
+  ## A procedure to get any user's posts using the user's id.
+  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
+  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  ## *Note:* This procedure only returns posts that are public. For private posts, use getEveryPostByUserId()
+  let sqlStatement = sql"SELECT * FROM posts WHERE id = ?;"
+  if limit != 0:
+    var i = 0;
+    for post in db.getAllRows(sqlStatement, id):
+      # Check for if post is unlisted or public, only then can we add it into the list.
+      if post[high(post)] == "0" or post[high(post)] == "1":
+        inc(i)
+        result.add(db.constructPostFromRow(post))
+      if i > limit:
+        break
+  else:
+    for post in db.getAllRows(sqlStatement, id):
+      # Check for if post is unlisted or public, only then can we add it into the list.
+      if post[high(post)] == "0" or post[high(post)] == "1":
       result.add(db.constructPostFromRow(post))
   return result
 

@@ -34,6 +34,9 @@ type
     published*: DateTime # The timestamp of when then Post was last edited
     content*: string # The content that this specific revision had.
 
+  PostPrivacyLevel* = enum
+    Public, Unlisted, FollowersOnly, Private
+
   Post* = object
     id*: string # A unique id.
     recipients*: seq[string] # A sequence of recipient's handles.
@@ -44,6 +47,7 @@ type
     modified*: bool # A boolean indicating whether the Post was edited or not.
     local*:bool # A boolean indicating whether or not the post came from the local server or external servers
     client*: string # A string containing the client id used for writing this post.
+    level*: PostPrivacyLevel # The privacy level of the post
     reactions*: Table[string, seq[string]] # A sequence of reactions this post has.
     boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post. (Along with what level)
     revisions*: seq[PostRevision] # A sequence of past revisions, this is basically copies of post.content
@@ -64,6 +68,7 @@ proc newPost*(sender,content: string, replyto: string = "", recipients: seq[stri
   result.replyto = replyto
   result.written = written
   result.revisions = @[]
+  result.level = Public
   result.client = "0"
 
   return result
@@ -152,3 +157,28 @@ proc toString*(revisions: seq[PostRevision]): string =
 
 proc toPostRevisionsSeq*(str: string): seq[PostRevision] =
   discard # TODO
+
+proc toString*(lvl: PostPrivacyLevel): string =
+  case lvl:
+  of Public: return "0"
+  of Unlisted: return "1"
+  of FollowersOnly: return "2"
+  of Private: return "3"
+
+proc toPostPrivacyLevel*(lvl: string): PostPrivacyLevel =
+  case lvl:
+  of "0": return Public
+  of "1": return Unlisted
+  of "2": return FollowersOnly
+  of "3": return Private
+  else:
+    return Public
+
+proc toPostPrivacyLevel*(lvl: int): PostPrivacyLevel =
+  case lvl:
+  of 0: return Public
+  of 1: return Unlisted
+  of 2: return FollowersOnly
+  of 3: return Private
+  else:
+    return Public
