@@ -79,6 +79,6 @@ proc getConfigFilename*(): string =
 
 proc isNil*(table: ConfigTable): bool =
   # We can cheat a bit and just check for the existence of a required key.
-  if not table.exists("instance","name"):
-    return false
-  return true
+  if len(table) == 0:
+    return true
+  return false
