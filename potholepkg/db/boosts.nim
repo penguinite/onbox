@@ -19,7 +19,7 @@
 
 import ../crypto
 
-import common
+import common, users
 
 # From somewhere in the standard library
 import std/tables
@@ -34,10 +34,25 @@ const boostsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT N
 }.toOrderedTable
 
 proc getBoosts*(db: DbConn, id: string): Table[string, seq[string]] =
-  ## Retrieves a Table of boosts for a post.
-  let preResult = db.getRow(sql"SELECT uid,level FROM boosts WHERE pid = ?;", id)
-  echo preResult
-  return
+  ## Retrieves a Table of boosts for a post. Result consists of a table where the keys are the specific levels and the value is a sequence of boosters associated with this level.
+  for row in db.getAllRows(sql"SELECT uid,level FROM boosts WHERE pid = ?;", id):
+    result[row[1]].add(row[0])
+  return result
+
+proc getBoostsQuick*(db: DbConn, id: string): seq[string] =
+  ## Returns a list of boosters for a specific post
+  for row in db.getAllRows(sql"SELECT uid,level FROM boosts WHERE pid = ?;", id):
+    if row[1] == "Private" or row[1] == "FollowersOnly":
+      continue
+    result.add(row[0])
+  return result
+
+proc getBoostsQuickWithHandle*(db: DbConn, id: string): seq[string] =
+  ## Returns a list of boosters for a specific post, used when rendering /users/USER.
+  ## This is the exact same thing as above but we call the db to convert the ids into handles.
+  for id in db.getBoostsQuick(id):
+    result.add(db.getHandleFromId(id))
+  return result
 
 proc addBoost*(db: DbConn, pid,uid,level: string): bool =
   ## Adds an individual boost
