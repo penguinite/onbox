@@ -424,8 +424,6 @@ This means the following:
   6. 2 numbers for the minute and then a colon (:)
   7. 2 numbers for the second
 
-
-
 Here are examples of dates in this format:
 UNIX Epoch starting date: "1970-01-01 00:00:00"
 Year 2000 problem date: "1999-12-31 23:59:59"
