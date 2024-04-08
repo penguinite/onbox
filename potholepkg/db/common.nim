@@ -76,11 +76,7 @@ proc hasDbHost*(config: ConfigTable): bool =
 proc getDbHost*(config: ConfigTable): string =
   ## This procedure returns a string containing the name of the database we want to use.
   ## It has a default value of "127.0.0.1:5432" but overrides it based on the config or environment variables (In that order)
-  result = "127.0.0.1:5432"
-
-  if config.exists("db","host"):
-    result = config.getString("db","host")
-
+  result = config.getStringOrDefault("db","host","127.0.0.1:5432")
   if existsEnv("PHDB_HOST"):
     result = getEnv("PHDB_HOST")
 
@@ -94,11 +90,7 @@ proc hasDbName*(config: ConfigTable): bool =
 proc getDbName*(config: ConfigTable): string =
   ## This procedure returns a string containing the name of the database we want to use.
   ## It has a default value of "pothole" but overrides it based on the config or environment variables (In that order)
-  result = "pothole"
-
-  if config.exists("db","name"):
-    result = config.getString("db","name")
-
+  result = config.getStringOrDefault("db","name","pothole")
   if existsEnv("PHDB_NAME"):
     result = getEnv("PHDB_NAME")
   
@@ -112,11 +104,7 @@ proc hasDbUser*(config: ConfigTable): bool =
 proc getDbUser*(config: ConfigTable): string =
   ## This procedure returns a string containing the name of the database we want to use.
   ## It has a default value of "pothole" but overrides it based on the config or environment variables (In that order)
-  result = "pothole"
-
-  if config.exists("db","user"):
-    result = config.getString("db","user")
-
+  result = config.getStringOrDefault("db","user","pothole")
   if existsEnv("PHDB_USER"):
     result = getEnv("PHDB_USER")
   
@@ -131,13 +119,11 @@ proc getDbPass*(config: ConfigTable): string =
   ## This procedure returns a string containing the name of the database we want to use.
   ## It has no default value but overrides it based on the config or environment variables (In that order)
   ## 
+  result = config.getStringOrDefault("db","password","")
   if existsEnv("PHDB_PASS"):
-    return getEnv("PHDB_PASS")
+    result = getEnv("PHDB_PASS")
 
-  if config.exists("db","password"):
-    return config.getString("db","password")
-
-  return ""
+  return result
 
 proc has*(row: Row): bool =
   ## A quick helper function to check if a Row is valid.
