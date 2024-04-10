@@ -18,7 +18,7 @@
 ## Common procedures for debugging. This is only useful for creating
 ## fake users and fake posts (for testing)
 import std/[tables]
-import potholepkg/[user, post, crypto, lib, database, conf]
+import potholepkg/[user, post, crypto, lib, conf]
 
 const fakeNames = @["Jeremy", "Jane Doe", "pyro", "Tavish Finnegan DeGroo", "Mikhail", "Dell Conagher", "Ludwig Humboldt", "Mundy", "spy"]
 const fakeHandles* = @["scout","soldier","pyro","demoman","heavy","engineer", "medic", "sniper", "spy"]

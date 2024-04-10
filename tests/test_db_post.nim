@@ -38,20 +38,9 @@ let
 discard setup(config)
 # Now let's get started!
 
-when not defined(iHaveMyOwnStuffThanks):
-  echo "Adding fake users"
-  for user in getFakeUsers():
-    discard db.addUser(user)
-
-  echo "Adding fake posts"
-  for post in getFakePosts():
-    discard db.addPost(post)
-    db.addBulkReactions(post.id, getFakeReactions())
-    db.addBulkBoosts(post.id, getFakeBoosts())
-
 ## getTotalPosts
 echo  "Testing getTotalPosts() "
-assert db.getTotalPosts() == len(fakeStatuses), "Fail! (result: " & $db.getTotalPosts() & ", len: " & $len(fakeStatuses) & ")"
+assert db.getTotalPosts() == len(fakeStatuses), "Fail! (result: " & $db.getTotalPosts() & " len: " & $len(fakeStatuses) & ")"
 
 # For these next few tests, it helps to have a post we control every aspect of.
 let content = "@scout @soldier @pyro @demoman @heavy @engineer @medic @sniper @spy Wow! You will never be able to read what I said previously because something has mysteriously changed my post!"
@@ -71,6 +60,8 @@ if not db.userIdExists("johnadminson"):
   )
   user.id = "johnadminson"
   user.admin = true
+  user.salt = ""
+  user.password = ""
   discard db.addUser(user)
 
 discard db.addPost(custompost)
@@ -98,8 +89,8 @@ assert db.getPost(custompost.id) == custompost, "Fail!"
 
 ## getPostsByUserHandle()
 echo "Testing getPostsByUserHandle() "
-assert db.getPostsByUserHandle("johnadminson",1).len() > 0, "Fail! (result: " & $(db.getPostsByUserHandle("johnadminson",1)) & "post: " & $(custompost) & ")"
+assert db.getPostsByUserHandle("johnadminson",1).len() > 0, "Fail! (result: " & $(db.getPostsByUserHandle("johnadminson",1)) & " post: " & $(custompost) & ")"
  
 ## getPostsByUserId()
 echo "Testing getPostsByUserId() "
-assert db.getPostsByUserId("johnadminson",1).len() > 0, "Fail! (result: " & $(db.getPostsByUserId("johnadminson",1)) & "post: " & $(custompost) & ")"
+assert db.getPostsByUserId("johnadminson",1).len() > 0, "Fail! (result: " & $(db.getPostsByUserId("johnadminson",1)) & " post: " & $(custompost) & ")"

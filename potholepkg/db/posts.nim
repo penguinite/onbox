@@ -187,7 +187,7 @@ proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
   ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
   ## *Note:* This procedure only returns posts that are public. For private posts, use getEveryPostByUserId()
-  let sqlStatement = sql"SELECT * FROM posts WHERE id = ?;"
+  let sqlStatement = sql"SELECT * FROM posts WHERE sender = ?;"
   if limit != 0:
     var i = 0;
     for post in db.getAllRows(sqlStatement, id):

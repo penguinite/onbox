@@ -140,7 +140,7 @@ proc getUserById*(db: DbConn, id: string): User =
   if not db.userIdExists(id):
     error "Something or someone tried to get a non-existent user with the id \"", id, "\""
 
-  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE id = ?;"))
+  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE id = ?;", id))
 
 proc getUserByHandle*(db: DbConn, handle: string): User =
   ## Retrieve a user from the database using their handle
@@ -151,7 +151,7 @@ proc getUserByHandle*(db: DbConn, handle: string): User =
     
   return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE handle = ?;", sanitizeHandle(handle)))
 
-proc updateUserByHandle*(db: DbConn, handle: User.handle, column, value: string): bool =
+proc updateUserByHandle*(db: DbConn, handle: string, column, value: string): bool =
   ## A procedure to update any user (The user is identified by their handle)
   ## The *only* parameter that is sanitized is the handle, the value has to be sanitized by your user program!
   ## Or else you will be liable to truly awful security attacks!
@@ -164,7 +164,11 @@ proc updateUserByHandle*(db: DbConn, handle: User.handle, column, value: string)
     return false
   
   # Then update!
-  return db.update("users", "handle = " & sanitizeHandle(handle), column, value)
+  try:
+    db.exec(sql("UPDATE users SET " & column & " = ? WHERE handle = ?;"), value, sanitizeHandle(handle))
+    return true
+  except CatchableError as err:
+    error "Couldn't update user with handle \"", sanitizeHandle(handle), "\": ", err.msg
   
 proc updateUserById*(db: DbConn, id: User.id, column, value: string): bool = 
   ## A procedure to update any user (The user is identified by their ID)
@@ -178,7 +182,12 @@ proc updateUserById*(db: DbConn, id: User.id, column, value: string): bool =
   if not usersCols.hasKey(column):
     return false
 
-  return db.update("users", "id = " & id, column, value)
+  # Then update!
+  try:
+    db.exec(sql("UPDATE users SET " & column & " = ? WHERE id = ?;"), value, id)
+    return true
+  except CatchableError as err:
+    error "Couldn't update user with handle \"", id, "\": ", err.msg
 
 proc getIdFromHandle*(db: DbConn, handle: string): string =
   ## A function to convert a user handle to an id.

@@ -13,7 +13,7 @@ discard """
 
 """
 
-import potholepkg/[database, conf, user, post], debug
+import potholepkg/[database, conf, user, lib], debug
 
 
 # A basic config so that we don't error out.
@@ -38,24 +38,16 @@ let
 
 # Now let's get started!
 
-when not defined(iHaveMyOwnStuffThanks):
-  echo "Adding fake users"
-  for user in getFakeUsers():
-    discard db.addUser(user)
-
-  echo "Adding fake posts"
-  for post in getFakePosts():
-    discard db.addPost(post)
-    db.addBulkReactions(post.id, getFakeReactions())
-    db.addBulkBoosts(post.id, getFakeBoosts())
-
 ## getAdmins
 echo "Testing getAdmins() "
 # Create a new admin user
 var adminuser = newUser("johnadminson",true,"123")
 adminuser.admin = true
 adminuser.id = "johnadminson"
+adminuser.password = ""
+adminuser.salt = ""
 if not db.userIdExists("johnadminson"):
+  echo "Adding admin user"
   discard db.addUser(adminuser)
 
 var adminFlag = false # This flag will get flipped when it sees the name "johnadminson" in the list of names that getAdmins() provides. If this happens then the test passes!
@@ -70,7 +62,7 @@ assert adminFlag == true, "Fail!\ngetAdmins: " & $db.getAdmins()
 echo "Testing getTotalLocalUsers() "
 # By this point we have added the fakeUsers + our fake admin user above.
 # So let's just test for if the value returned by getTotalLocalUsers is the same as our fake users + 1
-assert db.getTotalLocalUsers() == len(fakeHandles) + 1, "Fail! (result: " & $db.getTotalLocalUsers() & "len: " & $len(fakeHandles) & ")"
+assert db.getTotalLocalUsers() == len(fakeHandles) + 2, "Fail! (result: " & $db.getTotalLocalUsers() & " len: " & $len(fakeHandles) & ")"
 
 ## userIdExists
 echo "Testing userIdExists() "
@@ -83,13 +75,23 @@ echo "Testing userHandleExists() "
 # Same exact thing but with the handle this time.
 assert db.userHandleExists(adminuser.handle) == true, "Fail! (result: " & $db.userHandleExists(adminuser.handle) & "handle: " & adminuser.handle & ")"
 
+proc findMismatch(u, u2: User) = 
+  for fld, val in u.fieldPairs:
+    if u.get(fld) != u2.get(fld):
+      echo fld, ": ", u.get(fld), " != ", u2.get(fld)
+
+
 ## getUserById
 echo "Testing getUserById() "
-assert db.getUserById(adminuser.id) == adminuser, "Fail! (result: " & $db.getUserById(adminuser.id) & "adminuser: " & $adminuser & ")"
+if db.getUserById(adminuser.id) != adminuser:
+  findMismatch(db.getUserById(adminuser.id), adminuser)
+assert db.getUserById(adminuser.id) == adminuser
 
 ## getUserByHandle
 echo "Testing getUserByHandle() "
-assert db.getUserByHandle(adminuser.handle) == adminuser, "Fail! (result: " & $db.getUserByHandle(adminuser.handle) & "adminuser: " & $adminuser & ")"
+if db.getUserByHandle(adminuser.handle) != adminuser:
+  findMismatch(db.getUserByHandle(adminuser.handle), adminuser)
+assert db.getUserByHandle(adminuser.handle) == adminuser, "Fail!"
 
 ## getIdFromHandle
 echo "Testing getIdFromHandle() "
@@ -103,10 +105,16 @@ assert db.getHandleFromId(adminuser.id) == adminuser.handle, "Fail! (result: " &
 # Make the johnadminson user no longer admin(son)
 echo "Testing updateUserByHandle() "
 discard db.updateUserByHandle(adminuser.handle,"admin","false")
-assert db.getUserByHandle(adminuser.handle).admin == false, "Fail! (result: " & $db.getUserByHandle(adminuser.handle) & ")"
+adminuser.admin = false
+if db.getUserByHandle(adminuser.handle) != adminuser:
+  findMismatch(db.getUserByHandle(adminuser.handle), adminuser)
+assert db.getUserByHandle(adminuser.handle).admin == false, "Fail!"
 
 ## updateUserById
 # Make the johnadminson user admin(son)
 echo "Testing updateUserById() "
 discard db.updateUserById(adminuser.id,"admin","true")
-assert db.getUserById(adminuser.id).admin == true, "Fail (result: " & db.getUserById(adminuser.id) & ")"
+adminuser.admin = true
+if db.getUserById(adminuser.id) != adminuser:
+  findMismatch(db.getUserById(adminuser.id), adminuser)
+assert db.getUserById(adminuser.id).admin == true, "Fail (result: " & $db.getUserById(adminuser.id) & ")"
