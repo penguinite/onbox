@@ -4,7 +4,7 @@ A lightweight, federated and powerful microblogging server written in Nim. Potho
 
 *Note:* Pothole is a work-in-progress. Lots of implementation details are being figured out just now and are thus likely to change over time. In other words, this is pre-alpha or even *research* stage. 
 
-*Note:* This is the `main` branch which contains a bleeding-edge codebase, which isn't stable at all for production environments, consider downloading the `stable` branch instead which is more stable. So pick your poison! stability or bleeding-edge (or pick a specific feature branch to test out a feature if you are a developer.)
+*Note:* This is the `main` branch which contains a bleeding-edge codebase, which isn't stable at all for production environments, consider downloading the `stable` branch instead which is more stable. (Although, there is no `stable` branch as of yet since nothing works yet) So pick your poison! stability or bleeding-edge (or pick a specific feature branch to test out a feature if you are a developer.)
 
 ## What is Pothole?
 
