@@ -34,12 +34,16 @@ task ctl, "Shorthand for nimble run potholectl":
     exec "./potholectl " & cleanArgs().join(" ")
     return
 
-  if dirExists("build") and fileExists("build/potholectl"):
-    exec "./build/potholectl " & cleanArgs().join(" ")
+  if dirExists(binDir) and fileExists(binDir & "/potholectl"):
+    exec binDir & "/potholectl " & cleanArgs().join(" ")
     return
   
   exec("nimble -d:release build")
-  exec("./build/potholectl " & cleanArgs().join(" "))
+  exec(binDir & "/potholectl " & cleanArgs().join(" "))
+
+task ctlbuild, "Shorthand for nimble build potholectl":
+  exec "nimble -d:release build"
+  cpFile(binDir & "/potholectl", "./potholectl")
 
 after build:
   cpFile("pothole.conf",binDir & "/pothole.conf")
