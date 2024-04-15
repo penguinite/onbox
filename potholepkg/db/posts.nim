@@ -164,44 +164,38 @@ proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[strin
       result.add(post[0])
   return result
 
-proc getEveryPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
+proc getEveryPostByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
   ## A procedure to get any user's posts using the user's id.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
   ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
   ## *Note:* This procedure returns every post, even private ones. For public posts, use getPostByUserId()
-  let sqlStatement = sql"SELECT * FROM posts WHERE id = ?;"
+  var sqlStatement = ""
   if limit != 0:
-    var i = 0;
-    for post in db.getAllRows(sqlStatement, id):
-      inc(i)
-      result.add(db.constructPostFromRow(post))
-      if i > limit:
-        break
+    sqlStatement = "SELECT * FROM posts WHERE id = ? LIMIT " & $limit & ";"
   else:
-    for post in db.getAllRows(sqlStatement, id):
+    sqlStatement = "SELECT * FROM posts WHERE id = ?;"
+  
+  for post in db.getAllRows(sql(sqlStatement), id):
       result.add(db.constructPostFromRow(post))
   return result
 
-proc getPostsByUserId*(db: DbConn, id:string, limit: int = 15): seq[Post] =
+proc getPostsByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
   ## A procedure to get any user's posts using the user's id.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
   ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
   ## *Note:* This procedure only returns posts that are public. For private posts, use getEveryPostByUserId()
-  let sqlStatement = sql"SELECT * FROM posts WHERE sender = ?;"
+  var sqlStatement = ""
   if limit != 0:
-    var i = 0;
-    for post in db.getAllRows(sqlStatement, id):
-      # Check for if post is unlisted or public, only then can we add it into the list.
-      if post[high(post)] == "0" or post[high(post)] == "1":
-        inc(i)
-        result.add(db.constructPostFromRow(post))
-      if i > limit:
-        break
+    sqlStatement = "SELECT * FROM posts WHERE id = ? LIMIT " & $limit & ";"
   else:
-    for post in db.getAllRows(sqlStatement, id):
+    sqlStatement = "SELECT * FROM posts WHERE id = ?;"
+  
+  for post in db.getAllRows(sql(sqlStatement), id):
       # Check for if post is unlisted or public, only then can we add it into the list.
-      if post[high(post)] == "0" or post[high(post)] == "1":
-        result.add(db.constructPostFromRow(post))
+    let postObj = db.constructPostFromRow(post)
+    if postObj.level == Public or postObj.level == Unlisted:
+      result.add(postObj)
+
   return result
 
 proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post] =
@@ -209,7 +203,13 @@ proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post
   ## The handle can be passed plainly, it will be escaped later.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
   ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
-  return db.getPostsByUserId(db.getIdFromHandle(sanitizeHandle(handle)), limit)
+  return db.getPostsByUserId(db.getIdFromHandle(handle), limit)
+
+proc getPostsByUserIDPaginated*(db: DbConn, id:string, offset: int, limit: int = 15): seq[Post] =
+  ## A procedure to get posts made by a specific user, this procedure is specifically optimized for pagination.
+  ## In that, it supports with offsets, limits and whatnot.
+  # SELECT * FROM medley ORDER BY n ASC LIMIT 5;
+  return
 
 proc getTotalPosts*(db: DbConn): int =
   ## A procedure to get the total number of local posts.
