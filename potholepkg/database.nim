@@ -105,6 +105,9 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false):
     result.createClient(
       "0", "", ""
     )
+  
+  # Create an index on the post table to speed up post by user searches.
+  result.exec "CREATE INDEX IF NOT EXISTS snd_idx ON posts USING btree (sender);"
   return result
 
 proc init*(config: ConfigTable): DbConn = 
