@@ -63,12 +63,22 @@ proc prepareTable*(): Table[string, string] =
   return result
 
 proc preRouteInit() =
-  if config.isNil(): config = setup(getConfigFilename())
-  if staticFolder == "": staticFolder = initStatic(config)
+  if config.isNil(): 
+    when defined(perfdebug):
+      log "Re-preparing config table"
+    config = setup(getConfigFilename())
+  if staticFolder == "":
+    when defined(perfdebug):
+      log "Re-preparing static folder string"
+    staticFolder = initStatic(config)
   if connectedToDb == false:
+    when defined(perfdebug):
+      log "Re-preparing database"
     db = init(config)
     connectedToDb = true
   if templateTable.len() == 0:
+    when defined(perfdebug):
+      log "Re-preparing template table"
   templateTable = prepareTable()
 
 
