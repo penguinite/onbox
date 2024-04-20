@@ -68,6 +68,7 @@ proc preRouteInit() =
   if connectedToDb == false:
     db = init(config)
     connectedToDb = true
+  if templateTable.len() == 0:
   templateTable = prepareTable()
 
 
