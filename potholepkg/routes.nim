@@ -27,6 +27,7 @@ import prologue
 var
   config{.threadvar.}: ConfigTable 
   staticFolder{.threadvar.}: string 
+  connectedToDb{.threadvar}: bool
   db{.threadvar.}: database.DbConn
   templateTable{.threadvar.}: Table[string, string]
 
@@ -64,7 +65,9 @@ proc prepareTable*(): Table[string, string] =
 proc preRouteInit() =
   if config.isNil(): config = setup(getConfigFilename())
   if staticFolder == "": staticFolder = initStatic(config)
-  db = init(config) # TODO: Fix database.isNil()
+  if connectedToDb == false:
+    db = init(config)
+    connectedToDb = true
   templateTable = prepareTable()
 
 

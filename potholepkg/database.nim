@@ -132,12 +132,6 @@ proc uninit*(db: DbConn): bool =
   except CatchableError as err:
     error "Couldn't close the database: " & err.msg
 
-proc isNil*(db: DbConn): bool =
-  # The old check (line below) errors out with a storage acess error and I am not sure how to fix it.
-  # return db[].dbName.len() == 0
-  # TODO: If this could be fixed then that would be great
-  return false
-
 proc cleanDb*(db: DbConn) =
   for i in databaseTables:
     try:  
