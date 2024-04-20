@@ -31,6 +31,15 @@ var
   db{.threadvar.}: database.DbConn
   templateTable{.threadvar.}: Table[string, string]
 
+proc prepareNthLetter(s: string): string = 
+  for ch in s:
+    case ch:
+    of ' ':
+      result.add ' '
+    else:
+      result.add "<span>" & ch & "</span>"
+  return result
+
 proc prepareTable*(): Table[string, string] =
   result = {
     "version":"", # Pothole version
@@ -40,6 +49,11 @@ proc prepareTable*(): Table[string, string] =
     "name": config.getString("instance","name"), # Instance name
     "description": config.getString("instance","description") # Instance description
   }.toTable
+
+  when defined(extraperf) or defined(embedded):
+    result["name_nth_letter"] = config.getString("instance", "name")
+  else:
+    result["name_nth_letter"] = prepareNthLetter(config.getString("instance","name")), # Instance name but with every chacter divided by a span just for fun
 
   if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
     result["staff"] = "" # Clear whatever is already in this.
@@ -79,7 +93,7 @@ proc preRouteInit() =
   if templateTable.len() == 0:
     when defined(perfdebug):
       log "Re-preparing template table"
-  templateTable = prepareTable()
+    templateTable = prepareTable()
 
 
 proc renderWithFullTable(fn: string, extras: openArray[(string,string)]): string {.gcsafe.} =
@@ -264,7 +278,7 @@ proc get_auth_signin*(ctx: Context) {.async.} =
 
 proc post_auth_signin*(ctx: Context) {.async.} =
   preRouteInit()
-  
+
   # Let's first check for required options.
   # Everything else will come later.
   if not ctx.isValidFormParam("user"):

@@ -1,13 +1,46 @@
+:root {
+  --bg: #ecf9e8;
+  --txt: #836d55;
+  --s1: #7a3e03;
+  --s2: #a8692d;
+  --s3: #a27b4a;
+  --link: #d31348;
+}
+
 body {
-  font-family: ui-sans-serif, sans-serif, system-ui;
-  background-color: #eee;
-  line-height: 1.6rem;
+  font-family: system-ui, ui-sans-serif, sans-serif, system-ui;
+  background-color: var(--bg);
+  color: var(--txt);
+  font-size: 1.15rem;
+  line-height: 1.7;
   max-width: 700px;
   margin:auto;
 }
 
+h1 span:nth-child(1n), .avatar span:nth-child(1n) { color: var(--s1); }
+h1 span:nth-child(2n), .avatar span:nth-child(2n) { color: var(--s2); }
+h1 span:nth-child(3n), .avatar span:nth-child(3n) { color: var(--s3); }
+h1 {
+  border: 2px solid var(--s1);
+  width: auto;
+  display:inline-block;
+  padding: 0% 1% 0% 1%;
+  margin-top: 1rem;
+}
+
+
 label { display: block; }
-a { text-decoration: none; }
+a {
+  text-decoration: none;
+  color: var(--link);
+  background-color: var(--bg);
+  transition: background-color 0.1s, color 0.1s;
+  font-weight: bold;
+}
+a:hover {
+  color: var(--bg);
+  background-color: var(--link);
+}
 
 /* User page specific decor */
 .avatar img {
