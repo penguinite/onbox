@@ -1,8 +1,9 @@
 echo "Test 02 - Configuration Parsing"
 
 import potholepkg/conf
+import iniplus/writer
 
-var exampleConfig = ""
+var exampleConfig = newConfigTable()
 
 for section, preKey in requiredConfigOptions.pairs:
   exampleConfig.add("\n[" & section & "]\n")
