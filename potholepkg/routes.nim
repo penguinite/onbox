@@ -53,7 +53,7 @@ proc prepareTable*(): Table[string, string] =
   when defined(extraperf) or defined(embedded):
     result["name_nth_letter"] = config.getString("instance", "name")
   else:
-    result["name_nth_letter"] = prepareNthLetter(config.getString("instance","name")), # Instance name but with every chacter divided by a span just for fun
+    result["name_nth_letter"] = prepareNthLetter(config.getString("instance","name")), # Instance name but with every chacter divided by a span just for fun (and styling purposes)
 
   if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
     result["staff"] = "" # Clear whatever is already in this.
