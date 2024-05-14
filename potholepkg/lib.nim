@@ -24,17 +24,18 @@
 ## The User and Post definitions are now stored in pothole/user and pothole/post respectively.
 
 from std/strutils import Whitespace, `%`, toLowerAscii
+from crypto import kdf
 # For macro definition
 import std/macros
 
 # App version
 const phVersion* {.strdefine.}: string = "0.0.2" ## This constant allows you to customize the potholepkg version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
-const version*: string = phVersion ## This is basically just phVersion, but it's copied twice for readability purposes.
+const version*: string = phVersion ## This is basically just phVersion, but it's copied twice for well, code readability purposes.
 
 # A folder to save debugging data to.
 const globalCrashDir* {.strdefine.}: string = "CAR_CRASHED_INTO_POTHOLE!"
 
-const kdf* = 1 ## The latest Key Derivation Function supported by this build of potholepkg, check out the KDF section in the DESIGN.md document for more information.
+const kdf* {.deprecated: "Use crypto.kdf and not lib.kdf".} = crypto.kdf
 
 when not defined(phNoLog):
   template log*(str: varargs[string, `$`]) =
@@ -77,7 +78,9 @@ func isEmptyOrWhitespace*(ch: char, charset: set[char] = Whitespace): bool =
   return true
 
 func parseBool*(str: string): bool = 
-  ## I'll have to add this.
+  ## I'll have to add this because strutils.parseBool() does not have "t" and "f"
+  ## And I think the reason for this inclusion was that db_postgres or something db-related was return "t" and "f" for booleans.
+  ## And since parseBool() did not support this, it was messing up the entire database logic of pothole.
   ## TODO: Submit a PR to nim upstream to add "t" and "f" in parseBool()
   case str.toLowerAscii():
   of "y", "yes", "true", "1", "on", "t": return true
@@ -120,8 +123,3 @@ func cleanTrailing*(str: string, charset: set[char] = Whitespace): string =
     dec(endnum)
 
   return str[0 .. endnum]
-
-func int64ToInt*(num: int64): int =
-  ## The only reason this procedure exists at all is because tiny_sqlite's intVal macro gets us a int64, not a regular int.
-  ## which somehow breaks everything so we need this to convert from int64 to int
-  return num.int

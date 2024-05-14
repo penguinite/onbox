@@ -72,7 +72,7 @@ proc addUser*(db: DbConn, user: User): bool =
       user.bio,
       user.password,
       user.salt,
-      user.kdf,
+      $KDFToInt(user.kdf),
       user.admin,
       user.moderator,
       user.is_frozen,
@@ -130,6 +130,8 @@ proc constructUserFromRow*(row: Row): User =
       result.get(key) = parseInt(row[i])
     when result.get(key) is UserType:
       result.get(key) = toUserType(row[i])
+    when result.get(key) is KDF:
+      result.get(key) = StringToKDF(row[i])
 
   return result
 

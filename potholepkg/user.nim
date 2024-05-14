@@ -21,6 +21,7 @@
 
 # From Pothole
 import lib, crypto
+export KDF, KDFToInt, IntToKDF, StringToKDF
 
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
@@ -54,7 +55,7 @@ type
     bio*: string # A string containing the user's biography
     password*: string # A string to store a hashed + salted password 
     salt*: string # The actual salt with which to hash the password.
-    kdf*: int # Key derivation function version number
+    kdf*: KDF # Key derivation function version
     admin*: bool # A boolean indicating if the user is an admin.
     moderator*: bool # A boolean indicating if the user is a moderator.
     is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
@@ -87,7 +88,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   if local:
     result.salt = randomString(12)
 
-  result.kdf = lib.kdf # Always assume user is using latest KDF because why not?
+  result.kdf = crypto.kdf # Always assume user is using latest KDF because why not?
   result.local = local
   result.admin = false # This is false by default.
   result.moderator = false # This is false by default.
@@ -105,7 +106,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   
   result.password = ""
   if local and not isEmptyOrWhitespace(password):
-    result.password = pbkdf2_hmac_sha512_hash(password, result.salt)  
+    result.password = hash(password, result.salt)  
 
   # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)
   return result

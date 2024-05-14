@@ -76,23 +76,57 @@ proc randomString*(limit: int = 16): string =
     result.add(randchar())
   return result
 
-
-proc pbkdf2_hmac_sha512_hash*(password: string, salt:string, iter: int = 210000, outlen: int = 24, genSafe:bool = true): string =
+proc pbkdf2_hmac_sha512_hash(password, salt:string): string =
   ## We use PBKDF2-HMAC-SHA512 by default with 210000 iterations unless specified.
   ## This procedure is a wrapper over nimcrypto's PBKDF2 implementation
   ## This procedure returns a base64-encoded string. You can specify the safe parameter of 
   ## encode() with the genSafe parameter
+  ## kdf ID: 1
   runnableExamples:
     var password = "cannabis abyss"
     var salt = "__eat_flaming_death"
     # Hash the user's password
     var hashed_password = pbkdf2_hmac_sha512_hash(password, salt)
-  result = ""
   for x in pbkdf2(
       sha512,
       toOpenArray(password,0,len(password) - 1),
       toOpenArray(salt,0,len(salt) - 1),
-      iter,
-      outlen):
-    result.add(encode($x, safe = genSafe))
+      210000,
+      32):
+    result.add(encode($x, safe = true))
   return result
+
+type
+  KDF* = enum
+    PBKDF_HMAC_SHA512
+
+const kdf* = PBKDF_HMAC_SHA512 ## The latest Key Derivation Function supported by this build of pothole, check out the KDF section in the DESIGN.md document for more information.
+
+proc hash*(password, salt: string, algo: KDF = kdf): string =
+  ## Hashes a string with a salt with the specific algorithm specified by Id
+  runnableExamples:
+    var password = "cannabis abyss"
+    var salt = "__eat_flaming_death"
+    # Hash the user's password
+    var hashed_password = hash(password, salt, PBKDF_HMAC_SHA512)
+  case algo:
+  of PBKDF_HMAC_SHA512: return pbkdf2_hmac_sha512_hash(password, salt)
+
+proc KDFToInt*(algo: KDF): int =
+  ## Converts a KDF object into a number
+  ## TODO: Maybe merge this with the user.kdf field in the user.nim module???
+  ## It doesn't make sense to keep this here, except to maybe avoid a circular dependency.
+  case algo:
+  of PBKDF_HMAC_SHA512: return 1
+
+proc IntToKDF*(num: int): KDF =
+  case num:
+  of 1: return PBKDF_HMAC_SHA512
+  else: return kdf
+
+proc StringToKDF*(num: string): KDF =
+  case num:
+  of "1": return PBKDF_HMAC_SHA512
+  else: return kdf
+
+  
