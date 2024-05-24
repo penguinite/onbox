@@ -19,15 +19,18 @@
 ## (more specifically, the standard db_connector/db_postgres module)
 ## This backend is still not working yet.
 
+# From somewhere in Quark
+import private/database
+
 # From somewhere in Pothole
-import lib, conf, user
+import user
 
 # From somewhere in the standard library
 import std/strutils
 
 # Export these:
-import db/[users, posts, reactions, boosts, common, postrevisions, apps]
-export DbConn, isNil, users, posts, reactions, boosts, postrevisions, apps, getDbHost, getDbName, getDbPass, getDbUser
+import db/[users, posts, reactions, boosts, postrevisions, apps]
+export DbConn, users, posts, reactions, boosts, postrevisions, apps
 
 const databaseTables = @[
   ## Add an extra field to this whenever you need to insert a new table.
@@ -40,43 +43,24 @@ const databaseTables = @[
   ("apps", appsCols)
 ]
 
-proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false): DbConn  =
-  # Some checks to run before we actually open the database
+proc setup*(
+  name, user, host, password: string,
+  schemaCheck: bool = true
+): DbConn =
 
-  if not hasDbHost(config) and not quiet:
-    log "Couldn't retrieve database host. Using \"127.0.0.1:5432\" as default"
-    log ""
-
-  if not hasDbName(config) and not quiet:
-    log "Couldn't retrieve database name. Using \"pothole\" as default"
-
-  if not hasDbUser(config) and not quiet:
-    log "Couldn't retrieve database user login. Using \"pothole\" as default"
-  
-  if not hasDbPass(config) and not quiet:
-    log "Couldn't find database user password from the config file or environment, did you configure pothole correctly?"
-    error "Database user password couldn't be found."
-
-  let
-    host = getDbHost(config)
-    name = getDbName(config)
-    user = getDbUser(config)
-    password = getDbPass(config)
-
-  if not quiet: log "Opening database \"", name ,"\" at \"", host, "\" with user \"", user, "\""
-
-  if host.startsWith("__eat_flaming_death") and not quiet:
-    log "Someone or something used the forbidden code. Quietly returning... Stuff might break!"
+  if host.startsWith("__eat_flaming_death"):
+    # This bit of code is used in some documentation, and so its important for us to add a special case
+    # so it wont actually run any database operations.
+    # TODO: Figure out what documentation is using this workaround, and patch it.
     return
 
-  # Open database and initialize the users and posts table.
+  # Open database
   result = open(host, user, password, name)
   
+  # Here we create the structures.
   for i in databaseTables:
     # Create the tables first
-    if not createDbTable(result, i[0], i[1]):
-      if quiet: quit(1)
-      error "Failed to create ", i[0], " table"
+    createDbTable(result, i[0], i[1])
     
     # Now we check the schema to make sure it matches the hard-coded one.
     if schemaCheck:
@@ -98,7 +82,7 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false):
   null.salt = ""
   null.name = "Deleted User"
   if not result.userIdExists("null"):
-    discard result.addUser(null)
+    result.addUser(null)
 
   # Add a default app just in case
   if not result.clientExists("0"):
@@ -110,34 +94,16 @@ proc setup*(config: ConfigTable, schemaCheck: bool = true, quiet: bool = false):
   result.exec "CREATE INDEX IF NOT EXISTS snd_idx ON posts USING btree (sender);"
   return result
 
-proc init*(config: ConfigTable): DbConn = 
+proc init*(name, user, host, password: string): DbConn = 
   ## This procedure quickly initializes the database by skipping a bunch of checks.
   ## It assumes that you have done these checks on startup by running the regular setup() proc once.
-  try:
-    return open(
-      config.getDbHost(),
-      config.getDbUser(),
-      config.getDbPass(),
-      config.getDbName()
-    )
-  except CatchableError as err:
-    log "Did you forget to start the postgres database server?"
-    error "Couldn't connect to postgres: ", err.msg
+  return open(host, user, password, name,)
 
 proc uninit*(db: DbConn): bool =
   ## Uninitialize the database.
   ## Or close it basically...
-  try:
-    db.close()
-  except CatchableError as err:
-    error "Couldn't close the database: " & err.msg
+  db.close()
 
 proc cleanDb*(db: DbConn) =
   for i in databaseTables:
-    try:  
-      db.exec(sql("DROP TABLE IF EXISTS " & i[0] & " CASCADE;"))
-    except CatchableError as err:
-      error "Couldn't clean database ", i[0], ": ", err.msg
-  
-proc cleanDb*(config: ConfigTable) =
-  database.init(config).cleanDb()
+    db.exec(sql("DROP TABLE IF EXISTS " & i[0] & " CASCADE;"))

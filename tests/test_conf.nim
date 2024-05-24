@@ -5,8 +5,7 @@ import iniplus/writer
 
 var exampleConfig = newConfigTable()
 
-for section, preKey in requiredConfigOptions.pairs:
-  exampleConfig.add("\n[" & section & "]\n")
+for section, preKey in requiredConfigOptions.pairs:  exampleConfig.add("\n[" & section & "]\n")
   for key in preKey:
     exampleConfig.add(key & "=\"Test value\"\n")
 exampleConfig.add("\n[db]\nfilename=\"main.db\"")

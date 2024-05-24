@@ -17,14 +17,12 @@
 # db/sqlite/users.nim:
 ## This module contains all database logic for handling users.
 
-# From somewhere in Pothole
-import ../[user, lib]
+# From somewhere in Quark
+import ../[user, strextra, crypto]
+import ../private/[database, macros]
 
 # From somewhere in the standard library
-import std/strutils except isEmptyOrWhitespace, parseBool, parseBool
 import std/[tables]
-
-import common
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 # For this module to work, both database schemas and user object definitions must be similar
@@ -44,44 +42,36 @@ const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY NOT NULL
 "is_approved":"BOOLEAN NOT NULL"}.toOrderedTable  # A boolean indicating if the user hs been approved by an administrator
 
 
-proc addUser*(db: DbConn, user: User): bool = 
+proc addUser*(db: DbConn, user: User) = 
   ## Add a user to the database
   ## This procedure expects an escaped user to be handed to it.
   var testStmt = sql"SELECT local FROM users WHERE ? = ?;"
 
-  if has(db.getRow(testStmt, "handle", user.handle)):
-    log "User with handle " & user.handle & " already exists!"
-    return false # Simply exit
+  if has(db.getRow(testStmt, "handle", user.handle)): 
+    raise newException(DbError, "User with same handle as \"" & user.handle & "\" already exists")
 
   if has(db.getRow(testStmt, "id", user.id)):
-    log "User with id " & user.id & " already exists!"
-    return false # Return false if id already exists
+    raise newException(DbError, "User with same id as \"" & user.id & "\" already exists")
   
   # TODO: Likewise with the addPost() proc, there has to be a better way than this.
   # It's just too ugly.
-  
-  try:
-    db.exec(
-      sql"INSERT INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,moderator,is_frozen,is_approved) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-      user.id,
-      user.kind,
-      user.handle,
-      user.name,
-      user.local,
-      user.email,
-      user.bio,
-      user.password,
-      user.salt,
-      $KDFToInt(user.kdf),
-      user.admin,
-      user.moderator,
-      user.is_frozen,
-      user.is_approved
-    )
-  except CatchableError as err:
-    error "Failed to insert user: ", err.msg
-
-  return true
+  db.exec(
+    sql"INSERT INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,moderator,is_frozen,is_approved) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+    user.id,
+    user.kind,
+    user.handle,
+    user.name,
+    user.local,
+    user.email,
+    user.bio,
+    user.password,
+    user.salt,
+    KDFToString(user.kdf),
+    user.admin,
+    user.moderator,
+    user.is_frozen,
+    user.is_approved
+  )
 
 proc getAdmins*(db: DbConn): seq[string] = 
   ## A procedure that returns the usernames of all administrators.
@@ -140,7 +130,7 @@ proc getUserById*(db: DbConn, id: string): User =
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
   ## This procedure expects a regular ID, it will sanitize and escape it by default.
   if not db.userIdExists(id):
-    error "Something or someone tried to get a non-existent user with the id \"", id, "\""
+    raise newException(DbError, "Couldn't find user with id \"" & id & "\"")
 
   return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE id = ?;", id))
 
@@ -149,53 +139,47 @@ proc getUserByHandle*(db: DbConn, handle: string): User =
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
   ## This procedure expects a regular handle, it will sanitize and escape it by default.
   if not db.userHandleExists(handle):
-    error "Something or someone tried to get a non-existent user with the handle \"", handle, "\""
+    raise newException(DbError, "Couldn't find user with handle \"" & handle &  "\"")
     
   return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE handle = ?;", sanitizeHandle(handle)))
 
-proc updateUserByHandle*(db: DbConn, handle: string, column, value: string): bool =
+proc updateUserByHandle*(db: DbConn, handle: string, column, value: string) =
   ## A procedure to update any user (The user is identified by their handle)
   ## The *only* parameter that is sanitized is the handle, the value has to be sanitized by your user program!
   ## Or else you will be liable to truly awful security attacks!
   ## For guidance, look at the sanitizeHandle() procedure in user.nim or the escape() procedure in the strutils module
+  
+  # Check if user exists or if the column exists.
   if not db.userHandleExists(handle):
-    return false
+    raise newException(DbError, "User with handle \"" & handle & "\" doesn't exist.")
 
-  # Check if it's a valid column to update
   if not usersCols.hasKey(column):
-    return false
+    raise newException(DbError, "User table column \"" & column & "\" doesn't exist.")
   
   # Then update!
-  try:
-    db.exec(sql("UPDATE users SET " & column & " = ? WHERE handle = ?;"), value, sanitizeHandle(handle))
-    return true
-  except CatchableError as err:
-    error "Couldn't update user with handle \"", sanitizeHandle(handle), "\": ", err.msg
+  db.exec(sql("UPDATE users SET " & column & " = ? WHERE handle = ?;"), value, sanitizeHandle(handle))
   
-proc updateUserById*(db: DbConn, id: User.id, column, value: string): bool = 
+proc updateUserById*(db: DbConn, id: User.id, column, value: string) = 
   ## A procedure to update any user (The user is identified by their ID)
   ## Like with the updateUserByHandle() function, the only sanitized parameter is the id. 
   ## You *have* to sanitize the value argument yourself
   ## For guidance, look at the sanitizeHandle() procedure in user.nim or the escape() procedure in the strutils module
+  
+  # Check if the user or column exists
   if not db.userIdExists(id):
-    return false
-
-  # Check if it's a valid column to update
+    raise newException(DbError, "User with id \"" & id & "\" doesn't exist.")
+  
   if not usersCols.hasKey(column):
-    return false
+    raise newException(DbError, "User table column \"" & column & "\" doesn't exist.")
 
   # Then update!
-  try:
-    db.exec(sql("UPDATE users SET " & column & " = ? WHERE id = ?;"), value, id)
-    return true
-  except CatchableError as err:
-    error "Couldn't update user with handle \"", id, "\": ", err.msg
+  db.exec(sql("UPDATE users SET " & column & " = ? WHERE id = ?;"), value, id)
 
 proc getIdFromHandle*(db: DbConn, handle: string): string =
   ## A function to convert a user handle to an id.
   ## This procedure expects a regular handle, it will sanitize and escape it by default.
   if not db.userHandleExists(handle):
-    error "Something or someone tried to get a non-existent user with the handle \"" & handle & "\""
+    raise newException(DbError, "Couldn't find user with handle \"" & handle &  "\"")
   
   return db.getRow(sql"SELECT id FROM users WHERE handle = ?;", sanitizeHandle(handle))[0]
 
@@ -203,22 +187,16 @@ proc getHandleFromId*(db: DbConn, id: string): string =
   ## A function to convert a  id to a handle.
   ## This procedure expects a regular ID, it will sanitize and escape it by default.
   if not db.userIdExists(id):
-    error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
+    raise newException(DbError, "Couldn't find user with id \"" & id &  "\"")
   
   return db.getRow(sql"SELECT handle FROm users WHERE id = ?;", id)[0]
 
-proc deleteUser*(db: DbConn, id: string): bool = 
+proc deleteUser*(db: DbConn, id: string) = 
   if not db.userIdExists(id):
-    error "Something or someone tried to get a non-existent user with the id \"" & id & "\""
+    raise newException(DbError, "Couldn't find user with id \"" & id &  "\"")
   
-  try:
-    db.exec(sql"DELETE FROM users WHERE id = ?;", id)
-    return true
-  except:
-    return false
+  db.exec(sql"DELETE FROM users WHERE id = ?;", id)
 
-proc deleteUsers*(db: DbConn, ids: seq[string]): bool = 
+proc deleteUsers*(db: DbConn, ids: seq[string]) = 
   for id in ids:
-    if not db.deleteUser(id):
-      return false
-  return true
+    db.deleteUser(id)

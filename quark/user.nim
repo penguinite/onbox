@@ -19,12 +19,16 @@
 ## The User object type has been moved here after commit 9f3077d
 ## Database-related procedures are in db.nim
 
-# From Pothole
-import lib, crypto
+# From somewhere in Quark
+import crypto, strextra
+import private/macros
 export KDF, KDFToInt, IntToKDF, StringToKDF
 
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
+
+# From somewhere else
+import rng
 
 # A set of characters that you cannot use at all.
 # this filters anything that doesn't make a valid email.
@@ -82,11 +86,11 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   
   # First off let's do the things that are least likely to create an error in any way possible.
   result = User()
-  result.id = randomString()
+  result.id = randstr()
   
   result.salt = ""
   if local:
-    result.salt = randomString(12)
+    result.salt = randstr(12)
 
   result.kdf = crypto.kdf # Always assume user is using latest KDF because why not?
   result.local = local

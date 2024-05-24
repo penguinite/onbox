@@ -18,8 +18,8 @@
 ## This module contains all database logic for handling boosts.
 
 import ../crypto
-
-import common, users
+import ../private/database
+import users
 
 # From somewhere in the standard library
 import std/tables
@@ -42,6 +42,7 @@ proc getBoosts*(db: DbConn, id: string): Table[string, seq[string]] =
 proc getBoostsQuick*(db: DbConn, id: string): seq[string] =
   ## Returns a list of boosters for a specific post
   for row in db.getAllRows(sql"SELECT uid,level FROM boosts WHERE pid = ?;", id):
+    # Obviously don't add private boosts to the public list.
     if row[1] == "Private" or row[1] == "FollowersOnly":
       continue
     result.add(row[0])
@@ -54,12 +55,12 @@ proc getBoostsQuickWithHandle*(db: DbConn, id: string): seq[string] =
     result.add(db.getHandleFromId(id))
   return result
 
-proc addBoost*(db: DbConn, pid,uid,level: string): bool =
+proc addBoost*(db: DbConn, pid,uid,level: string) =
   ## Adds an individual boost
   # Check for ID first.
-  var id = randomString(8)
+  var id = randstr(8)
   while has(db.getRow(sql"SELECT id FROM boosts WHERE id = ?;", id)):
-    id = randomString(8)
+    id = randstr(8)
 
   db.exec(sql"INSERT INTO boosts (id, pid, uid, level) VALUES (?,?,?,?);",id,pid,uid,level)
 
@@ -67,7 +68,7 @@ proc addBulkBoosts*(db: DbConn, id: string, table: Table[string, seq[string]]) =
   ## Adds an entire table of boosts to the database
   for boost,list in table.pairs:
     for user in list:
-      discard db.addBoost(id, user, boost)
+      db.addBoost(id, user, boost)
 
 proc removeBoost*(db: DbConn, pid,uid: string) =
   ## Removes a boost from the database

@@ -19,12 +19,15 @@
 ## The Post object type has been moved here after commit 9f3077d
 ## Database-related procedures are in db.nim
 
-# From Pothole
-import lib, crypto
+# From somewhere in Quark
+import crypto, strextra
 
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[tables, times]
+
+# From somewhere else
+import rng
 
 export DateTime, parse, format, utc
 
@@ -52,12 +55,22 @@ type
     boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post. (Along with what level)
     revisions*: seq[PostRevision] # A sequence of past revisions, this is basically copies of post.content
 
-proc newPost*(sender,content: string, replyto: string = "", recipients: seq[string] = @[], local: bool = false, written: DateTime = now().utc): Post =
-  if isEmptyOrWhitespace(sender) or isEmptyOrWhitespace(content):
-    error "Missing critical fields for post." 
+proc newPost*(
+    sender, content: string,
+    replyto: string = "",
+    recipients: seq[string] = @[],
+    local: bool = false,
+    written: DateTime = now().utc
+  ): Post =
+
+  if isEmptyOrWhitespace(sender):
+    raise newException(ValueError, "Post is missing sender field.")
+
+  if isEmptyOrWhitespace(content):
+    raise newException(ValueError, "Post is missing content field.")
 
   # Generate post id
-  result.id = randomString(18)
+  result.id = randstr(18)
   
   # Just do this stuff...
   result.sender = sender

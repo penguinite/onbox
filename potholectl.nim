@@ -20,10 +20,10 @@
 ## Pothole's internals with.
 
 # From Pothole
-import potholepkg/lib
+import pothole/lib
 
 # From Pothole (ctl folder)
-import potholepkg/ctl/[shared, db, mrf, dev, user, post]
+import potholectl/[shared, db, mrf, dev, user, post]
 
 # From standard library
 import std/[os, parseopt, strutils, tables]
@@ -80,7 +80,7 @@ of "user": user.processCmd(command, data, args)
 of "post": post.processCmd(command, data, args)
 
 # Extra educational material
-of "date": helpPrompt("date","")
+of "date","dates": helpPrompt("date","")
 of "id","ids": helpPrompt("ids","")
 of "handle", "handles": helpPrompt("handles","")
 else:

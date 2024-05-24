@@ -13,16 +13,17 @@ discard """
 
 """
 
-import potholepkg/[database, conf, user, post], debug
+import quark/[database, user, post], debug
 
+
+const
+  dbName{.strdefine.} = "pothole"
+  dbUser{.strdefine.} = "pothole"
+  dbHost{.strdefine.} = "127.0.0.1:5432"
+  dbPass{.strdefine.} = "SOMETHING_SECRET"
 
 # A basic config so that we don't error out.
 var exampleConfig = ""
-
-for section, preKey in requiredConfigOptions.pairs:
-  exampleConfig.add("\n[" & section & "]\n")
-  for key in preKey:
-    exampleConfig.add(key & "=\"Test value\"\n")
 
 exampleConfig.add """
 [db]
@@ -33,7 +34,6 @@ password="SOMETHING_SECRET"
 """
 
 let
-  config = setupInput(exampleConfig)
   db = init(config)
 discard setup(config)
 # Now let's get started!

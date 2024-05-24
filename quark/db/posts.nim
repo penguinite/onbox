@@ -17,15 +17,14 @@
 # db/sqlite/posts.nim:
 ## This module contains all database logic for handling posts.
 
-# From somewhere in Pothole
-import ../[post, user, lib]
+# From somewhere in Quark
+import ../[post, strextra]
+import reactions, boosts, users
+import ../private/[database, macros]
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[tables]
-
-import common, reactions, boosts, users
-
 
 const postsCols*: OrderedTable[string, string] = {
   "id": "TEXT PRIMARY KEY NOT NULL", #The Post id
@@ -41,11 +40,6 @@ const postsCols*: OrderedTable[string, string] = {
   # TODO: This __A/__B hack is really, well... hacky. Maybe replace it?
   "__A": "foreign key (sender) references users(id)", # Some foreign key for database integrity
 }.toOrderedTable
-
-## Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-#const postsCols*: OrderedTable[string, string] = {"id":"TEXT PRIMARY KEY NOT NULL", # The post Id
-
-#}.toOrderedTable
 
 proc constructPostFromRow*(db: DbConn, row: Row): Post =
   ## A procedure that takes a database Row (From the Posts table)
@@ -86,7 +80,7 @@ proc constructPostFromRow*(db: DbConn, row: Row): Post =
 
   return result
 
-proc addPost*(db: DbConn, post: Post): bool =
+proc addPost*(db: DbConn, post: Post) =
   ## A function add a post into the database
   ## This function uses parameterized substitution
   ## So escaping objects before sending them here is not a requirement.
@@ -94,58 +88,45 @@ proc addPost*(db: DbConn, post: Post): bool =
   let testStatement = sql"SELECT local FROM posts WHERE id = ?;"
 
   if db.getRow(testStatement, post.id).has():
-    return false # Someone has tried to add a post twice. We just won't add it.
+    return # Someone has tried to add a post twice. We just won't add it.
   
   # TODO: Automate this some day.
   # I believe we can use a template or a macro to automate inserting this stuff in.
-  try:
-    let statement = sql"INSERT INTO posts (id,recipients,sender,replyto,content,written,modified,local,client,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
-    db.exec(
-      statement,
-      post.id,
-      toString(post.recipients),
-      post.sender,
-      post.replyto,
-      post.content,
-      toDbString(post.written),
-      post.modified,
-      post.local,
-      post.client,
-      toString(post.level)
-    )
-  except CatchableError as err:
-    error "Failed to insert post: ", err.msg
-  return true
+  let statement = sql"INSERT INTO posts (id,recipients,sender,replyto,content,written,modified,local,client,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+  db.exec(
+    statement,
+    post.id,
+    toString(post.recipients),
+    post.sender,
+    post.replyto,
+    post.content,
+    toDbString(post.written),
+    post.modified,
+    post.local,
+    post.client,
+    toString(post.level)
+  )
 
 proc postIdExists*(db: DbConn, id: string): bool =
   ## A function to see if a post id exists in the database
   ## The id supplied can be plain and un-escaped. It will be escaped and sanitized here.
   return has(db.getRow(sql"SELECT local FROM posts WHERE id = ?;", id))
 
-proc updatePost*(db: DbConn, id, column, value: string): bool =
+proc updatePost*(db: DbConn, id, column, value: string) =
   ## A procedure to update a post using it's ID.
   ## Like with the updateUserByHandle and updateUserById procedures,
   ## the value parameter should be heavily sanitized and escaped to prevent a class of awful security holes.
   ## The id can be passed plain, it will be escaped.
-  let statement = sql("UPDATE posts SET " & column & " = ? WHERE id = ?;")
-  try:
-    db.exec(statement, value, id)
-    return true
-  except:
-    return false
+  db.exec(sql("UPDATE posts SET " & column & " = ? WHERE id = ?;"), value, id)
 
 proc getPost*(db: DbConn, id: string): Post =
   ## A procedure to get a post object using it's ID.
   ## The id can be passed plain, it will be escaped.
   ## The output will be an unescaped
-  
-  var post = db.getRow(sql"SELECT * FROM posts WHERE id = ?;", id)
+  let post = db.getRow(sql"SELECT * FROM posts WHERE id = ?;", id)
   if not post.has():
-    error "Something or someone tried to retrieve a non-existent post with the ID of \"" & id & "\""
-
-  result = db.constructPostFromRow(post)
-
-  return result
+    raise newException(DbError, "Couldn't find post with id \"" & id & "\"")
+  return db.constructPostFromRow(post)
 
 proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[string] = 
   ## A procedure that only fetches the IDs of posts made by a specific user.
@@ -208,7 +189,7 @@ proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post
 proc getPostsByUserIDPaginated*(db: DbConn, id:string, offset: int, limit: int = 15): seq[Post] =
   ## A procedure to get posts made by a specific user, this procedure is specifically optimized for pagination.
   ## In that, it supports with offsets, limits and whatnot.
-  # SELECT * FROM medley ORDER BY n ASC LIMIT 5;
+  ## Since our 
   return
 
 proc getTotalPosts*(db: DbConn): int =
@@ -218,36 +199,24 @@ proc getTotalPosts*(db: DbConn): int =
     inc(result)
   return result
 
-proc deletePost*(db: DbConn, id: string): bool = 
-  try:
-    db.exec(sql"DELETE FROM posts WHERE id = ?;", id)
-    return true
-  except:
-    return false
+proc deletePost*(db: DbConn, id: string) = 
+  db.exec(sql"DELETE FROM posts WHERE id = ?;", id)
 
-proc deletePosts*(db: DbConn, sequence: seq[string]): bool =
+proc deletePosts*(db: DbConn, sequence: seq[string]) =
   for id in sequence:    
-    if not db.deletePost(id):
-      return false
-  return true
+    db.deletePost(id)
 
-proc reassignSenderPost*(db: DbConn, post_id, sender: string): bool =
-  try:
-    db.exec(sql"UPDATE posts SET sender = ? WHERE id = ?;", sender, post_id)
-    return true
-  except:
-    return false
+proc reassignSenderPost*(db: DbConn, post_id, sender: string) =
+  db.exec(sql"UPDATE posts SET sender = ? WHERE id = ?;", sender, post_id)
 
 proc getNumOfReplies*(db: DbConn, post_id: string): int =
   for i in db.getAllRows(sql"SELECT id WHERE replyto = ?;", post_id):
     inc(result)
   return result
 
-proc reassignSenderPosts*(db: DbConn, post_ids: seq[string], sender: string): bool =
+proc reassignSenderPosts*(db: DbConn, post_ids: seq[string], sender: string) =
   for post_id in post_ids:
-    if not db.reassignSenderPost(post_id, sender):
-      return false
-  return true
+    db.reassignSenderPost(post_id, sender)
 
 proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Post] =
   ## A procedure to get posts from local users only.

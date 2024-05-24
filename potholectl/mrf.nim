@@ -18,13 +18,16 @@
 ## Operations related to extensions.
 ## It does stuff like reveal the embedded metadata and uh... stuff...
 
-# From ctl/ folder in Pothole
+# From somewhere in Quark
+import quark/[strextra]
+
+# From somewhere in Potholectl
 import shared
 
-# From elsewhere in Pothole
-import ../mrf
+# From somewhere in Pothole
+import pothole/mrf
 
-# From standard libraries
+# From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[dynlib, os, tables, posix]
 
@@ -60,26 +63,24 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       echo "potholectl will run a couple of tests, these try to show what features/filters this MRF policy has."
       echo "If there is no output then it means this MRF policy has no features or potholectl couldnt detect them."
 
-      if cast[PostFilterProc](lib.symAddr("filterIncomingPost")) != nil:
+      if lib.getFilterIncomingPost() != nil:
         log "This MRF policy filters incoming posts"
-      if cast[PostFilterProc](lib.symAddr("filterOutgoingPost")) != nil:
+      if lib.getFilterOutgoingPost() != nil:
         log "This MRF policy filters outgoing posts"
 
-      if cast[UserFilterProc](lib.symAddr("filterIncomingUser")) != nil:
+      if lib.getFilterIncomingUser() != nil:
         log "This MRF policy filters incoming users"
-      if cast[UserFilterProc](lib.symAddr("filterOutgoingUser")) != nil:
+      if lib.getFilterOutgoingUser() != nil:
         log "This MRF policy filters outgoing users"
 
-      if cast[ActivityFilterProc](lib.symAddr("filterIncomingActivity")) != nil:
+      if lib.getFilterIncomingActivity() != nil:
         log "This MRF policy filters incoming activities"
-      if cast[ActivityFilterProc](lib.symAddr("filterOutgoingActivity")) != nil:
+      if lib.getFilterOutgoingActivity() != nil:
         log "This MRF policy filters outgoing activities"
-      
-
   of "check_config":
-    return
+    return # TODO: Implement
   of "enable":
-    return
+    return # TODO: Implement
   else:
     helpPrompt("mrf")
     

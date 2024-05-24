@@ -17,12 +17,14 @@
 # db/sqlite/reactions.nim:
 ## This module contains all database logic for handling reactions.
 
-import ../crypto
+# From somewhere in Quark
+import ../private/database
 
 # From somewhere in the standard library
 import std/tables
 
-import common
+# From somewhere else
+import rng
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 const reactionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL",
@@ -39,12 +41,12 @@ proc getReactions*(db: DbConn, id: string): Table[string, seq[string]] =
     result[row[1]].add(row[0])
   return result
 
-proc addReaction*(db: DbConn, pid,uid,reaction: string): bool =
+proc addReaction*(db: DbConn, pid,uid,reaction: string) =
   ## Adds an individual reaction
   # Check for ID first.
-  var id = randomString(8)
+  var id = randstr(8)
   while has(db.getRow(sql"SELECT id FROM reactions WHERE id = ?;", id)):
-    id = randomString(8)
+    id = randstr(8)
 
   db.exec(sql"INSERT INTO reactions (id, pid, uid, reaction) VALUES (?,?,?,?);",id,pid,uid,reaction)
 
@@ -52,7 +54,7 @@ proc addBulkReactions*(db: DbConn, id: string, table: Table[string, seq[string]]
   ## Adds an entire table of reactions to the database
   for reaction,list in table.pairs:
     for user in list:
-      discard db.addReaction(id, user, reaction)
+      db.addReaction(id, user, reaction)
 
 proc removeReaction*(db: DbConn, pid,uid: string) =
   ## Removes a reactions from the database

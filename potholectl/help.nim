@@ -20,13 +20,13 @@
 
 #! This is a god damn mess.
 
-from ../lib import version
+from pothole/lib import version
 import std/[tables, strutils]
 
 const prefix* = """
 Potholectl $#
 Copyright (c) Leo Gavilieau 2023
-Copyright (c) penguinite <penguinite@tuta.io> 2024
+Copyright (c) penguinite 2024
 Licensed under the GNU Affero GPL License under version 3 or later.
 """ % [lib.version]
 

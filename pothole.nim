@@ -14,16 +14,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
-# From Pothole
-import potholepkg/[lib, conf, database, routes]
+# From somewhere in Quark
+import quark/[database]
+
+# From somewhere in Pothole
+import pothole/[routes, lib, conf, database]
 
 # From standard library
 import std/tables
 from std/strutils import join
 
 proc exit() {.noconv.} =
-  echo "Interrupted by Ctrl+C"
-  quit(1)
+  error "Interrupted by Ctrl+C"
 
 # From nimble
 import prologue
@@ -43,8 +45,29 @@ var port = 3500
 if config.exists("web","port"):
   port = config.getInt("web","port")
 
+if not hasDbHost(config):
+  log "Couldn't retrieve database host. Using \"127.0.0.1:5432\" as default"
+  log ""
+
+if not hasDbName(config):
+  log "Couldn't retrieve database name. Using \"pothole\" as default"
+
+if not hasDbUser(config):
+  log "Couldn't retrieve database user login. Using \"pothole\" as default"
+  
+if not hasDbPass(config):
+  log "Couldn't find database user password from the config file or environment, did you configure pothole correctly?"
+  error "Database user password couldn't be found."
+
+log "Opening database at ", config.getDbHost()
+
 # Initialize database
-discard setup(config)
+discard setup(
+  config.getDbName(),
+  config.getDbUser(),
+  config.getDbHost(),
+  config.getDbPass()
+)
 
 log "Running on http://localhost:" & $port
 

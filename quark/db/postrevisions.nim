@@ -20,7 +20,6 @@
 # From somewhere in the standard library
 import std/tables
 
-
 const postsRevisionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # This contains the id of the revision, because of course we ought to have an id for everything.
   "published": "TIMESTAMP NOT NULL", # This contains the date of when the revision was made
   "content": "TEXT NOT NULL DEFAULT ''", # This contains past revisions

@@ -11,3 +11,4 @@ nimbledeps/
 .db_pid
 pothole_envs
 potholectl
+!potholectl/

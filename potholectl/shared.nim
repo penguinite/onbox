@@ -17,13 +17,16 @@
 # ctl/shared.nim:
 ## Shared procedures for potholectl.
 
-# From ctl/ folder
+# From somewhere in Potholectl
 import help
 
-# From elsewhere in Pothole
-import ../[lib, conf]
+# From somewhere in Quark
+import quark/strextra
 
-# From standard library
+# From somewhere in Pothole
+import pothole/[lib, conf]
+
+# From somewhere in the standard library
 import std/[tables, osproc]
 
 var subsystems*: seq[string] = @[]

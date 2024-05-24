@@ -14,15 +14,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# ctl/dev.nim:
+# potholectl/dev.nim:
 ## Developer operations for Potholectl
 ## Anything a contributor to Pothole would need can be found here.
 
-# From ctl/ folder in Pothole
+# From somewhere in Potholectl
 import shared
 
-# From elsewhere in Pothole
-import ../[lib, conf, database]
+# From somewhere in Pothole
+import pothole/[lib, conf, database]
 
 # From standard libraries
 import std/[os, osproc, tables, strutils]
@@ -117,7 +117,12 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       log "Either you have no readable config file or no environment variables"
       log "You might be able to recover from this error by running the setup_env command first"
       return
-    cleanDb(config)
+    init(
+      config.getDbName(),
+      config.getDbUser(),
+      config.getDbHost(),
+      config.getDbPass(),
+    ).cleanDb()
   of "delete":
     purgeDb()
   of "psql":

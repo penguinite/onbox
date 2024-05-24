@@ -19,15 +19,21 @@
 ## This simply parses the subsystem & command (and maybe arguments)
 ## and it calls the appropriate function from src/db.nim
 
-# From ctl/ folder in Pothole
+# From somewhere in Potholectl
 import shared
 
-# From elsewhere in Pothole
-import ../[database,lib,conf,crypto]
+# From somewhere in Quark
+import quark/[crypto, database, strextra]
+
+# From somewhere in Pothole
+import pothole/[database, lib, conf]
 
 # From standard libraries
 from std/tables import Table
 from std/strutils import split, `%`
+
+# From elsewhere
+import rng
 
 proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   if args.check("h","help"):
@@ -42,10 +48,21 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   case cmd:
   of "schema_check", "init":
     log "Re-running database initialization with schema checking enabled."
-    discard setup(config,true)
+    discard setup(
+      config.getDbName(),
+      config.getDbUser(),
+      config.getDbHost(),
+      config.getDbPass(),
+      true
+    )
   of "clean": 
     log "Cleaning everything in database"
-    cleanDb(config)
+    init(
+      config.getDbName(),
+      config.getDbUser(),
+      config.getDbHost(),
+      config.getDbPass(),
+    ).cleanDb()
   of "docker":
     log "Setting up postgres docker container according to config file"
     var
@@ -72,7 +89,7 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     
     if password == "SOMETHING_SECRET" and not args.check("a","allow-weak-password"):
       log "Changing vulnerable database password to something more secure"
-      password = randomString(64)
+      password = randstr(64)
       echo "Please update the config file to reflect the following changes:"
       echo "[db] password is now \"", password, "\""
   

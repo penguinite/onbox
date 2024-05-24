@@ -19,11 +19,14 @@
 ## This simply parses the subsystem & command (and maybe arguments)
 ## and it calls the appropriate function from potholepkg/database.nim and potholepkg/user.nim
 
-# From ctl/ folder in Pothole
+# From somewhere in Potholectl
 import shared
 
-# From elsewhere in Pothole
-import ../[database,lib,conf,user]
+# From somewhere in Quark
+import quark/[database, user, strextra]
+
+# From somewhere in Pothole
+import pothole/[database,lib,conf]
 
 # From standard libraries
 from std/tables import Table
@@ -39,7 +42,13 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   else:
     config = conf.setup(getConfigFilename())
 
-  let db = database.setup(config, true, args.check("q","quiet"))
+  let db = setup(
+    config.getDbUser(),
+    config.getDbName(),
+    config.getDbHost(),
+    config.getDbPass(),
+    true
+  )
 
   case cmd:
   of "new":
@@ -98,15 +107,16 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     if args.check("m","moderator"): user.moderator = true
     if args.check("r","require-approval"): user.is_approved = false
     
-    if db.addUser(user):
+    try:
+      db.addUser(user)
       if not args.check("q","quiet"):
         log "Successfully inserted user"
         echo "Login details:"
       echo "name: ", user.handle
       echo "password: ", password
-    else:
+    except CatchableError as err:
       if not args.check("q","quiet"):
-        log "Failed to insert user"
+        error "Failed to insert user: ", err.msg
       quit(1)
   of "delete", "del", "purge":
     var
@@ -147,18 +157,24 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
 
     if args.check("p", "purge") or cmd == "purge":
       # Delete every post first.
-      if not db.deletePosts(db.getPostIDsByUserWithID(id)):
-        error "Failed to delete posts by user"
+      try:
+        db.deletePosts(db.getPostIDsByUserWithID(id))
+      except CatchableError as err:
+        error "Failed to delete posts by user: ", err.msg
     else:
       # We must reassign every post made this user to the `null` user
       # Otherwise the database will freakout.
-      if not db.reassignSenderPosts(db.getPostIDsByUserWithID(id), "null"):
+      try:
+        db.reassignSenderPosts(db.getPostIDsByUserWithID(id), "null")
+      except CatchableError as err:
         log "There's probably some database error somewhere..."
-        error "Failed to reassign posts by user"
+        error "Failed to reassign posts by user: ", err.msg
     
     # Delete the user
-    if not db.deleteUser(id):
-      error "Failed to delete user"
+    try:
+      db.deleteUser(id)
+    except CatchableError as err:
+      error "Failed to delete user: ", err.msg
     
     echo "If you're seeing this then there's a high chance your command succeeded."
   of "id":

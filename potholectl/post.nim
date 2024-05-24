@@ -19,11 +19,14 @@
 ## This simply parses the subsystem & command (and maybe arguments)
 ## and it calls the appropriate function from potholepkg/database.nim and potholepkg/user.nim
 
-# From ctl/ folder in Pothole
+# From somewhere in Potholectl
 import shared
 
-# From elsewhere in Pothole
-import ../[database,lib,conf,post]
+# From somewhere in Quark
+import quark/[post, strextra]
+
+# From somewhere in Pothole
+import pothole/[database,lib,conf]
 
 # From standard libraries
 from std/tables import Table
@@ -39,7 +42,13 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   else:
     config = conf.setup(getConfigFilename())
 
-  let db = database.setup(config, true, args.check("q","quiet"))
+  let db = database.setup(
+    config.getDbName(),
+    config.getDbUser(),
+    config.getDbHost(),
+    config.getDbPass(),
+    true
+  )
 
   case cmd:
   of "new":
@@ -105,19 +114,18 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
     if not db.postIdExists(replyto) and not replyto.isEmptyOrWhitespace():
       error "Replyto must be the ID of a pre-existing post."
 
-    if db.addPost(post):
+    try:
+      db.addPost(post)
       log "Successfully inserted post"
-    else:
-      log "Failed to insert post"
+    except CatchableError as err:
+      error "Failed to insert post: ", err.msg
   of "delete", "del":
     if len(data) == 0:
       error "Arguments must be provided for this command to work"
-
- 
-    
+    # TODO: Implement
     echo "If you're seeing this then there's a high chance your command succeeded."
   of "purge":
-
+    # TODO: Implement
     echo "If you're seeing this then there's a high chance your command succeeded."
   else:
     helpPrompt("post")

@@ -6,7 +6,7 @@ description   = "A lightweight and efficient microblogging server."
 license       = "AGPL-3.0-or-later"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
-installDirs    = @["potholepkg"]
+installDirs    = @["quark"]
 backend       = "cpp"
 
 ## The following options are required
@@ -50,7 +50,8 @@ after build:
 
 # Dependencies
 requires "nim >= 2.0.0"
-requires "nimcrypto >= 0.5.4"
+requires "nimcrypto >= 0.5.4" # Hard-coding password hashing dependency to make sure there's no regression.
+requires "rng >= 0.1.0"
 requires "prologue >= 0.6.4"
 requires "iniplus >= 0.2.2"
 requires "db_connector >= 0.1.0"

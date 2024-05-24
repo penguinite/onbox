@@ -14,10 +14,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
-# From potholepkg or pothole's server codebase
-import lib,conf,database,assets,user,crypto,post
+# From somewhere in Quark
+import quark/[user, post, strextra]
 
-# From stdlib
+# From somewhere in Pothole
+import conf, assets, lib, database
+
+# From somewhere in the standard library
 import std/[tables, options]
 import std/strutils except isEmptyOrWhitespace, parseBool
 
@@ -28,7 +31,7 @@ var
   config{.threadvar.}: ConfigTable 
   staticFolder{.threadvar.}: string 
   connectedToDb{.threadvar}: bool
-  db{.threadvar.}: database.DbConn
+  db{.threadvar.}: DbConn
   templateTable{.threadvar.}: Table[string, string]
 
 proc prepareNthLetter(s: string): string = 
@@ -53,7 +56,7 @@ proc prepareTable*(): Table[string, string] =
   when defined(extraperf) or defined(embedded):
     result["name_nth_letter"] = config.getString("instance", "name")
   else:
-    result["name_nth_letter"] = prepareNthLetter(config.getString("instance","name")), # Instance name but with every chacter divided by a span just for fun (and styling purposes)
+    result["name_nth_letter"] = prepareNthLetter(config.getString("instance","name")) # Instance name but with every chacter divided by a span just for fun (and styling purposes)
 
   if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
     result["staff"] = "" # Clear whatever is already in this.
@@ -88,7 +91,12 @@ proc preRouteInit() =
   if connectedToDb == false:
     when defined(perfdebug):
       log "Re-preparing database"
-    db = init(config)
+    db = init(
+      config.getDbName(),
+      config.getDbUser(),
+      config.getDbHost(),
+      config.getDbPass()
+    )
     connectedToDb = true
   if templateTable.len() == 0:
     when defined(perfdebug):
@@ -267,10 +275,11 @@ proc post_auth_signup*(ctx: Context) {.async.} =
   if config.getBool("user","require_approval"):
     user.is_approved = false # User isn't allowed to login until their account is approved.
 
-  if db.addUser(user):
-    resp renderSuccess("Your account has been successfully registered. " & crypto.randomString(),"signup.html")
-  else:
-    resp renderError("Account registration failed! Ask for help from administrator!","signup.html")
+  try:
+    db.addUser(user)
+    resp renderSuccess("Your account has been successfully registered.","signup.html")
+  except CatchableError as err:
+    resp renderError("Account registration failed! Ask for help from administrator!\nError: " & err.msg,"signup.html")
 
 proc get_auth_signin*(ctx: Context) {.async.} =
   preRouteInit()

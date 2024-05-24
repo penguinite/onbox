@@ -379,3 +379,26 @@ And MRF works like this for outgoing data:
 4. Pothole sends the JSON out to other servers
 
 So simple you could turn it into a flowchart! Yet, I am not gonna do that.
+
+# Quark
+
+This is the first entry in a while I assume, since a lot of information here is old. In fact, git blame tells me the last change was by the original creator 6 months ago. It's only been 4 months since I took over, and it doesn't seem that there were any special changes in that one month, the commit logs only tell me that the creator was working on potholectl, more specifically the `dev` subsystem.
+
+Irregardless though, I, myself, have had a lot of rough design decisions that I would have loved to document, if only I knew about the site directory. And honestly, I'm having a bit of a blast exploring all the stuff I have found! It's like an abandoned coal mine! Except without all of the danger maybe, and I am learning a lot about the history of this project.
+
+From what I can see in the site, there was a version published roughly 7 months ago. The creator told me the schedule was supposed to be every six months (or bi-annual if you're a fancy nerd), so this is already a month over deadline. But I am abandoning that schedule until I get a stable release without ActivityPub support.
+
+That version, from 7 months ago, it was made for a single reason. It was because the creator split the database logic and whatnot into its own library, presumably because the code was messy and he wanted to write it like a library since it would be cleaner.
+
+But that split never lasted long, and I have no idea why. Now, I could ask the creator, but it takes too long to actually get into contact. And we have to make promises, appointments and ugh, it's too fucking annoying... What we can do instead is hypothesize! From looking at the rest of the codebase, in its historic form, it's clear that there was a huge split.
+
+We know the creator split the codebase into two, possibly to ensure their style would become more readable, but also, he moved the code away into a different repository (What was the name of that repo? Idk)
+
+I can already tell that this might've been too much for them, and so they probably gave it up because of that. But, I do like the idea of making a social-media library. So with that in mind! I bring to you: Quark!
+
+It's the database logic, object definitions and everything packed into a different location. I am already re-writing huge parts of the codebase to be more independent, and less pothole-specific. The fun thing is that, soon enough with better documentation, you could very well make your own social media server (or anything that needs a User-Post-Activity framework) using this library!
+
+Rather than putting it into its own repo, with its own release schedule and the headaches of versioning two separate apps together. I will just put it into a different folder on **this** repository. So it's easy for people to download, and easy for people to contribute!
+
+I think this can work, I feel like this has to work even! If I put in the work then surely, it will work, right?
+Well we will find out in the coming weeks whether I can handle this or not, if not, then I will just merge the two together.

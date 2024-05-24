@@ -1,6 +1,7 @@
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024 <penguinite@tuta.io>
 #
-# This file is part of Pothole.
+# This file is part of Pothole. Specifically, the Quark repository.
 # 
 # Pothole is free software: you can redistribute it and/or modify it under the terms of
 # the GNU Affero General Public License as published by the Free Software Foundation,
@@ -14,12 +15,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# db/sqlite/boosts.nim:
+# quark/db/boosts.nim:
 ## This module contains all database logic for handling boosts.
 
-import ../crypto
-
-import common
+import ../private/database
+import rng
 
 # From somewhere in the standard library
 import std/tables
@@ -35,11 +35,11 @@ const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NUL
 proc createClient*(db: DbConn, tmp_id, name: string, link: string = "") =
   var id = tmp_id
   while db.getRow(sql"SELECT name FROM apps WHERE id = ?;", id)[0] != "":
-    id = randomString()
+    id = randstr()
   db.exec(sql"INSERT INTO apps(id, name, link) VALUES (?,?,?);",id,name,link)
 
 proc createClient*(db: DbConn, name: string, link: string = "") =
-  db.createClient(randomString(),name,link)
+  db.createClient(randstr(), name, link)
 
 proc getClientLink*(db: DbConn, id: string): string = 
   return db.getRow(sql"SELECT link FROM apps WHERE id = ?;", id)[0]
