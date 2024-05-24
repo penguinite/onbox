@@ -3,28 +3,30 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link rel="stylesheet" href="/css/style.css"/>
+		<link rel="stylesheet" href="/static/style.css"/>
 		<title>$name$ - Pothole</title>
 	</head>
 	<body>
-		<header>
-			<h1>$name_nth_letter$</h1>
-			<nav>
-				<a href="/">Home</a>
-				<a href="/about/">About this instance</a>
-				<a href="/auth/sign_up">Register an account</a>
-				<a href="/auth/sign_in">Login to your account</a>
-			</nav>
-		</header>
-		<main>
-			<p>$description$</p>
-			<h2>What is this?</h2>
-			<p>This is a Fediverse instance running Pothole. Pothole is a fast microblogging server that has the ability to communicate with ActivityPub-compatible social networks such as Mastodon servers and Pleroma, Misskey, Friendica instances.</p>
-			<h2>How do I get started?</h2>
-			<p>Pothole does not come with a frontend installed by default, although, you can use any <a href="https://joinmastodon.org/apps">Mastodon client</a> you want!</p>
-		</main>
-		<footer>
-			<p>This server is powered by <a href="https://github.com/penguinite/pothole/">Pothole $version$</a></p>
-		</footer>
+		<div id="burrito">
+			<header>
+				<h1>$name_nth_letter$</h1>
+				<nav>
+					<a href="/">Home</a>
+					<a href="/about/">About this instance</a>
+					<a href="/auth/sign_up">Register an account</a>
+					<a href="/auth/sign_in">Login to your account</a>
+				</nav>
+			</header>
+			<main>
+				<p>$description$</p>
+				<h2>What is this?</h2>
+				<p>This is a Fediverse instance running Pothole. Pothole is a fast microblogging server that has the ability to communicate with ActivityPub-compatible social networks such as Mastodon servers and Pleroma, Misskey, Friendica instances.</p>
+				<h2>How do I get started?</h2>
+				<p>Pothole does not come with a frontend installed by default, although, you can use any <a href="https://joinmastodon.org/apps">Mastodon client</a> you want!</p>
+			</main>
+			<footer>
+				<p>This server is powered by <a href="https://github.com/penguinite/pothole/">Pothole $version$</a></p>
+			</footer>
+		</div>
 	</body>
 </html>

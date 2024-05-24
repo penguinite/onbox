@@ -18,23 +18,23 @@
 import quark/[database]
 
 # From somewhere in Pothole
-import pothole/[routes, lib, conf, database]
+import pothole/[routes, lib, conf, database, assets]
 
 # From standard library
-import std/tables
+import std/[tables, os]
 from std/strutils import join
 
-proc exit() {.noconv.} =
-  error "Interrupted by Ctrl+C"
 
 # From nimble
-import prologue
+import prologue, prologue/middlewares/staticfile
 
 echo "Pothole version ", lib.version 
 echo "Copyright © Leo Gavilieau 2022-2023." 
 echo "Copyright © penguinite <penguinite@tuta.io> 2024." 
 echo "Licensed under the GNU Affero General Public License version 3 or later" 
 
+proc exit() {.noconv.} =
+  error "Interrupted by Ctrl+C"
 # Catch Ctrl+C so we can exit without causing a stacktrace
 setControlCHook(exit)
 
@@ -71,6 +71,9 @@ discard setup(
 
 log "Running on http://localhost:" & $port
 
+# Create directory for pure static files
+discard initStatic(config)
+discard initTemplates(config)
 
 let settings = newSettings(
   debug = defined(debug),
@@ -78,9 +81,13 @@ let settings = newSettings(
   appName = "Pothole"
 )
 var app = newApp(settings)
-for ur in staticURLs.keys: 
-  app.get(ur, serveStatic)
-app.get("/css/style.css", serveCSS)
+for ur in renderURLs.keys: 
+  app.get(ur, serveRenderedAsset)
+
+app.get("/favicon.ico", redirectTo("/static/favicon.ico"))
+app.get("/static/style.css", serveCSS)
+app.use(staticFileMiddleware(initStatic(config)))
+
 #router.get("/showRandomPosts/", randomPosts)
 app.get("/auth/sign_up", get_auth_signup)
 app.post("/auth/sign_up", post_auth_signup)

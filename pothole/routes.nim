@@ -29,6 +29,7 @@ import prologue
 
 var
   config{.threadvar.}: ConfigTable 
+  templatesFolder{.threadvar.}: string 
   staticFolder{.threadvar.}: string 
   connectedToDb{.threadvar}: bool
   db{.threadvar.}: DbConn
@@ -88,6 +89,10 @@ proc preRouteInit() =
     when defined(perfdebug):
       log "Re-preparing static folder string"
     staticFolder = initStatic(config)
+  if templatesFolder == "":
+    when defined(perfdebug):
+      log "Re-preparing templates folder string"
+    templatesFolder = initTemplates(config)
   if connectedToDb == false:
     when defined(perfdebug):
       log "Re-preparing database"
@@ -111,14 +116,14 @@ proc renderWithFullTable(fn: string, extras: openArray[(string,string)]): string
     table[key] = val
 
   return renderTemplate(
-    getAsset(staticFolder, fn),
+    getAsset(templatesFolder, fn),
     table
   )
 
 proc renderWithFullTable(fn: string): string {.gcsafe.} =
   {.gcsafe.}:
     return renderTemplate(
-      getAsset(staticFolder, fn),
+      getAsset(templatesFolder, fn),
       templateTable
     )
 
@@ -126,7 +131,7 @@ proc renderError(error: string): string =
   # One liner to generate an error webpage.
   {.gcsafe.}:
     return renderTemplate(
-        getAsset(staticFolder,"error.html"),
+        getAsset(templatesFolder,"error.html"),
       {"error": error}.toTable,
     )
 
@@ -135,7 +140,7 @@ proc renderError(error, fn: string): string =
     var table = templateTable
     table["result"] = "<div class=\"error\"><p>" & error & "</p></div>"
     return renderTemplate(
-        getAsset(staticFolder, fn),
+        getAsset(templatesFolder, fn),
       table
     )
 
@@ -143,7 +148,7 @@ proc renderSuccess(str: string): string =
   # One liner to generate a "Success!" webpage.
   {.gcsafe.}:
     return renderTemplate(
-        getAsset(staticFolder, "success.html"),
+        getAsset(templatesFolder, "success.html"),
       {"result": str}.toTable,
     )
 
@@ -152,7 +157,7 @@ proc renderSuccess(msg, fn: string): string =
     var table = templateTable
     table["result"] = "<div class=\"success\"><p>" & msg & "</p></div>"
     return renderTemplate(
-      getAsset(staticFolder, fn),
+      getAsset(templatesFolder, fn),
       table
     )
 
@@ -194,13 +199,19 @@ proc getPathParam(ctx: Context, param:string): string =
 
 # But this won't work for /auth/ routes!
 
-const staticURLs*: Table[string,string] = {
+const renderURLs*: Table[string,string] = {
   "/": "index.html", 
   "/about": "about.html", "/about/more": "about.html", # About pages, they run off of the same template.
 }.toTable
 
 
-proc serveStatic*(ctx: Context) {.async.} =
+proc serveCSS*(ctx: Context) {.async.} = 
+  ## This procedure gets ran whenever staticFolder/style.css doesnt exist
+  preRouteInit()
+  ctx.response.addHeader("Content-Type", "text/css")
+  resp getEmbeddedAsset("style.css")
+
+proc serveRenderedAsset*(ctx: Context) {.async.} =
   preRouteInit()
   var path = ctx.request.path
 
@@ -208,12 +219,10 @@ proc serveStatic*(ctx: Context) {.async.} =
   # Except if the path is the root, aka. literally just a slash
   if path.endsWith("/") and path != "/": path = path[0..^2]
 
-  resp renderWithFullTable(staticURLs[path])
+  resp renderWithFullTable(renderURLs[path])
 
-proc serveCSS*(ctx: Context) {.async.} = 
-  preRouteInit()
-  ctx.response.addHeader("Content-Type", "text/css")
-  resp getAsset(staticFolder, "style.css")
+proc serveStatic*(ctx: Context) {.async.} = 
+  await ctx.staticFileResponse(ctx.request.path, "")
 
 proc get_auth_signup*(ctx: Context) {.async.} =
   preRouteInit()
@@ -371,12 +380,12 @@ proc render_profile_html*(ctx: Context) {.async.} =
       "post_updated": "", # Will be filled later. TODO
       "client_name": db.getClientName(i.client),
       "client_link": db.getClientLink(i.client),
-      "reactions": render_reactions_html(db, staticFolder, i.id),
+      "reactions": render_reactions_html(db, templatesFolder, i.id),
       "boosts": $len(db.getBoostsQuickWithHandle(i.id)),
       "replies_num": $db.getNumOfReplies(i.id)
     }.toTable
     posts.add(
-      renderTemplate(getAsset(staticFolder, "post.html"), table)
+      renderTemplate(getAsset(templatesFolder, "post.html"), table)
     )
     posts.add("</div>")
   posts.add("</div>")
@@ -391,4 +400,4 @@ proc render_profile_html*(ctx: Context) {.async.} =
     "user_forward": "TODO! Pagination"
   }.toTable
 
-  resp renderTemplate(getAsset(staticFolder, "user.html"), table)
+  resp renderTemplate(getAsset(templatesFolder, "user.html"), table)

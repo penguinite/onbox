@@ -101,6 +101,18 @@ proc initUploads*(config: ConfigTable): string =
 
   return result
 
+proc initTemplates*(config: ConfigTable): string =
+  ## Initializes the templates folder by checking if the user has already defined where it should be
+  ## and creating the folder if it doesn't exist.
+  result = config.getStringOrDefault("folders", "templates", "templates/")
+  if not result.endsWith("/"):
+    result.add("/")
+
+  if not dirExists(result):
+    createDir(result)
+
+  return result
+
 proc initStatic*(config: ConfigTable): string =
   ## Initializes the static folder by checking if the user has already defined where it should be
   ## and creating the folder if it doesn't exist.
