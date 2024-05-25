@@ -48,10 +48,18 @@ else:
     log "The only reasonable way out is to throw an error and force the admin to setup the files properly"
     error "Couldn't retrieve asset with filename: ", fn
 
+proc prepareNthLetter(s: string): string = 
+  for ch in s:
+    case ch:
+    of ' ': result.add ' '
+    else: result.add "<span>" & ch & "</span>"
+  return result
+
 func renderTemplate*(input: string, vars: Table[string,string]): string =
   ## This function renders our template files. With simple string substitution.
   ## It's main benefit over using an external library is that it can be used in run-time quite easily.
   ## Nimja and nim-templates use macros which make it harder to pipe the output of a procedure to them. (For cleanliness's sake.)
+  var nth_letter = false
   for line in input.splitLines:
     if "$" notin line:
       result.add(line & "\n")
@@ -76,8 +84,20 @@ func renderTemplate*(input: string, vars: Table[string,string]): string =
         if ch == '$':
           parseFlag = false
           key = key.toLower() # Convert the key to lowercase for consistency.
+
+          # But first, let's check for if the key ends with "_nth_letter"
+          # _nth_letter is an optional attribute that makes every character separated by a span tag.
+          # This is for styling purposes, and it is entirely optional.
+          if key.endsWith("_nth_letter"):
+            key = key[0..^12]
+            nth_letter = true
+
           if vars.hasKey(key): # Check if it exists, and insert it into the result var
-            result.add(vars[key])
+            if nth_letter:
+              result.add(prepareNthLetter(vars[key]))
+              nth_letter = false
+            else:
+              result.add(vars[key])
           key = "" # Empty the key so previous output doesn't pollute everything else (This makes it easy to support multiple commands in one line.)
         else:
           key.add(ch)

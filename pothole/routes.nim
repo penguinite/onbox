@@ -35,15 +35,6 @@ var
   db{.threadvar.}: DbConn
   templateTable{.threadvar.}: Table[string, string]
 
-proc prepareNthLetter(s: string): string = 
-  for ch in s:
-    case ch:
-    of ' ':
-      result.add ' '
-    else:
-      result.add "<span>" & ch & "</span>"
-  return result
-
 proc prepareTable*(): Table[string, string] =
   result = {
     "version":"", # Pothole version
@@ -51,13 +42,10 @@ proc prepareTable*(): Table[string, string] =
     "rules": "<p>None</p>", # Instance rules (From config)
     "result": "", # This is used for embedding errors within pages. It should always be empty.
     "name": config.getString("instance","name"), # Instance name
-    "description": config.getString("instance","description") # Instance description
+    "description": config.getString("instance","description"), # Instance description
+    "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
+    "sign_up": config.getStringOrDefault("web","_signup_link", "/auth/sign_up/"), # Sign up link
   }.toTable
-
-  when defined(extraperf) or defined(embedded):
-    result["name_nth_letter"] = config.getString("instance", "name")
-  else:
-    result["name_nth_letter"] = prepareNthLetter(config.getString("instance","name")) # Instance name but with every chacter divided by a span just for fun (and styling purposes)
 
   if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
     result["staff"] = "" # Clear whatever is already in this.

@@ -1,22 +1,28 @@
-<div class="post">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="generator" content="HTML Tidy for HTML5 for Linux version 5.6.0">
+  <title></title>
+</head>
+<body>
+  <div class="post">
     <div class="sender">
-        <a href="$user_link$">
-            <img src="$avatar$">
-            <p>$name$ <i>$handle$</i></p>
-        </a>
+      <a href="$user_link$"><img src="$avatar$">
+      <p>$name$ <i>$handle$</i></p></a>
     </div>
-    <p>$post_content$</p>
-    <!-- TODO: probably separate into another file like with reactions. -->
-    <div class="attachments">$post_attachments$</div>
+    <p>$post_content$</p><!-- TODO: probably separate into another file like with reactions. -->
+    <div class="attachments">
+      $post_attachments$
+    </div>
     <div class="date">
-        <a href="$post_link$">$post_date$</a>
-        $post_updated$
-        <a href="$client_link">$client_name$</a>
+      <a href="$post_link$">$post_date$</a> $post_updated$ <a href="$client_link">$client_name$</a>
     </div>
     <div class="stats">
-        <!-- reaction.html, this is embedded for every unique reaction -->
-        $reactions$
-        <p class="boosts"><a href="$post_link/boosts/">$boosts$</a></p>
-        <p class="replies"><a href="$post_link$">$replies_num$</a></p>
+      <!-- reaction.html, this is embedded for every unique reaction -->
+      $reactions$
+      <p class="boosts"><a href="$post_link/boosts/">$boosts$</a></p>
+      <p class="replies"><a href="$post_link$">$replies_num$</a></p>
     </div>
-</div>
+  </div>
+</body>
+</html>
