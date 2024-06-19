@@ -1,10 +1,10 @@
-# Note: MRF Policies are considered to be under the AGPL since they do rely on potholepkg.
-# So make sure to release your code.
+# Note: MRF Policies are considered to be under the AGPL since they do rely on pothole's source code.
+# So make sure to release your MRF policies under the same license.
 
 
 {.push cdecl, dynlib, exportc.}
 
-import potholepkg/mrf 
+import pothole/mrf 
 
 #! Incoming data refers to data from the outside world sent to the instance.
 

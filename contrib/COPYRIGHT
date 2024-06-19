@@ -1,8 +1,3 @@
-Path: /test_crypto.nim
-Description: A test file for crypto.nim, prints too much though.
-Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
-License: AGPL-3.0-or-later
-
 Path: /example_mrf.nim
 Description: A template for a custom MRF policy.
 Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
@@ -11,4 +6,14 @@ License: AGPL-3.0-or-later
 Path: /OVEREXCITED_RAMBLER_MRF.nim
 Description: MRF Policy that makes everyone sound like an OVEREXCITED RAMBLER! 
 Copyright: © Leo Gavilieau <xmoo@privacyrequired.com> 2023
+License: AGPL-3.0-or-later
+
+Path: /alex_banhammer_mrf.nim
+Description: MRF Policy that rejects any user whose name or handle contains "alex"
+Copyright: © penguinite <penguinite@tuta.io> 2024
+License: AGPL-3.0-or-later
+
+Path: /spongebob_case_mrf.nim
+Description: MRF Policy that adds spongebob case to every post
+Copyright: © penguinite <penguinite@tuta.io> 2024
 License: AGPL-3.0-or-later

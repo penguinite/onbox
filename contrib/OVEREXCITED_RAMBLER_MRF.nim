@@ -1,8 +1,7 @@
 # This policy makes everyone sound like an overexcited rambler.
 # Ie. "Hello everyone" turns into "HELLO EVERYONE :DDDDDD"
 
-import potholepkg/mrf
-import std/strutils
+import pothole/mrf, std/strutils
 
 {.push cdecl, dynlib, exportc.}
 
@@ -14,3 +13,4 @@ proc filterIncomingPost*(post: Post, config: ConfigTable): Post =
   result.content = toUpper(post.content)
 
   result.content.add(" :DDDDDD")
+  return result
