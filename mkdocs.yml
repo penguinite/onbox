@@ -1,0 +1,4 @@
+site_name: Pothole documentation
+site_url: https://penguinite.dev/pothole/
+theme:
+  name: material

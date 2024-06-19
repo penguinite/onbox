@@ -10,4 +10,4 @@ Here is a helpful table with a version, its release date and whether it's suitab
 
 | Version | Release date (ISO 8601) | Status |
 |---------|-------------------------|--------|
-| [0.0.2](0.0.2/)   | 2023-04-08    |Unusable|
+| [0.0.2](0.0.2/)   | 2023-04-08    |**Unusable**|
