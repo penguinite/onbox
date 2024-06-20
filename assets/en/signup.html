@@ -10,14 +10,19 @@
 <body>
   <div id="burrito">
     <header>
-      <h1>$name_nth_letter$</h1>
+      <h1>$name[span_separated]$</h1>
       <nav>
         <a href="/">Home</a> <a href="/about/">About this instance</a> <a href="$sign_up$">Register an account</a> <a href="$sign_in$">Login to your
         account</a>
       </nav>
     </header>
     <main>
-      <p>Before you sign up, make sure you <a href="/about/#rules">read the instance rules</a></p>$result$
+      $if(result)$
+        <div class="box result">
+          $result$
+        </div>
+      $end$
+      <p>Before you sign up, make sure you <a href="/about/#rules">read the instance rules</a></p>
       <form method="post">
         <label for="user">Username:</label> <input type="text" placeholder="einstein" name="user"> <label for="name">Display name:</label> <input type="text"
         placeholder="Albert Einstein" name="name"> <label for="bio">Biography:</label> 

@@ -48,14 +48,10 @@ else:
     log "The only reasonable way out is to throw an error and force the admin to setup the files properly"
     error "Couldn't retrieve asset with filename: ", fn
 
-proc prepareNthLetter(s: string): string = 
-  for ch in s:
-    case ch:
-    of ' ': result.add ' '
-    else: result.add "<span>" & ch & "</span>"
-  return result
 
-func renderTemplate*(input: string, vars: Table[string,string]): string =
+
+func renderTemplate*(input: string, vars: Table[string,string]): string
+  {.deprecated: "Use temple.templateify() instead".} = 
   ## This function renders our template files. With simple string substitution.
   ## It's main benefit over using an external library is that it can be used in run-time quite easily.
   ## Nimja and nim-templates use macros which make it harder to pipe the output of a procedure to them. (For cleanliness's sake.)
@@ -92,12 +88,7 @@ func renderTemplate*(input: string, vars: Table[string,string]): string =
             key = key[0..^12]
             nth_letter = true
 
-          if vars.hasKey(key): # Check if it exists, and insert it into the result var
-            if nth_letter:
-              result.add(prepareNthLetter(vars[key]))
-              nth_letter = false
-            else:
-              result.add(vars[key])
+            result.add(vars[key])
           key = "" # Empty the key so previous output doesn't pollute everything else (This makes it easy to support multiple commands in one line.)
         else:
           key.add(ch)

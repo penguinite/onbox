@@ -10,14 +10,19 @@
 <body>
   <div id="burrito">
     <header>
-      <h1>$name_nth_letter$</h1>
+      <h1>$name[span_separated]$</h1>
       <nav>
         <a href="/">Home</a> <a href="/about/">About this instance</a> <a href="$sign_up$">Register an account</a> <a href="$sign_in$">Login to your
         account</a>
       </nav>
     </header>
     <main>
-      <p>Fill out the following information to sign into your account</p>$result$
+      $if(result)$
+        <div class="box result">
+          $result$
+        </div>
+      $end$
+      <p>Fill out the following information to sign into your account</p>
       <form method="post">
         <label for="user">Username or Email:</label> <input type="text" name="user"> <label for="pass">Password:</label> <input type="password" name="pass">
         <label for="rememberme">Remember me:</label> <input type="checkbox" name="rememberme" value="true"><br>

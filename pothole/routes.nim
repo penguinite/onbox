@@ -25,7 +25,7 @@ import std/[tables, options]
 import std/strutils except isEmptyOrWhitespace, parseBool
 
 # From nimble/other sources
-import prologue
+import prologue, temple
 
 var
   config{.threadvar.}: ConfigTable 
@@ -35,34 +35,29 @@ var
   db{.threadvar.}: DbConn
   templateTable{.threadvar.}: Table[string, string]
 
-proc prepareTable*(): Table[string, string] =
+proc prepareTable*(db: DbConn = db, config: ConfigTable = config): Table[string, string] =
   result = {
-    "version":"", # Pothole version
-    "staff": "<p>None</p>", # Instance staff (Any user with the admin attribute)
-    "rules": "<p>None</p>", # Instance rules (From config)
-    "result": "", # This is used for embedding errors within pages. It should always be empty.
     "name": config.getString("instance","name"), # Instance name
     "description": config.getString("instance","description"), # Instance description
     "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
     "sign_up": config.getStringOrDefault("web","_signup_link", "/auth/sign_up/"), # Sign up link
   }.toTable
 
+  # Instance staff (Any user with the admin attribute)
   if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
-    result["staff"] = "" # Clear whatever is already in this.
     # Build a list of admins, by using data from the database.
-    result["staff"].add("<ul>")
+    result["staff"] = ""
     for user in db.getAdmins():
       result["staff"].add("<li><a href=\"/users/" & user & "\">" & user & "</a></li>") # Add every admin as a list item.
-    result["staff"].add("</ul>")
 
+  # Instance rules (From config)
   if config.exists("instance","rules"):
-    result["rules"] = "" # Again, clear whatever is in it first.
     # Build the list, item by item using data from the config file.
-    result["rules"].add("<ol>")
+    result["rules"] = ""
     for rule in config.getStringArray("instance","rules"):
       result["rules"].add("<li>" & rule & "</li>")
-    result["rules"].add("</ol>")
 
+  # Pothole version
   when not defined(phPrivate):
     if config.getBool("web","show_version"):
       result["version"] = lib.phVersion
@@ -103,14 +98,15 @@ proc renderWithFullTable(fn: string, extras: openArray[(string,string)]): string
   for key, val in extras.items:
     table[key] = val
 
-  return renderTemplate(
-    getAsset(templatesFolder, fn),
-    table
-  )
+  {.gcsafe.}:
+    return templateify(
+      getAsset(templatesFolder, fn),
+      table
+    )
 
 proc renderWithFullTable(fn: string): string {.gcsafe.} =
   {.gcsafe.}:
-    return renderTemplate(
+    return templateify(
       getAsset(templatesFolder, fn),
       templateTable
     )
@@ -118,7 +114,7 @@ proc renderWithFullTable(fn: string): string {.gcsafe.} =
 proc renderError(error: string): string =
   # One liner to generate an error webpage.
   {.gcsafe.}:
-    return renderTemplate(
+    return templateify(
         getAsset(templatesFolder,"error.html"),
       {"error": error}.toTable,
     )
@@ -127,7 +123,7 @@ proc renderError(error, fn: string): string =
   {.gcsafe.}:
     var table = templateTable
     table["result"] = "<div class=\"error\"><p>" & error & "</p></div>"
-    return renderTemplate(
+    return templateify(
         getAsset(templatesFolder, fn),
       table
     )
@@ -135,7 +131,7 @@ proc renderError(error, fn: string): string =
 proc renderSuccess(str: string): string =
   # One liner to generate a "Success!" webpage.
   {.gcsafe.}:
-    return renderTemplate(
+    return templateify(
         getAsset(templatesFolder, "success.html"),
       {"result": str}.toTable,
     )
@@ -144,7 +140,7 @@ proc renderSuccess(msg, fn: string): string =
   {.gcsafe.}:
     var table = templateTable
     table["result"] = "<div class=\"success\"><p>" & msg & "</p></div>"
-    return renderTemplate(
+    return templateify(
       getAsset(templatesFolder, fn),
       table
     )
@@ -333,12 +329,12 @@ proc render_reactions_html*(db: DbConn, folder: string, id: string): string =
     }.toTable
 
     result.add(
-      renderTemplate(getAsset(folder, "reaction.html"), table)
+      templateify(getAsset(folder, "reaction.html"), table)
     )
 
   return result
 
-proc render_profile_html*(ctx: Context) {.async.} =
+proc render_profile_html*(ctx: Context) {.async, gcsafe.} =
   preRouteInit()
   # Some basic checks
   if not ctx.isValidPathParam("user"):
@@ -372,9 +368,11 @@ proc render_profile_html*(ctx: Context) {.async.} =
       "boosts": $len(db.getBoostsQuickWithHandle(i.id)),
       "replies_num": $db.getNumOfReplies(i.id)
     }.toTable
-    posts.add(
-      renderTemplate(getAsset(templatesFolder, "post.html"), table)
-    )
+
+    {.gcsafe.}:
+      posts.add(
+        templateify(getAsset(templatesFolder, "post.html"), table)
+      )
     posts.add("</div>")
   posts.add("</div>")
 
@@ -388,4 +386,4 @@ proc render_profile_html*(ctx: Context) {.async.} =
     "user_forward": "TODO! Pagination"
   }.toTable
 
-  resp renderTemplate(getAsset(templatesFolder, "user.html"), table)
+  resp templateify(getAsset(templatesFolder, "user.html"), table)
