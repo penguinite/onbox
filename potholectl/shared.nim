@@ -80,8 +80,6 @@ proc check*(args: Table[string, string], short, long: string): bool =
 proc get*(args: Table[string, string], short, long: string): string =
   ## Gets a command-line argument value. If there is no value to be retrieved then an empty string is returned.
   for key,val in args.pairs:
-    if val.isEmptyOrWhitespace():
-      continue
     if short == key or long == key: return val
   return ""
 

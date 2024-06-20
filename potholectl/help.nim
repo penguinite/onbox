@@ -68,7 +68,7 @@ const helpDialog* = @[
 ]
 
 const devEnvVarNotice = """
-Note: *Environment variables are generated from the config file in the root directory.*
+Note: *Environment variables are generated from the config file in the current directory.*
 If a config file cannot be found then potholectl will simply use default values.
 """
 
@@ -440,22 +440,43 @@ Make sure to wrap the date around with double quotes, that way there won't be an
 A handle is basically what pothole calls the "username"
 A handle can be as simple as "john" or "john@example.com"
 A handle is not the same thing as an email address.
-In pothole, the handle is used as a login name but also a user finding mechanism (for federation)
+In pothole, the handle is used as a login name and also as a user finding mechanism (for federation)
     """
   ],
   "ids": @[
     prefix,
     """
 Pothole abstract nearly every single thing into some object with an "id"
-Users have IDs and posts have IDs.genCmd
+Users have IDs and posts have IDs.
 So do activities, media attachments, reactions, boosts and so on.
 
-Internally, pothole translates any human-readable data (such as a handle, see potholectl handles)
-into an id that it can use for manipulation, data retrieveal and so on.
+Internally, pothole translates any human-readable data (such as a handle, see `potholectl handles`)
+into an id that it can use for manipulation, data retrieval and so on.
 
 This slightly complicates everything but potholectl will try to make an educated guess.
 If you do know whether something is an ID or not, then you can use the -i flag to tell potholectl not to double check.
 Of course, this differs with every command but it should be possible.
+    """
+  ],
+  "template": @[
+    prefix,
+    """
+Pothole uses the "temple" library for templating. Templating means converting dull text from
+template files into data that can be presented to the user.
+
+So, for example, if you want to modify the homepage title to include bold text, you could
+change the line "$name$" into "$name[bold]$"
+
+This is also a command, that lets you test out your templating. And see how Pothole
+would render it.
+
+Usage: potholectl templating [TEMPLATE_FILE]
+[TEMPLATE_FILE] is a filename
+
+Alternative usage: potholectl templating [TEMPLATE_FILE] [TEMPLATE_TABLE]
+[TEMPLATE_FILE] and [TEMPLATE_TABLE] are both filenames that point to different things
+[TEMPLATE_FILE] is the template to be rendered
+[TEMPLATE_TABLE] is a JSON file containing the items to be used in the templating process
     """
   ]
 }.toTable

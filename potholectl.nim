@@ -23,7 +23,7 @@
 import pothole/lib
 
 # From Pothole (ctl folder)
-import potholectl/[shared, db, mrf, dev, user, post]
+import potholectl/[shared, db, mrf, dev, user, post, templating]
 
 # From standard library
 import std/[os, parseopt, strutils, tables]
@@ -78,7 +78,8 @@ of "mrf": mrf.processCmd(command, data, args)
 of "dev": dev.processCmd(command, data, args)
 of "user": user.processCmd(command, data, args)
 of "post": post.processCmd(command, data, args)
-
+# Extra short commands
+of "template": templating.processCmd(data, args)
 # Extra educational material
 of "date","dates": helpPrompt("date","")
 of "id","ids": helpPrompt("ids","")
