@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# ctl/ext.nim:
+# ctl/mrf.nim:
 ## Operations related to extensions.
 ## It does stuff like reveal the embedded metadata and uh... stuff...
 
@@ -33,7 +33,7 @@ import std/[dynlib, os, tables, posix]
 
 proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
   if args.check("h","help"):
-    helpPrompt("ext",cmd)
+    helpPrompt("mrf",cmd)
 
   case cmd:
   of "view":

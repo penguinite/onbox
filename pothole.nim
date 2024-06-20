@@ -24,7 +24,6 @@ import pothole/[routes, lib, conf, database, assets]
 import std/[tables, os]
 from std/strutils import join
 
-
 # From nimble
 import prologue, prologue/middlewares/staticfile
 
