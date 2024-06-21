@@ -17,9 +17,6 @@
 # ctl/template.nim:
 ## Operations related to templating.
 
-# From somewhere in Quark
-import quark/strextra
-
 # From somewhere in Potholectl
 import shared
 
