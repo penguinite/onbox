@@ -15,167 +15,17 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Quark
-import quark/[user, post, strextra]
+import quark/[user, post]
 
 # From somewhere in Pothole
-import conf, assets, lib, database
+import conf, assets, database, routeutils
 
 # From somewhere in the standard library
-import std/[tables, options]
+import std/[tables]
 import std/strutils except isEmptyOrWhitespace, parseBool
 
 # From nimble/other sources
 import prologue, temple
-
-var
-  config{.threadvar.}: ConfigTable 
-  templatesFolder{.threadvar.}: string 
-  staticFolder{.threadvar.}: string 
-  connectedToDb{.threadvar}: bool
-  db{.threadvar.}: DbConn
-  templateTable{.threadvar.}: Table[string, string]
-
-proc prepareTable*(db: DbConn = db, config: ConfigTable = config): Table[string, string] =
-  result = {
-    "name": config.getString("instance","name"), # Instance name
-    "description": config.getString("instance","description"), # Instance description
-    "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
-    "sign_up": config.getStringOrDefault("web","_signup_link", "/auth/sign_up/"), # Sign up link
-  }.toTable
-
-  # Instance staff (Any user with the admin attribute)
-  if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
-    # Build a list of admins, by using data from the database.
-    result["staff"] = ""
-    for user in db.getAdmins():
-      result["staff"].add("<li><a href=\"/users/" & user & "\">" & user & "</a></li>") # Add every admin as a list item.
-
-  # Instance rules (From config)
-  if config.exists("instance","rules"):
-    # Build the list, item by item using data from the config file.
-    result["rules"] = ""
-    for rule in config.getStringArray("instance","rules"):
-      result["rules"].add("<li>" & rule & "</li>")
-
-  # Pothole version
-  when not defined(phPrivate):
-    if config.getBool("web","show_version"):
-      result["version"] = lib.phVersion
-  return result
-
-proc preRouteInit() =
-  if config.isNil(): 
-    when defined(perfdebug):
-      log "Re-preparing config table"
-    config = setup(getConfigFilename())
-  if staticFolder == "":
-    when defined(perfdebug):
-      log "Re-preparing static folder string"
-    staticFolder = initStatic(config)
-  if templatesFolder == "":
-    when defined(perfdebug):
-      log "Re-preparing templates folder string"
-    templatesFolder = initTemplates(config)
-  if connectedToDb == false:
-    when defined(perfdebug):
-      log "Re-preparing database"
-    db = init(
-      config.getDbName(),
-      config.getDbUser(),
-      config.getDbHost(),
-      config.getDbPass()
-    )
-    connectedToDb = true
-  if templateTable.len() == 0:
-    when defined(perfdebug):
-      log "Re-preparing template table"
-    templateTable = prepareTable()
-
-
-proc renderWithFullTable(fn: string, extras: openArray[(string,string)]): string {.gcsafe.} =
-  var table = templateTable
-  
-  for key, val in extras.items:
-    table[key] = val
-
-  {.gcsafe.}:
-    return templateify(
-      getAsset(templatesFolder, fn),
-      table
-    )
-
-proc renderWithFullTable(fn: string): string {.gcsafe.} =
-  {.gcsafe.}:
-    return templateify(
-      getAsset(templatesFolder, fn),
-      templateTable
-    )
-
-proc renderError(error: string): string =
-  # One liner to generate an error webpage.
-  {.gcsafe.}:
-    return templateify(
-        getAsset(templatesFolder,"error.html"),
-      {"error": error}.toTable,
-    )
-
-proc renderError(error, fn: string): string =
-  {.gcsafe.}:
-    var table = templateTable
-    table["result"] = "<div class=\"error\"><p>" & error & "</p></div>"
-    return templateify(
-        getAsset(templatesFolder, fn),
-      table
-    )
-
-proc renderSuccess(str: string): string =
-  # One liner to generate a "Success!" webpage.
-  {.gcsafe.}:
-    return templateify(
-        getAsset(templatesFolder, "success.html"),
-      {"result": str}.toTable,
-    )
-
-proc renderSuccess(msg, fn: string): string =
-  {.gcsafe.}:
-    var table = templateTable
-    table["result"] = "<div class=\"success\"><p>" & msg & "</p></div>"
-    return templateify(
-      getAsset(templatesFolder, fn),
-      table
-    )
-
-proc isValidQueryParam(ctx: Context, param: string): bool =
-  let param = ctx.getQueryParamsOption(param)
-  if isNone(param):
-    return false
-  if isEmptyOrWhitespace(param.get()):
-    return false
-  return true
-
-proc isValidFormParam(ctx: Context, param: string): bool =
-  let param = ctx.getFormParamsOption(param)
-  if isNone(param):
-    return false
-  if isEmptyOrWhitespace(param.get()):
-    return false
-  return true
-
-proc getFormParam(ctx: Context, param: string): string =
-  return ctx.getFormParamsOption(param).get()
-
-proc isValidPathParam(ctx: Context, param:string): bool =
-  let param = ctx.getPathParamsOption(param)
-  if isNone(param):
-    return false
-  if isEmptyOrWhitespace(param.get()):
-    return false
-  return true
-
-proc getPathParam(ctx: Context, param:string): string =
-  return ctx.getPathParamsOption(param).get()
-
-#! Actual prologue routes
 
 # our serveStatic route reads from static/FILENAME and renders it as a template.
 # This helps keep everything simpler, since we just add our route to the string, it's asset and
@@ -203,7 +53,7 @@ proc serveRenderedAsset*(ctx: Context) {.async.} =
   # Except if the path is the root, aka. literally just a slash
   if path.endsWith("/") and path != "/": path = path[0..^2]
 
-  resp renderWithFullTable(renderURLs[path])
+  resp render(renderURLs[path])
 
 proc serveStatic*(ctx: Context) {.async.} = 
   await ctx.staticFileResponse(ctx.request.path, "")
@@ -215,7 +65,7 @@ proc get_auth_signup*(ctx: Context) {.async.} =
   if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == false:
     filename = "signup_disabled.html"
 
-  resp renderWithFullTable(filename)
+  resp render(filename)
 
 proc post_auth_signup*(ctx: Context) {.async.} =
   preRouteInit()
@@ -276,7 +126,7 @@ proc post_auth_signup*(ctx: Context) {.async.} =
 
 proc get_auth_signin*(ctx: Context) {.async.} =
   preRouteInit()
-  resp renderWithFullTable("signin.html")
+  resp render("signin.html")
 
 proc post_auth_signin*(ctx: Context) {.async.} =
   preRouteInit()

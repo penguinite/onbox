@@ -22,7 +22,7 @@ import shared
 
 # From somewhere in Pothole
 import pothole/[conf, database, lib]
-from pothole/routes import prepareTable
+from pothole/routeutils import prepareTable
 
 # From somewhere in the standard library
 import std/json
