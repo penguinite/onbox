@@ -48,7 +48,15 @@ proc setupInput*(input: string, check: bool = true): ConfigTable =
   return result
 
 proc setup*(filename: string, check: bool = true): ConfigTable =
-  return setupInput(open(filename).readAll(), check)
+  return setupInput(
+    readFile(filename),
+    check
+  )
+
+proc getBoolOrDefault*(config: ConfigTable, section, key: string, default: bool): bool =
+  if config.exists(section, key):
+    return config.getBool(section, key)
+  return default
 
 proc getTable*(table: ConfigTable, section, key: string): Table[string, string] =
   let

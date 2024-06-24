@@ -60,11 +60,10 @@ proc serveStatic*(ctx: Context) {.async.} =
 
 proc get_auth_signup*(ctx: Context) {.async.} =
   preRouteInit()
-  var filename = "signup.html"
-
-  if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == false:
-    filename = "signup_disabled.html"
-
+  resp renderWithExtras(
+    "signup.html",
+    @[("signup_enabled": $(config.getBoolOrDefault("user","registrations_open",true)))]
+  )
   resp render(filename)
 
 proc post_auth_signup*(ctx: Context) {.async.} =
@@ -73,8 +72,11 @@ proc post_auth_signup*(ctx: Context) {.async.} =
   # Check if the registrations are open.
   # I don't know how I missed this obvious flaw
   # the first time I wrote this route.
-  if config.exists("user","registrations_open") and config.getBool("user","registrations_open") == false:
-    resp renderError("This instance has disabled user registrations.", "signup_disabled.html")
+  if not config.getBoolOrDefault("user","registrations_open", true):
+    resp renderWithExtras(
+      "signup.html",
+      @[("signup_enabled": $(config.getBoolOrDefault("user","registrations_open",true)))]
+    )
     return
   
   # Let's first check for required options.
@@ -115,7 +117,7 @@ proc post_auth_signup*(ctx: Context) {.async.} =
     user.name = ctx.getFormParam("name")
   
   # Make user non-approved if instance requires approval for registration.
-  if config.getBool("user","require_approval"):
+  if config.getBoolOrDefault("user","require_approval",false):
     user.is_approved = false # User isn't allowed to login until their account is approved.
 
   try:
