@@ -6,15 +6,16 @@ description   = "A lightweight and efficient microblogging server."
 license       = "AGPL-3.0-or-later"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
-installDirs    = @["quark"]
+installDirs   = @["quark"]
 backend       = "cpp"
 
 ## The following options are required
-switch("stackTrace","on")
-switch("mm", "orc")
-switch("threads","on")
+when not defined(phEmbedded):
+  switch("stackTrace","on") # For better debugging
+switch("mm", "orc") # Required by mummy
+switch("threads","on") # Required by mummy
 
-task clean, "Removes build folder if it exists":
+task clean, "Removes build folders if it exists":
   if dirExists(binDir):
     rmdir(binDir)
   if dirExists("static/"):
@@ -38,22 +39,19 @@ task ctl, "Shorthand for nimble run potholectl":
     exec "./potholectl " & cleanArgs().join(" ")
     return
 
-  
-  exec("nimble -d:release build")
+  exec("nimble -d:release build potholectl")
   exec(binDir & "/potholectl " & cleanArgs().join(" "))
-
-task ctlbuild, "Shorthand for nimble build potholectl":
-  exec "nimble -d:release build"
-  cpFile(binDir & "/potholectl", "./potholectl")
 
 after build:
   cpFile("pothole.conf",binDir & "/pothole.conf")
+  cpFile("LICENSE", binDir & "/LICENSE")
 
 # Dependencies
 requires "nim >= 2.0.0"
 requires "nimcrypto >= 0.5.4"
 requires "rng >= 0.1.0"
-requires "prologue >= 0.6.4"
 requires "iniplus >= 0.2.2"
 requires "https://github.com/penguinite/temple >= 0.2.2" # TODO: Add this as a nimble package
 requires "db_connector >= 0.1.0"
+requires "mummy >= 0.4.2"
+requires "waterpark >= 0.1.7"
