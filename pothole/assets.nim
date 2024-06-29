@@ -237,4 +237,5 @@ proc setAsset*(folder, id, name: string, data: openArray[byte]): bool =
     
     return false # Let client come up with some reason as to why it failed.
 
-  
+#! Templating object pool
+# Yes, this is bad and we should do something else but I have no idea what.

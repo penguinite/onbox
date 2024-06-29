@@ -25,7 +25,7 @@ import std/[tables]
 from std/strutils import join
 
 # From nimble
-import prologue, prologue/middlewares/staticfile
+import mummy, mummy/routers
 
 echo "Pothole version ", lib.version 
 echo "Copyright © Leo Gavilieau 2022-2023." 
@@ -68,30 +68,14 @@ discard setup(
   config.getDbPass()
 )
 
-log "Running on http://localhost:" & $port
-
 # Create directory for pure static files
 discard initStatic(config)
 discard initTemplates(config)
 
-let settings = newSettings(
-  debug = defined(debug),
-  port = Port(port),
-  appName = "Pothole"
-)
-var app = newApp(settings)
-for ur in renderURLs.keys: 
-  app.get(ur, serveRenderedAsset)
+log "Serving on http://localhost:" & $port
 
-app.get("/favicon.ico", redirectTo("/static/favicon.ico"))
-app.get("/static/style.css", serveCSS)
-app.use(staticFileMiddleware(initStatic(config)))
+var router: Router
+for url in renderURLs.keys:
+  router.get(url, serveAndRender)
 
-#router.get("/showRandomPosts/", randomPosts)
-app.get("/auth/sign_up", get_auth_signup)
-app.post("/auth/sign_up", post_auth_signup)
-app.get("/auth/sign_in", get_auth_signin)
-app.post("/auth/sign_in", post_auth_signin)
-app.get("/users/{user}", render_profile_html) # Render user profile in HTML as seen by a web browser pointing to INSTANCE/users/USER
-
-app.run()
+newServer(router).serve(Port(port))

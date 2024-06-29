@@ -17,13 +17,45 @@
 # From somewhere in Quark
 import quark/strextra
 
+# From somewhere in Pothole
+import pothole/[conf, database, lib]
+
 # From somewhere in the standard library
-import std/[tables]
+import std/[tables, options]
 
 # From nimble/other sources
-import mummy
+import mummy, mummy/multipart
 
-proc isValidQueryParam*(req: Request, decodeQueryComponent(): string): bool =
+proc prepareTable*(db: DbConn, config: ConfigTable): Table[string, string] =
+  ## Creates a table that can be passed onto temple.templateify with all the data we usually need.
+  result = {
+    "name": config.getString("instance","name"), # Instance name
+    "description": config.getString("instance","description"), # Instance description
+    "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
+    "sign_up": config.getStringOrDefault("web","_signup_link", "/auth/sign_up/"), # Sign up link
+  }.toTable
+
+  # Instance staff (Any user with the admin attribute)
+  if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
+    # Build a list of admins, by using data from the database.
+    result["staff"] = ""
+    for user in db.getAdmins():
+      result["staff"].add("<li><a href=\"/users/" & user & "\">" & user & "</a></li>") # Add every admin as a list item.
+
+  # Instance rules (From config)
+  if config.exists("instance","rules"):
+    # Build the list, item by item using data from the config file.
+    result["rules"] = ""
+    for rule in config.getStringArray("instance","rules"):
+      result["rules"].add("<li>" & rule & "</li>")
+
+  # Pothole version
+  when not defined(phPrivate):
+    if config.getBool("web","show_version"):
+      result["version"] = lib.phVersion
+  return result
+
+proc isValidQueryParam*(req: Request, query: string): bool =
   ## Check if a query parameter (such as "?query=parameter") is valid and not empty
   return not req.queryParams[query].isEmptyOrWhitespace()
 
