@@ -63,7 +63,7 @@ proc processCmd*(data: seq[string], args: Table[string,string]) =
         table[key] = val.getStr()
 
   else:
-    table = prepareTable(db, config)
+    table = prepareTable(config, db)
 
   # Check if templating data is in a file
   # of it has been provided in the actual command
