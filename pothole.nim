@@ -34,7 +34,7 @@ echo "Licensed under the GNU Affero General Public License version 3 or later"
 
 proc exit() {.noconv.} =
   error "Interrupted by Ctrl+C"
-# Catch Ctrl+C so we can exit without causing a stacktrace
+# Catch Ctrl+C so we can exit our way.
 setControlCHook(exit)
 
 echo "Using ", getConfigFilename(), " as config file"
@@ -46,7 +46,6 @@ if config.exists("web","port"):
 
 if not hasDbHost(config):
   log "Couldn't retrieve database host. Using \"127.0.0.1:5432\" as default"
-  log ""
 
 if not hasDbName(config):
   log "Couldn't retrieve database name. Using \"pothole\" as default"

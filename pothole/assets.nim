@@ -29,7 +29,6 @@ when not defined(phNoEmbeddedAssets):
     "index.html": staticRead("../assets/" & phLang & "/index.html"),
     "about.html": staticRead("../assets/" & phLang & "/about.html"),
     "signup.html": staticRead("../assets/" & phLang & "/signup.html"),
-    "signup_disabled.html": staticRead("../assets/" & phLang & "/signup_disabled.html"),
     "signin.html": staticRead("../assets/" & phLang & "/signin.html"),
     "error.html": staticRead("../assets/" & phLang & "/error.html"),
     "success.html": staticRead("../assets/" & phLang & "/success.html"),
@@ -47,57 +46,6 @@ else:
     log "This build does not embed assets, thus getEmbeddedAsset does not work."
     log "The only reasonable way out is to throw an error and force the admin to setup the files properly"
     error "Couldn't retrieve asset with filename: ", fn
-
-
-
-func renderTemplate*(input: string, vars: Table[string,string]): string
-  {.deprecated: "Use temple.templateify() instead".} = 
-  ## This function renders our template files. With simple string substitution.
-  ## It's main benefit over using an external library is that it can be used in run-time quite easily.
-  ## Nimja and nim-templates use macros which make it harder to pipe the output of a procedure to them. (For cleanliness's sake.)
-  var nth_letter = false
-  for line in input.splitLines:
-    if "$" notin line:
-      result.add(line & "\n")
-      continue
-
-    var 
-      i = 0 # For storing where we are in the string 
-      parseFlag = false # For checking whether we are currently parsing something or not.
-      key = ""; # For storing the parsed key in.
-      
-    for ch in line:
-      inc(i)
-
-      if len(line) < i and not parseFlag:
-        continue # Skip since line isnt large enough for string substitution (except if we are already parsing something in which case, do not skip. )
-    
-      if ch == '$' and not parseFlag:
-        parseFlag = true # Set this to true so the later parts can start parsing. And then skip.
-        continue
-
-      if parseFlag:
-        if ch == '$':
-          parseFlag = false
-          key = key.toLower() # Convert the key to lowercase for consistency.
-
-          # But first, let's check for if the key ends with "_nth_letter"
-          # _nth_letter is an optional attribute that makes every character separated by a span tag.
-          # This is for styling purposes, and it is entirely optional.
-          if key.endsWith("_nth_letter"):
-            key = key[0..^12]
-            nth_letter = true
-
-            result.add(vars[key])
-          key = "" # Empty the key so previous output doesn't pollute everything else (This makes it easy to support multiple commands in one line.)
-        else:
-          key.add(ch)
-        continue
-
-      result.add(ch)
-    result.add("\n")
-    
-  return result        
 
 proc initUploads*(config: ConfigTable): string =
   ## Initializes the upload folder by checking if the user has already defined where it should be
