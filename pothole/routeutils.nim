@@ -39,12 +39,9 @@ type
   TemplatingPool* = object
     pool: Pool[TemplateObj]
 
-proc prepareTemplateObj*(db: DbConn, config: ConfigTable): TemplateObj =
-  ## Creates a templateObj filled with all the templating stuff we need.
-  result.staticFolder = initStatic(config)
-  result.templatesFolder = initTemplates(config)
 
-  result.table = {
+proc prepareTable*(config: ConfigTable, db: DbConn): Table[string, string] = 
+  result = {
     "name": config.getString("instance","name"), # Instance name
     "description": config.getString("instance","description"), # Instance description
     "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
@@ -54,25 +51,31 @@ proc prepareTemplateObj*(db: DbConn, config: ConfigTable): TemplateObj =
   # Instance staff (Any user with the admin attribute)
   if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
     # Build a list of admins, by using data from the database.
-    result.table["staff"] = ""
+    result["staff"] = ""
     for user in db.getAdmins():
       # Add every admin as a list item.
-      result.table["staff"].add(
+      result["staff"].add(
         "<li><a href=\"/users/$#\">$#</a></li>" % [user, user]
       )
 
   # Instance rules (From config)
   if config.exists("instance","rules"):
     # Build the list, item by item using data from the config file.
-    result.table["rules"] = ""
+    result["rules"] = ""
     for rule in config.getStringArray("instance","rules"):
-      result.table["rules"].add("<li>" & rule & "</li>")
+      result["rules"].add("<li>" & rule & "</li>")
 
   # Pothole version
   when not defined(phPrivate):
     if config.getBool("web","show_version"):
-      result.table["version"] = lib.phVersion
+      result["version"] = lib.phVersion
   return result
+
+proc prepareTemplateObj*(db: DbConn, config: ConfigTable): TemplateObj =
+  ## Creates a templateObj filled with all the templating stuff we need.
+  result.staticFolder = initStatic(config)
+  result.templatesFolder = initTemplates(config)
+  result.table = prepareTable(config, db)
 
 proc borrow*(pool: TemplatingPool): TemplateObj {.inline, raises: [], gcsafe.} =
   pool.pool.borrow()
