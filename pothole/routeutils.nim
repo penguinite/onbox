@@ -18,17 +18,33 @@
 import quark/strextra
 
 # From somewhere in Pothole
-import pothole/[conf, database, lib]
+import pothole/[conf, database, lib, assets]
 
 # From somewhere in the standard library
 import std/[tables, options]
+from std/strutils import `%`
 
 # From nimble/other sources
-import mummy, mummy/multipart
+import mummy, mummy/multipart, waterpark, temple
 
-proc prepareTable*(db: DbConn, config: ConfigTable): Table[string, string] =
-  ## Creates a table that can be passed onto temple.templateify with all the data we usually need.
-  result = {
+# Oh dear god... A "Template Object" pool.
+# I.. I am disgusted
+# Please nim... PLEASE! Make `let`'s actually gc-safe!!! PLEASE I AM BEGGING!
+type
+  TemplateObj* = object
+    staticFolder*: string
+    templatesFolder*: string
+    table*: Table[string, string]
+
+  TemplatingPool* = object
+    pool: Pool[TemplateObj]
+
+proc prepareTemplateObj*(db: DbConn, config: ConfigTable): TemplateObj =
+  ## Creates a templateObj filled with all the templating stuff we need.
+  result.staticFolder = initStatic(config)
+  result.templatesFolder = initTemplates(config)
+
+  result.table = {
     "name": config.getString("instance","name"), # Instance name
     "description": config.getString("instance","description"), # Instance description
     "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
@@ -38,23 +54,47 @@ proc prepareTable*(db: DbConn, config: ConfigTable): Table[string, string] =
   # Instance staff (Any user with the admin attribute)
   if config.exists("web","show_staff") and config.getBool("web","show_staff") == true:
     # Build a list of admins, by using data from the database.
-    result["staff"] = ""
+    result.table["staff"] = ""
     for user in db.getAdmins():
-      result["staff"].add("<li><a href=\"/users/" & user & "\">" & user & "</a></li>") # Add every admin as a list item.
+      # Add every admin as a list item.
+      result.table["staff"].add(
+        "<li><a href=\"/users/$#\">$#</a></li>" % [user, user]
+      )
 
   # Instance rules (From config)
   if config.exists("instance","rules"):
     # Build the list, item by item using data from the config file.
-    result["rules"] = ""
+    result.table["rules"] = ""
     for rule in config.getStringArray("instance","rules"):
-      result["rules"].add("<li>" & rule & "</li>")
+      result.table["rules"].add("<li>" & rule & "</li>")
 
   # Pothole version
   when not defined(phPrivate):
     if config.getBool("web","show_version"):
-      result["version"] = lib.phVersion
+      result.table["version"] = lib.phVersion
   return result
 
+proc borrow*(pool: TemplatingPool): TemplateObj {.inline, raises: [], gcsafe.} =
+  pool.pool.borrow()
+
+proc recycle*(pool: TemplatingPool, conn: TemplateObj) {.inline, raises: [], gcsafe.} =
+  pool.pool.recycle(conn)
+
+proc newTemplatingPool*(size: int = 10, config: ConfigTable, db: DbConn): TemplatingPool =
+  result.pool = newPool[TemplateObj]()
+  try:
+    for _ in 0 ..< size:
+      result.pool.recycle(prepareTemplateObj(db, config))
+  except CatchableError as err:
+    error "Couldn't initialize template pool: ", err.msg
+
+template withConnection*(pool: TemplatingPool, obj, body) =
+  block:
+    let obj = pool.borrow()
+    try:
+      body
+    finally:
+      pool.recycle(obj)
 proc isValidQueryParam*(req: Request, query: string): bool =
   ## Check if a query parameter (such as "?query=parameter") is valid and not empty
   return not req.queryParams[query].isEmptyOrWhitespace()

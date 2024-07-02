@@ -28,7 +28,10 @@ import std/strutils except isEmptyOrWhitespace, parseBool
 import mummy, temple, waterpark/postgres
 
 let configPool* = newConfigPool()
-var dbPool: PostgresPool
+
+var
+  dbPool: PostgresPool
+  templatePool: TemplatingPool
 
 configPool.withConnection config:
   dbPool = newPostgresPool(
@@ -38,6 +41,14 @@ configPool.withConnection config:
     config.getdbPass(),
     config.getdbName()
   )
+
+  dbPool.withConnection db:
+    templatePool = newTemplatingPool(
+      config.getIntOrDefault("misc", "templating_pool_size", 75),
+      config,
+      db
+    )
+
 
 const renderURLs*: Table[string,string] = {
   "/": "index.html", 
