@@ -124,7 +124,7 @@ proc renderError*(folder: string, msg: string, file: string = "error.html"): str
   ## Replace file with your template file of choice
   return templateify(
     getAsset(folder, file),
-    {"result": msg}.toTable,
+    {"error": msg}.toTable,
   )
 
 

@@ -15,19 +15,19 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Quark
-import quark/[user, post]
+#import quark/[user, post]
 
 # From somewhere in Pothole
 import conf, assets, database, routeutils
 
 # From somewhere in the standard library
-import std/[tables]
-import std/strutils except isEmptyOrWhitespace, parseBool
+import std/[tables, mimetypes, os]
 
 # From nimble/other sources
-import mummy, temple, waterpark/postgres
+import mummy, waterpark/postgres
 
 let configPool* = newConfigPool()
+const mimedb = newMimetypes()
 
 var
   dbPool: PostgresPool
@@ -68,3 +68,22 @@ proc serveAndRender*(req: Request) =
       200, headers,
       obj.render(renderURLs[path])
     )
+
+proc serveStatic*(req: Request) =
+  var headers: HttpHeaders
+
+  let (dir, file, ext) = splitFile(req.path)
+  discard dir # Fucking nim.
+  templatePool.withConnection obj:
+    headers["Content-Type"] = mimedb.getMimetype(ext)
+    if ext == ".css":
+      # Special case for CSS files.
+      req.respond(200, headers, getAsset(obj.staticFolder, "style.css"))
+    else:
+      if not fileExists(obj.staticFolder & file & ext):
+        headers["Content-Type"] = "text/html"
+        req.respond(404, headers, renderError(obj.templatesFolder, "File couldn't be found."))
+        return
+      req.respond(200, headers, readFile(obj.staticFolder & file & ext))
+
+  

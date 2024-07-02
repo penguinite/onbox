@@ -82,4 +82,12 @@ for url in renderURLs.keys:
   if url != "/":
     router.get(url & "/", serveAndRender)
 
+router.get("/static/*", serveStatic)
+# Common file extensions that we want to serve in the root
+# This means we can add favicon.ico, robots.txt and so on.
+for url in @[
+  "/*.txt", "/*.svg", "/*.ico", "/*.png", "/*.webmanifest", "/*.jpg", "/*.webp", "/*.css", "/*.html"
+]:
+  router.get(url, serveStatic)
+
 newServer(router).serve(Port(port))
