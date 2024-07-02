@@ -1,4 +1,5 @@
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
 # 
@@ -76,5 +77,9 @@ log "Serving on http://localhost:" & $port
 var router: Router
 for url in renderURLs.keys:
   router.get(url, serveAndRender)
+  # A hacky way to make sure that /about/ and /about both get
+  # handled. 
+  if url != "/":
+    router.get(url & "/", serveAndRender)
 
 newServer(router).serve(Port(port))
