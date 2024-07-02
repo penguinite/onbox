@@ -95,6 +95,45 @@ template withConnection*(pool: TemplatingPool, obj, body) =
       body
     finally:
       pool.recycle(obj)
+
+proc renderWithExtras*(obj: TemplateObj, fn: string, extras: openArray[(string,string)]): string =
+  ## Renders the "fn" template file using the usual template table + any extras provided by the extras parameter
+  var table = obj.table
+
+  for key, val in extras.items:
+    table[key] = val
+
+  return templateify(
+    getAsset(obj.templatesFolder, fn),
+    table
+  )
+
+proc render*(obj: TemplateObj, fn: string): string =
+  ## Renders the template file provided by "filename"
+  ## using the usual template table.
+  return templateify(
+    getAsset(obj.templatesFolder, fn),
+    obj.table
+  )
+
+proc renderError*(folder: string, msg: string, file: string = "error.html"): string =
+  ## Helper proc to render a "Error!" webpage.
+  ## Replace file with your template file of choice
+  return templateify(
+    getAsset(folder, file),
+    {"result": msg}.toTable,
+  )
+
+
+proc renderSuccess*(folder: string, msg: string, file: string = "success.html"): string =
+  ## Helper proc to render a "Success!" webpage.
+  ## Replace file with your template file of choice
+  return templateify(
+    getAsset(folder, file),
+    {"result": msg}.toTable,
+  )
+
+
 proc isValidQueryParam*(req: Request, query: string): bool =
   ## Check if a query parameter (such as "?query=parameter") is valid and not empty
   return not req.queryParams[query].isEmptyOrWhitespace()

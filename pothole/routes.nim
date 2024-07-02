@@ -58,5 +58,13 @@ const renderURLs*: Table[string,string] = {
 proc serveAndRender*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "text/html"
-  req.respond(200, headers, "Done")
-  echo req.path
+  
+  var path = req.path
+  if path[high(path)] == '/' and path != "/":
+    path = path[0..^2] # Remove last slash at the end of the path
+  
+  templatePool.withConnection obj:
+    req.respond(
+      200, headers,
+      obj.render(renderURLs[path])
+    )
