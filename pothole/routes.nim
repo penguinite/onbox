@@ -27,30 +27,6 @@ import std/[tables, mimetypes, os]
 # From nimble/other sources
 import mummy, waterpark/postgres
 
-let configPool* = newConfigPool()
-const mimedb = newMimetypes()
-
-var
-  dbPool: PostgresPool
-  templatePool: TemplatingPool
-
-configPool.withConnection config:
-  dbPool = newPostgresPool(
-    config.getIntOrDefault("db", "pool_size", 10),
-    config.getdbHost(),
-    config.getdbUser(),
-    config.getdbPass(),
-    config.getdbName()
-  )
-
-  dbPool.withConnection db:
-    templatePool = newTemplatingPool(
-      config.getIntOrDefault("misc", "templating_pool_size", 75),
-      config,
-      db
-    )
-
-
 const renderURLs*: Table[string,string] = {
   "/": "index.html", 
   "/about": "about.html", "/about/more": "about.html", # About pages, they run off of the same template.

@@ -86,6 +86,25 @@ proc getTotalLocalUsers*(db: DbConn): int =
     inc(result)
   return result
 
+func quickSplitDomain(s: string): string = 
+  var flag = false
+  for ch in s:
+    if ch == '@':
+      flag = true
+    
+    if flag:
+      result.add(ch)
+  return result
+
+proc getDomains*(db: DbConn): CountTable[string] =
+  ## A procedure to get the domains known by this server.
+  for x in db.getAllRows(sql"SELECT handle FROM users WHERE local = false;"):
+    result.inc(quickSplitDomain(x[0]))
+
+proc getTotalDomains*(db: DbConn): int =
+  return db.getDomains().len()
+
+
 proc userIdExists*(db: DbConn, id:string): bool =
   ## A procedure to check if a user exists by id
   ## This procedures does escape IDs by default.

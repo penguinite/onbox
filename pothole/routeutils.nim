@@ -21,11 +21,11 @@ import quark/strextra
 import pothole/[conf, database, lib, assets]
 
 # From somewhere in the standard library
-import std/[tables, options]
+import std/[tables, options, mimetypes]
 from std/strutils import `%`
 
 # From nimble/other sources
-import mummy, mummy/multipart, waterpark, temple
+import mummy, mummy/multipart, waterpark, waterpark/postgres, temple
 
 # Oh dear god... A "Template Object" pool.
 # I.. I am disgusted
@@ -180,3 +180,28 @@ proc isValidFormParam*(mp: MultipartEntries, param: string): bool =
 proc getFormParam*(mp: MultipartEntries, param: string): string =
   ## Checks if a parameter submitted via an HTMl form is valid and not empty
   return mp[param]
+
+
+#! These are shared across routes.nim and api.nim
+let configPool* = newConfigPool()
+const mimedb* = newMimetypes()
+
+var
+  dbPool*: PostgresPool
+  templatePool*: TemplatingPool
+
+configPool.withConnection config:
+  dbPool = newPostgresPool(
+    config.getIntOrDefault("db", "pool_size", 10),
+    config.getdbHost(),
+    config.getdbUser(),
+    config.getdbPass(),
+    config.getdbName()
+  )
+
+  dbPool.withConnection db:
+    templatePool = newTemplatingPool(
+      config.getIntOrDefault("misc", "templating_pool_size", 75),
+      config,
+      db
+    )

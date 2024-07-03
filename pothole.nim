@@ -19,7 +19,7 @@
 import quark/[database]
 
 # From somewhere in Pothole
-import pothole/[routes, lib, conf, database, assets]
+import pothole/[routes, lib, conf, database, assets, api]
 
 # From standard library
 import std/[tables]
@@ -89,5 +89,10 @@ for url in @[
   "/*.txt", "/*.svg", "/*.ico", "/*.png", "/*.webmanifest", "/*.jpg", "/*.webp", "/*.css", "/*.html"
 ]:
   router.get(url, serveStatic)
+
+# Add API routes
+for url, route in apiRoutes.pairs:
+  router.addRoute(route[0], "/api/" & url, route[1])
+  router.addRoute(route[0], "/api/" & url & "/", route[1]) # Trailing slash fix.
 
 newServer(router).serve(Port(port))

@@ -33,7 +33,7 @@ export iniplus
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
 const requiredConfigOptions*: Table[string, seq[string]] = {
-  "instance": @["name", "description", "uri"]
+  "instance": @["name", "summary", "uri"]
 }.toTable
 
 proc setupInput*(input: string, check: bool = true): ConfigTable =
@@ -94,6 +94,11 @@ proc isNil*(table: ConfigTable): bool =
 proc getIntOrDefault*(config: ConfigTable, section, key: string, default: int): int =
   if config.exists(section, key):
     return config.getInt(section, key)
+  return default
+
+proc getStringArrayOrDefault*(config: ConfigTable, section, key: string, default: seq[string]): seq[string] = 
+  if config.exists(section, key):
+    return config.getStringArray(section, key)
   return default
 
 import waterpark

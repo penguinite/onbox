@@ -29,6 +29,9 @@ import conf
 # From somewhere in the standard library
 import std/os
 
+import waterpark/postgres
+export postgres
+
 proc hasDbHost*(config: ConfigTable): bool =
   if config.exists("db","host") or existsEnv("PHDB_HOST"):
     return true
