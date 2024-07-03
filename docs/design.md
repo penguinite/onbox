@@ -114,7 +114,7 @@ to the structure of the codebase.
 
 Users no longer have to worry about which database engine their binary is compiled for. And the whole setup process becomes way simpler
 I plan eventually on making friendly setup instructions for Pothole, if we kept on with this flawed idea then we would have to write 2 pages per distro.
-Package maintainers working with binary-only or hybrid software such as `apt`, `guix`, `dnf`, `pacman` and so on would have to provide 2 packages (Or maybe even 4 because of `phPrivate`)
+Package maintainers working with binary-only or hybrid software such as `apt`, `guix`, `dnf`, `pacman` and so on would have to provide 2 packages
 
 So, from now on, pothole only supports postgres irregardless of the `dbEngine` compile-time option.
 ### Database migrations
@@ -342,21 +342,6 @@ Tumblr's model frankly sucks.
 Yes, you can customize it however you want but I think most customization fans would be okay with a sensible default theme and the ability to customize the CSS and if we get rid of Potcode then we will cut about two months off of the deadline that used to be dedicated for Potcode development.
 
 Also, most users don't know or care about Potcode, they just want an efficient, stable ActivityPub server. That's it.
-
-# phPrivate
-
-so I propose adding a new build option, `phPrivate`, whose purpose is to enhance the privacy of Pothole instances.
-
-Here is what I propose it should do:
-1. It should minimize as much IP address collection as possible. This means tracking session cookies with country IDs, not specific IP addresses.
-2. It should allow users to register without an email address, yes, this increases spam but it means users can be truly pseudonymous.
-3. It should hide Pothole's version number, by setting it to a random number in the API and "0" elsewhere
-
-In the unlikely event of a security breach for a phPrivate instance, there should be no harm done to the users. The only action undertaken by the admins should be to encourage users to change their password and 2FA. And that's it!
-
-For small, anarchististic instances, this option fits well. But for larger, more general instances, this option will make it harder to troubleshoot security breaches since it tries to record as little info as possible.
-
-Also, extra note: If your web server or proxy is designed to log IP addresses then this is practically useless.
 
 # MRF
 

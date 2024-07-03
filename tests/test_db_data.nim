@@ -9,7 +9,7 @@ discard """
   targets: "cpp"
   
   # flags with which to run the test, delimited by `;`
-  matrix: "-d:release ; -d:phPrivate -d:release ; -d:debug ; -d:debug -d:phPrivate"
+  matrix: "-d:release ; -d:debug"
 
 """
 
