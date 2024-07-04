@@ -18,10 +18,10 @@
 
 
 # From somewhere in Quark
-#import quark/[user, post]
+import quark/[user, post]
 
 # From somewhere in Pothole
-import conf, database, routeutils, lib
+import conf, database, routeutils, lib, assets
 
 # From somewhere in the standard library
 import std/[tables, json]
@@ -33,15 +33,23 @@ proc v1InstanceView*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "application/json"
 
-  var userCount, postCount, domainCount: int
+  var
+    userCount, postCount, domainCount, totalPostsAdmin: int
+    adminAccount: User
     
   dbPool.withConnection db:
+    # The database (unlike the config file or templating object) is
+    # a limited resource, so let's use it and quickly give it back.    
     userCount = db.getTotalLocalUsers()
     postCount = db.getTotalPosts()
     domainCount = db.getTotalDomains()
+    adminAccount = db.getFirstAdmin()
+    totalPostsAdmin = db.getTotalPostsByUserId(adminAccount.id)
+    
 
+  var result: JsonNode
   configPool.withConnection config:
-    req.respond(200, headers, $(%*
+    result = %*
       {
         "uri": config.getString("instance","uri"),
         "title": config.getString("instance","name"),
@@ -67,12 +75,49 @@ proc v1InstanceView*(req: Request) =
         "configuration": {
           "statuses": {
             "max_characters": config.getIntOrDefault("instance", "max_chars", 2000),
-            "max_media_attachments": config.getIntOrDefault("instance", "max_attachments", 8),
+            "max_media_attachments": config.getIntOrDefault("user", "max_attachments", 8),
             "characters_reserved_per_url": 23
           },
+          "media_attachments": {
+            "supported_mime_types":["image/jpeg","image/png","image/gif","image/webp","video/webm","video/mp4","video/quicktime","video/ogg","audio/wave","audio/wav","audio/x-wav","audio/x-pn-wave","audio/vnd.wave","audio/ogg","audio/vorbis","audio/mpeg","audio/mp3","audio/webm","audio/flac","audio/aac","audio/m4a","audio/x-m4a","audio/mp4","audio/3gpp","video/x-ms-asf"],
+            "image_size_limit": config.getIntOrDefault("storage","upload_size_limit", 10) * 1000000,
+            "image_matrix_limit": 16777216, # I copied this as-is from the documentation cause I will NOT be writing code to deal with media file width and height.
+            "video_size_limit": config.getIntOrDefault("storage","upload_size_limit", 10) * 1000000,
+            "video_frame_rate_limit": 60, # I also won't be writing code to check for video framerates
+            "video_matrix_limit": 2304000 # I copied this as-is from the documentation cause I will NOT be writing code to deal with media file width and height.
+          },
+          "polls": {
+            "max_options": config.getIntOrDefault("instance", "max_poll_options", 20),
+            "max_characters_per_option": 100,
+            "min_expiration": 300,
+            "max_expiration": 2629746
+          },
+          "contact_account": {
+            "id": adminAccount.id,
+            "username": adminAccount.handle,
+            "acct": adminAccount.handle,
+            "display_name": adminAccount.name,
+            "locked": adminAccount.is_frozen,
+            "bot": isBot(adminAccount.kind),
+            "discoverable": true, # TODO: Add to DB
+            "group": isGroup(adminAccount.kind),
+            "created_at": "", # TODO: Add to DB
+            "note": adminAccount.bio,
+            "avatar": config.getAvatar(adminAccount.id),
+            "avatar_static": config.getAvatar(adminAccount.id),
+            "header": config.getHeader(adminAccount.id),
+            "header_static": config.getHeader(adminAccount.id),
+            "followers_count": 0, # TODO: Implement followers
+            "following_count": 0, # TODO: Implement following
+            "statuses_count": totalPostsAdmin,
+            "last_status_at": "", # Tell me, who the hell is using this?!? WHAT FOR?!?
+            "emojis": [],
+            "fields": [] # TODO: Implement
+          }
         }
       }
-    ))
+  
+  req.respond(200, headers, $(result))
   ## TODO: WIP, https://docs.joinmastodon.org/entities/V1_Instance
 
 proc v2InstanceView*(req: Request) = 

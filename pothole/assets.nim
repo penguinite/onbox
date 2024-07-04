@@ -132,6 +132,11 @@ proc getAvatar*(cnf: ConfigTable, id: string): string =
       return file
   return getDefaultAvatar(cnf)
 
+proc getHeader*(cnf: ConfigTable, id: string): string =
+  # TODO: Implement this
+  return
+
+
 proc getUploadFilename*(folder, id, name: string): string =
   ## Returns the filename of the user upload.
   if not dirExists(folder & id):

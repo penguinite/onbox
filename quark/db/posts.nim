@@ -190,7 +190,14 @@ proc getPostsByUserIDPaginated*(db: DbConn, id:string, offset: int, limit: int =
   ## A procedure to get posts made by a specific user, this procedure is specifically optimized for pagination.
   ## In that, it supports with offsets, limits and whatnot.
   ## Since our 
-  return
+  return # TODO: Implement
+
+proc getTotalPostsByUserId*(db: DbConn, id: string): int =
+  result = 0
+  for row in db.getAllRows(sql"SELECT local FROM posts WHERE sender = ?;", id):
+    inc(result)
+  return result
+
 
 proc getTotalPosts*(db: DbConn): int =
   ## A procedure to get the total number of local posts.

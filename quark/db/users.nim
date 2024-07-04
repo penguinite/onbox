@@ -105,6 +105,7 @@ proc getTotalDomains*(db: DbConn): int =
   return db.getDomains().len()
 
 
+
 proc userIdExists*(db: DbConn, id:string): bool =
   ## A procedure to check if a user exists by id
   ## This procedures does escape IDs by default.
@@ -143,6 +144,9 @@ proc constructUserFromRow*(row: Row): User =
       result.get(key) = StringToKDF(row[i])
 
   return result
+
+proc getFirstAdmin*(db: DbConn): User =
+  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE admin = true;"))
 
 proc getUserById*(db: DbConn, id: string): User =
   ## Retrieve a user from the database using their id

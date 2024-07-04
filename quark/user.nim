@@ -176,6 +176,12 @@ func fromUserType*(t: UserType): string =
 func `$`*(t: UserType): string =
   return fromUserType(t)
 
+proc isBot*(k: UserType): bool = 
+  return k == Application
+
+proc isGroup*(k: UserType): bool = 
+  return k == Group
+
 func `$`*(obj: User): string =
   ## Turns a User object into a human-readable string
   for key,val in obj.fieldPairs:
