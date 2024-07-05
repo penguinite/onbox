@@ -34,7 +34,7 @@ proc v1InstanceView*(req: Request) =
   headers["Content-Type"] = "application/json"
 
   var
-    userCount, postCount, domainCount, totalPostsAdmin: int
+    userCount, postCount, domainCount, totalPostsAdmin, followers, following: int
     adminAccount: User
     
   dbPool.withConnection db:
@@ -45,6 +45,8 @@ proc v1InstanceView*(req: Request) =
     domainCount = db.getTotalDomains()
     adminAccount = db.getFirstAdmin()
     totalPostsAdmin = db.getTotalPostsByUserId(adminAccount.id)
+    followers = db.getFollowersCount(adminAccount.id)
+    following = db.getFollowingCount(adminAccount.id)
     
 
   var result: JsonNode
@@ -107,8 +109,8 @@ proc v1InstanceView*(req: Request) =
             "avatar_static": config.getAvatar(adminAccount.id),
             "header": config.getHeader(adminAccount.id),
             "header_static": config.getHeader(adminAccount.id),
-            "followers_count": 0, # TODO: Implement followers
-            "following_count": 0, # TODO: Implement following
+            "followers_count": followers,
+            "following_count": following,
             "statuses_count": totalPostsAdmin,
             "last_status_at": "", # Tell me, who the hell is using this?!? WHAT FOR?!?
             "emojis": [],
