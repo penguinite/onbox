@@ -62,12 +62,33 @@ proc getFollowersCount*(db: DbConn, user: string): int =
 
 proc getFollowingCount*(db: DbConn, user: string): int =
   ## Returns how many people this user follows in a number
-  return len(db.getAllRows(sql"SELECT approved FROM follows WHERE follower = ?; AND approved= true;", user))
+  return len(db.getAllRows(sql"SELECT approved FROM follows WHERE follower = ? AND approved= true;", user))
+
+type
+  FollowStatus* = enum
+    NoFollowRequest, PendingFollowRequest, AcceptedFollowRequest
+
+proc getFollowStatus*(db: DbConn, follower, following: string): FollowStatus =
+  let row = db.getRow(sql"SELECT approved FROM follows WHERE follower = ? AND following = ?;", follower, following)
+
+  # It's small details like these that break the database logic.
+  # You'd expect getRow() to return booleans like this: "true" or "false"
+  # But no, it does "t" or "f" which, std/strutil's parseBool() can't handle
+  # Thankfully, i've been through this rigamarole before,
+  # so i already knew boolean handling was garbage
+  if row == @[]: return NoFollowRequest
+  if row == @["f"]: return PendingFollowRequest
+  if row == @["t"]: return AcceptedFollowRequest
 
 proc followUser*(db: DbConn, follower, following: string, approved: bool = true) =
   ## Follows a user
   if not db.userIdExists(follower) or not db.userIdExists(following):
     return # Since users don't exist, we just leave.
+
+  if db.getFollowStatus(follower, following) != NoFollowRequest:
+    # Follow request already exists and is either pending or accepted.
+    # In that case, just return.
+    return
   
   db.exec(
     sql"INSERT INTO follows VALUES (?, ?, ?)",
@@ -84,18 +105,3 @@ proc unfollowUser*(db: DbConn, follower, following: string) =
     follower, following
   )
   
-type
-  FollowStatus* = enum
-    NoFollowRequest, PendingFollowRequest, AcceptedFollowRequest
-
-proc getFollowStatus*(db: DbConn, follower, following: string): FollowStatus =
-  let row = db.getRow(sql"SELECT approved FROM follows WHERE follower = ? AND following = ?;", follower, following)
-
-  # It's small details like these that break the database logic.
-  # You'd expect getRow() to return booleans like this: "true" or "false"
-  # But no, it does "t" or "f" which, std/strutil's parseBool() can't handle
-  # Thankfully, i've been through this rigamarole before,
-  # so i already knew boolean handling was garbage
-  if row == @[]: return NoFollowRequest
-  if row == @["f"]: return PendingFollowRequest
-  if row == @["t"]: return AcceptedFollowRequest
