@@ -167,12 +167,12 @@ proc getPostsByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
   ## *Note:* This procedure only returns posts that are public. For private posts, use getEveryPostByUserId()
   var sqlStatement = ""
   if limit != 0:
-    sqlStatement = "SELECT * FROM posts WHERE id = ? LIMIT " & $limit & ";"
+    sqlStatement = "SELECT * FROM posts WHERE sender = ? LIMIT " & $limit & ";"
   else:
-    sqlStatement = "SELECT * FROM posts WHERE id = ?;"
+    sqlStatement = "SELECT * FROM posts WHERE sender = ?;"
   
   for post in db.getAllRows(sql(sqlStatement), id):
-      # Check for if post is unlisted or public, only then can we add it into the list.
+    # Check for if post is unlisted or public, only then can we add it into the list.
     let postObj = db.constructPostFromRow(post)
     if postObj.level == Public or postObj.level == Unlisted:
       result.add(postObj)
