@@ -133,6 +133,9 @@ proc constructUserFromRow*(row: Row): User =
 proc getFirstAdmin*(db: DbConn): User =
   return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE admin = true;"))
 
+proc adminAccountExists*(db: DbConn): bool = 
+  return db.getRow(sql"SELECT id FROM users WHERE admin = true;")[0] != ""
+
 proc getUserById*(db: DbConn, id: string): User =
   ## Retrieve a user from the database using their id
   ## This procedure returns a fully unescaped user, you do not need to do anything to it.
