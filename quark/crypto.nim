@@ -87,12 +87,16 @@ proc StringToKDF*(num: string): KDF =
   of "1": return PBKDF_HMAC_SHA512
   else: return kdf
 
+
 proc KDFToString*(kdf: KDF): string = 
   ## Converts a KDF object into a string.
   ## You could use to save nanoseconds when dealing with database logic.
   ## Honestly though, it might be too much. Even for me.
   case kdf:
   of PBKDF_HMAC_SHA512: return "1"
+
+proc `$`*(k: KDF): string = 
+  return KDFToString(k)
 
 proc pbkdf2_hmac_sha512_hash(password, salt:string, iter: int = 210000): string =
   ## We use PBKDF2-HMAC-SHA512 by default with 210000 iterations unless specified.
