@@ -29,8 +29,8 @@ import user
 import std/strutils
 
 # Export these:
-import db/[users, posts, reactions, boosts, postrevisions, apps]
-export DbConn, users, posts, reactions, boosts, postrevisions, apps
+import db/[users, posts, reactions, boosts, postrevisions, apps, follows]
+export DbConn, users, posts, reactions, boosts, postrevisions, apps, follows
 
 const databaseTables = @[
   ## Add an extra field to this whenever you need to insert a new table.
@@ -40,7 +40,8 @@ const databaseTables = @[
   ("postsRevisions", postsRevisionsCols),
   ("reactions", reactionsCols),
   ("boosts", boostsCols),
-  ("apps", appsCols)
+  ("apps", appsCols),
+  ("follows", followsCols)
 ]
 
 proc setup*(
@@ -57,6 +58,10 @@ proc setup*(
   # Open database
   result = open(host, user, password, name)
   
+  # Let's first set some standard settings
+  result.exec(sql"SET client_encoding = 'UTF8';")
+  result.exec(sql"SET standard_conforming_strings = on;")
+
   # Here we create the structures.
   for i in databaseTables:
     # Create the tables first
