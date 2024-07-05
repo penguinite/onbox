@@ -21,7 +21,6 @@
 
 # From somewhere in Quark
 import crypto, strextra
-import private/macros
 export KDF, KDFToInt, IntToKDF, StringToKDF
 
 # From Nim's standard library
@@ -64,6 +63,7 @@ type
     moderator*: bool # A boolean indicating if the user is a moderator.
     is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
     is_approved*: bool # A boolean indicating if the user hs been approved by an administrator
+    discoverable*: bool # A boolean indicating if the user is discoverable
 
 
 proc sanitizeHandle*(handle: string): string =
@@ -97,6 +97,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   result.admin = false # This is false by default.
   result.moderator = false # This is false by default.
   result.is_frozen = false # Always assume user isn't frozen.
+  result.discoverable = true # This is the default.
   result.kind = Person # Even if its a group, service or application then it doesn't matter.
 
   # Sanitize handle before using it
@@ -113,45 +114,6 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
     result.password = hash(password, result.salt)  
 
   # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)
-  return result
-
-proc escape*(user: User): User =
-  ## A procedure for escaping a User object
-  ## skipChecks allows you to skip the essential handle and password checks.
-  ## This is only used for potholectl.
-  result = user
-
-  result.handle = sanitizeHandle(user.handle)
-  result.email = sanitizeHandle(user.email)
-
-  # Use handle as display name if display name doesnt exist or is blank
-  if isEmptyOrWhitespace(user.name):
-    result.name = user.handle
-
-  # Now we loop over every field and escape it.
-  # TODO: Look into using templates or macros to automatically
-  #       generate the loop that escapes Users
-  #       It could make this code a lot faster.
-  for key,val in user.fieldPairs:
-    when typeof(val) is bool or typeof(val) is int:
-      result.get(key) = val
-    when typeof(val) is string:
-      result.get(key) = escape(val)
-
-  return result
-
-proc unescape*(user: User): User =
-  ## A procedure for unescaping a User object
-  result = User()
-
-  # TODO: Look into using templates or macros to automatically
-  #       generate the loop that unescapes Users
-  for key,val in user.fieldPairs:
-    when typeof(val) is bool or typeof(val) is int:
-      result.get(key) = val
-    when typeof(val) is string:
-      result.get(key) = unescape(val,"","")
-  
   return result
   
 func toUserType*(s: string): UserType =
