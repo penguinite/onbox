@@ -55,23 +55,7 @@ proc addUser*(db: DbConn, user: User) =
   
   # TODO: Likewise with the addPost() proc, there has to be a better way than this.
   # It's just too ugly.
-  db.exec(
-    sql"INSERT INTO users (id,kind,handle,name,local,email,bio,password,salt,kdf,admin,moderator,is_frozen,is_approved) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-    user.id,
-    user.kind,
-    user.handle,
-    user.name,
-    user.local,
-    user.email,
-    user.bio,
-    user.password,
-    user.salt,
-    KDFToString(user.kdf),
-    user.admin,
-    user.moderator,
-    user.is_frozen,
-    user.is_approved
-  )
+  db.autoStmt(User, "users", user)
 
 proc getAdmins*(db: DbConn): seq[string] = 
   ## A procedure that returns the usernames of all administrators.
