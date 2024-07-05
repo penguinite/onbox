@@ -38,6 +38,7 @@ const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY NOT NULL
 "kdf":"INTEGER NOT NULL", # The version of the key derivation function. See DESIGN.md's "Key derivation function table" for more.
 "admin":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether or not this user is an Admin.
 "moderator":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether or not this user is a Moderator.
+"discoverable": "BOOLEAN NOT NULL DEFAULT TRUE", # A boolean indicating whether or not this user is discoverable in frontends
 "is_frozen":"BOOLEAN NOT NULL", # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
 "is_approved":"BOOLEAN NOT NULL"}.toOrderedTable  # A boolean indicating if the user hs been approved by an administrator
 

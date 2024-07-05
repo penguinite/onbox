@@ -101,7 +101,7 @@ proc v1InstanceView*(req: Request) =
             "display_name": adminAccount.name,
             "locked": adminAccount.is_frozen,
             "bot": isBot(adminAccount.kind),
-            "discoverable": true, # TODO: Add to DB
+            "discoverable": adminAccount.discoverable,
             "group": isGroup(adminAccount.kind),
             "created_at": "", # TODO: Add to DB
             "note": adminAccount.bio,
