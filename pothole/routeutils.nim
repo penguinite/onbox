@@ -66,7 +66,7 @@ proc prepareTable*(config: ConfigTable, db: DbConn): Table[string, string] =
       result["rules"].add("<li>" & rule & "</li>")
 
   # Pothole version
-  if config.getBool("web","show_version"):
+  if config.getBoolOrDefault("web","show_version", true):
     result["version"] = lib.phVersion
   return result
 
