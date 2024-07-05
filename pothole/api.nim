@@ -34,23 +34,84 @@ proc v1InstanceView*(req: Request) =
   headers["Content-Type"] = "application/json"
 
   var
+    adminAccountExists: bool
     userCount, postCount, domainCount, totalPostsAdmin, followers, following: int
+    fieldsDb: seq[(string, string, bool, DateTime)]
     adminAccount: User
-    
+  
   dbPool.withConnection db:
-    # The database (unlike the config file or templating object) is
-    # a limited resource, so let's use it and quickly give it back.    
-    userCount = db.getTotalLocalUsers()
-    postCount = db.getTotalPosts()
-    domainCount = db.getTotalDomains()
-    adminAccount = db.getFirstAdmin()
-    totalPostsAdmin = db.getTotalPostsByUserId(adminAccount.id)
-    followers = db.getFollowersCount(adminAccount.id)
-    following = db.getFollowingCount(adminAccount.id)
+    adminAccountExists = db.adminAccountExists()
+
+  if adminAccountExists:
+    dbPool.withConnection db:
+      # The database (unlike the config file or templating object) is
+      # a limited resource, so let's use it and quickly give it back.    
+      userCount = db.getTotalLocalUsers()
+      postCount = db.getTotalPosts()
+      domainCount = db.getTotalDomains()
+      adminAccount = db.getFirstAdmin()
+      totalPostsAdmin = db.getTotalPostsByUserId(adminAccount.id)
+      followers = db.getFollowersCount(adminAccount.id)
+      following = db.getFollowingCount(adminAccount.id)
+      fieldsDb = db.getFields(adminAccount.id)
+  
+  # Handle profile fields
+  # I yearn for the day when I can get rid of this or replace it with something better
+  var fields: seq[JsonNode] = @[]
+  for key, value, verified, verified_date in fieldsDb.items:
+    var jason = %* {
+      "name": key,
+      "value": value,
+    }
+      
+    if verified:
+      jason["verified_at"] = newJString(verified_date.format("yyyy-mm-dd") & "T" & verified_date.format("hh:mm:ss"))
+    else:
+      jason["verified_at"] = newJNull()
     
+    fields.add(jason)
 
   var result: JsonNode
   configPool.withConnection config:
+    var contact_account = newJNull()
+    
+    if adminAccountExists:
+      contact_account = %* {
+        "id": adminAccount.id,
+        "username": adminAccount.handle,
+        "acct": adminAccount.handle,
+        "display_name": adminAccount.name,
+        "locked": adminAccount.is_frozen,
+        "bot": isBot(adminAccount.kind),
+        "discoverable": adminAccount.discoverable,
+        "group": isGroup(adminAccount.kind),
+        "created_at": "", # TODO: Add to DB
+        "note": adminAccount.bio,
+        "avatar": config.getAvatar(adminAccount.id),
+        "avatar_static": config.getAvatar(adminAccount.id),
+        "header": config.getHeader(adminAccount.id),
+        "header_static": config.getHeader(adminAccount.id),
+        "followers_count": followers,
+        "following_count": following,
+        "statuses_count": totalPostsAdmin,
+        "last_status_at": "", # Tell me, who the hell is using this?!? WHAT FOR?!?
+        "emojis": [], # TODO: I am not sure what this is supposed to be
+        "fields": fields
+      }
+
+    # Handle instance rules
+    var
+      rules: seq[JsonNode] = @[]
+      i = 0
+    for rule in config.getStringArrayOrDefault("instance", "rules", @[]):
+      inc(i)
+      rules.add(
+        %* {
+          "id": $i,
+          "text": rule
+        }
+      )
+    
     result = %*
       {
         "uri": config.getString("instance","uri"),
@@ -94,29 +155,9 @@ proc v1InstanceView*(req: Request) =
             "min_expiration": 300,
             "max_expiration": 2629746
           },
-          "contact_account": {
-            "id": adminAccount.id,
-            "username": adminAccount.handle,
-            "acct": adminAccount.handle,
-            "display_name": adminAccount.name,
-            "locked": adminAccount.is_frozen,
-            "bot": isBot(adminAccount.kind),
-            "discoverable": adminAccount.discoverable,
-            "group": isGroup(adminAccount.kind),
-            "created_at": "", # TODO: Add to DB
-            "note": adminAccount.bio,
-            "avatar": config.getAvatar(adminAccount.id),
-            "avatar_static": config.getAvatar(adminAccount.id),
-            "header": config.getHeader(adminAccount.id),
-            "header_static": config.getHeader(adminAccount.id),
-            "followers_count": followers,
-            "following_count": following,
-            "statuses_count": totalPostsAdmin,
-            "last_status_at": "", # Tell me, who the hell is using this?!? WHAT FOR?!?
-            "emojis": [],
-            "fields": [] # TODO: Implement
-          }
-        }
+        },
+        "contact_account": contact_account,
+        "rules": rules
       }
   
   req.respond(200, headers, $(result))
