@@ -13,7 +13,9 @@ discard """
 
 """
 
-import potholepkg/[database, conf, post], debug
+import pothole/[conf, database]
+import quark/[post]
+import debug
 
 
 # A basic config so that we don't error out.
@@ -34,15 +36,20 @@ password="SOMETHING_SECRET"
 
 let
   config = setupInput(exampleConfig)
-  db = setup(config)
+  db = setup(
+    config.getDbName(),
+    config.getDbUser(),
+    config.getDbHost(),
+    config.getDbPass()
+  )
 
 when not defined(iHaveMyOwnStuffThanks):
   echo "Adding fake users"
   for user in getFakeUsers():
-    discard db.addUser(user)
+    db.addUser(user)
 
   echo "Adding fake posts"
   for post in getFakePosts():
-    discard db.addPost(post)
+    db.addPost(post)
     db.addBulkReactions(post.id, getFakeReactions())
     db.addBulkBoosts(post.id, getFakeBoosts())

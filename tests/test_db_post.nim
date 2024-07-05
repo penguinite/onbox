@@ -13,8 +13,9 @@ discard """
 
 """
 
-import quark/[database, user, post], debug
-
+import quark/[user, post], debug
+import pothole/[conf, database]
+import std/strutils
 
 const
   dbName{.strdefine.} = "pothole"
@@ -27,6 +28,19 @@ var exampleConfig = ""
 
 exampleConfig.add """
 [db]
+host="$#"
+name="$#"
+user="$#"
+password="$#"
+""" % [dbHost, dbName, dbUser, dbPass]
+
+for section, preKey in requiredConfigOptions.pairs:
+  exampleConfig.add("\n[" & section & "]\n")
+  for key in preKey:
+    exampleConfig.add(key & "=\"Test value\"\n")
+
+exampleConfig.add """
+[db]
 host="127.0.0.1:5432"
 name="pothole"
 user="pothole"
@@ -34,8 +48,13 @@ password="SOMETHING_SECRET"
 """
 
 let
-  db = init(config)
-discard setup(config)
+  config = setupInput(exampleConfig)
+  db = setup(
+    config.getDbName(),
+    config.getDbUser(),
+    config.getDbHost(),
+    config.getDbPass()
+  )
 # Now let's get started!
 
 ## getTotalPosts
@@ -62,9 +81,9 @@ if not db.userIdExists("johnadminson"):
   user.admin = true
   user.salt = ""
   user.password = ""
-  discard db.addUser(user)
+  db.addUser(user)
 
-discard db.addPost(custompost)
+db.addPost(custompost)
 
 ## postIdExists
 echo "Testing postIdExists() "
@@ -72,7 +91,7 @@ assert db.postIdExists(custompost.id) == true, "Fail!"
 
 ## updatePost
 echo "Testing updatePost() "
-discard db.updatePost(custompost.id,"content",content)
+db.updatePost(custompost.id,"content",content)
 assert db.getPost(custompost.id).content == content, "Fail! (result: " & db.getPost(custompost.id).content & ")"
 custompost.content = content # We update this now so that the rest of the test code doesn't break
 
@@ -89,7 +108,7 @@ assert db.getPost(custompost.id) == custompost, "Fail!"
 
 ## getPostsByUserHandle()
 echo "Testing getPostsByUserHandle() "
-assert db.getPostsByUserHandle("johnadminson",1).len() > 0, "Fail! (result: " & $(db.getPostsByUserHandle("johnadminson",1)) & " post: " & $(custompost) & ")"
+assert db.getPostsByUserHandle("johnadminson",1).len() > 0, "Fail!\n\nresult: " & $(db.getPostsByUserHandle("johnadminson",1)) & "\n\n post: " & $(custompost)
  
 ## getPostsByUserId()
 echo "Testing getPostsByUserId() "

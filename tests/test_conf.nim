@@ -1,11 +1,12 @@
 echo "Test 02 - Configuration Parsing"
 
-import potholepkg/conf
+import pothole/conf
 import iniplus/writer
 
-var exampleConfig = newConfigTable()
+var exampleConfig = ""
 
-for section, preKey in requiredConfigOptions.pairs:  exampleConfig.add("\n[" & section & "]\n")
+for section, preKey in requiredConfigOptions.pairs: 
+  exampleConfig.add("\n[" & section & "]\n")
   for key in preKey:
     exampleConfig.add(key & "=\"Test value\"\n")
 exampleConfig.add("\n[db]\nfilename=\"main.db\"")

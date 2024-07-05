@@ -18,7 +18,8 @@
 ## Common procedures for debugging. This is only useful for creating
 ## fake users and fake posts (for testing)
 import std/[tables]
-import potholepkg/[user, post, crypto, lib, conf]
+import quark/[user, post, crypto]
+import pothole/[conf]
 
 const fakeNames = @["Jeremy", "Jane Doe", "pyro", "Tavish Finnegan DeGroo", "Mikhail", "Dell Conagher", "Ludwig Humboldt", "Mundy", "spy"]
 const fakeHandles* = @["scout","soldier","pyro","demoman","heavy","engineer", "medic", "sniper", "spy"]
@@ -30,10 +31,10 @@ proc getFakeUsers*(): seq[User] =
 
   for x in 0 .. high(fakeHandles):
     var user = newUser(fakeHandles[x], true, "")
-    if rand(5) == 1: user.admin = true
+    if rng.rand(5) == 1: user.admin = true
     user.name = fakeNames[x]
     user.id = fakeHandles[x] # Reset ID for easier testing.
-    user.kdf = lib.kdf
+    user.kdf = crypto.kdf
     user.bio = fakeBios[x]
     sequence.add(user)
 
@@ -127,7 +128,7 @@ proc getFakePosts*(): seq[Post] =
 
   for x in fakeStatuses:
     var post = newPost(
-      sender = fakeHandles[rand(high(fakeHandles))],  # Set random sender
+      sender = fakeHandles[rng.rand(high(fakeHandles))],  # Set random sender
       content = x, # Set content
       recipients = @[], # Set 0 recipients
       local = true # Set local
@@ -137,23 +138,23 @@ proc getFakePosts*(): seq[Post] =
 
 proc getFakeReactions*(): Table[string, seq[string]] = 
   var users: seq[string] = @[]
-  for i in 0..rand(5):
-    for i in 0..rand(high(fakeHandles)):
+  for i in 0..rng.rand(5):
+    for i in 0..rng.rand(high(fakeHandles)):
       users.add(fakeHandles[i])
-    result[reactions[rand(high(reactions))]] =  users
+    result[reactions[rng.rand(high(reactions))]] =  users
   return result
 
 proc getFakeBoosts*(): Table[string, seq[string]] =
   var users: seq[string] = @[]
-  for i in 0..rand(5):
-    for i in 0..rand(high(fakeHandles)):
+  for i in 0..rng.rand(5):
+    for i in 0..rng.rand(high(fakeHandles)):
       users.add(fakeHandles[i])
-    result[boosts[rand(high(boosts))]] = users
+    result[boosts[rng.rand(high(boosts))]] = users
   return result
 
 proc showFakePosts*() =
   for x in fakeStatuses:
-    var post = newPost(fakeHandles[rand(high(fakeHandles))], "", x, @[], true)
+    var post = newPost(fakeHandles[rng.rand(high(fakeHandles))], "", x, @[], true)
     echo "---"
     echo("Author: " & post.sender)
     echo(post.content)

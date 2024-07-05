@@ -13,11 +13,26 @@ discard """
 
 """
 
-import potholepkg/[database, conf, user, lib], debug
+import quark/user, quark/private/macros
+import pothole/[database, conf], debug
+import std/strutils
 
+const
+  dbName{.strdefine.} = "pothole"
+  dbUser{.strdefine.} = "pothole"
+  dbHost{.strdefine.} = "127.0.0.1:5432"
+  dbPass{.strdefine.} = "SOMETHING_SECRET"
 
 # A basic config so that we don't error out.
 var exampleConfig = ""
+
+exampleConfig.add """
+[db]
+host="$#"
+name="$#"
+user="$#"
+password="$#"
+""" % [dbHost, dbName, dbUser, dbPass]
 
 for section, preKey in requiredConfigOptions.pairs:
   exampleConfig.add("\n[" & section & "]\n")
@@ -34,7 +49,12 @@ password="SOMETHING_SECRET"
 
 let
   config = setupInput(exampleConfig)
-  db = init(config)
+  db = setup(
+    config.getDbName(),
+    config.getDbUser(),
+    config.getDbHost(),
+    config.getDbPass()
+  )
 
 # Now let's get started!
 
@@ -48,7 +68,7 @@ adminuser.password = ""
 adminuser.salt = ""
 if not db.userIdExists("johnadminson"):
   echo "Adding admin user"
-  discard db.addUser(adminuser)
+  db.addUser(adminuser)
 
 var adminFlag = false # This flag will get flipped when it sees the name "johnadminson" in the list of names that getAdmins() provides. If this happens then the test passes!
 for handle in db.getAdmins():
@@ -104,7 +124,7 @@ assert db.getHandleFromId(adminuser.id) == adminuser.handle, "Fail! (result: " &
 ## updateUserByHandle
 # Make the johnadminson user no longer admin(son)
 echo "Testing updateUserByHandle() "
-discard db.updateUserByHandle(adminuser.handle,"admin","false")
+db.updateUserByHandle(adminuser.handle,"admin","false")
 adminuser.admin = false
 if db.getUserByHandle(adminuser.handle) != adminuser:
   findMismatch(db.getUserByHandle(adminuser.handle), adminuser)
@@ -113,7 +133,7 @@ assert db.getUserByHandle(adminuser.handle).admin == false, "Fail!"
 ## updateUserById
 # Make the johnadminson user admin(son)
 echo "Testing updateUserById() "
-discard db.updateUserById(adminuser.id,"admin","true")
+db.updateUserById(adminuser.id,"admin","true")
 adminuser.admin = true
 if db.getUserById(adminuser.id) != adminuser:
   findMismatch(db.getUserById(adminuser.id), adminuser)
