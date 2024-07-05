@@ -18,6 +18,7 @@
 ## Potholectl is a command-line tool that aids in diagnosing problems
 ## or setting up instances. It provides a low-level tool to access
 ## Pothole's internals with.
+{.define: potholectl.} 
 
 # From Pothole
 import pothole/lib

@@ -190,18 +190,19 @@ var
   dbPool*: PostgresPool
   templatePool*: TemplatingPool
 
-configPool.withConnection config:
-  dbPool = newPostgresPool(
-    config.getIntOrDefault("db", "pool_size", 10),
-    config.getdbHost(),
-    config.getdbUser(),
-    config.getdbPass(),
-    config.getdbName()
-  )
-
-  dbPool.withConnection db:
-    templatePool = newTemplatingPool(
-      config.getIntOrDefault("misc", "templating_pool_size", 75),
-      config,
-      db
+when not defined(potholectl):
+  configPool.withConnection config:
+    dbPool = newPostgresPool(
+      config.getIntOrDefault("db", "pool_size", 10),
+      config.getdbHost(),
+      config.getdbUser(),
+      config.getdbPass(),
+      config.getdbName()
     )
+  
+    dbPool.withConnection db:
+      templatePool = newTemplatingPool(
+        config.getIntOrDefault("misc", "templating_pool_size", 75),
+        config,
+        db
+      )
