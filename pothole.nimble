@@ -13,6 +13,7 @@ backend       = "cpp"
 when not defined(phEmbedded):
   switch("stackTrace","on") # For better debugging
 switch("mm", "orc") # Required by mummy
+switch("d", "useMalloc") # Required for fixing memory leak, git blame and see commit msg.
 switch("threads","on") # Required by mummy
 
 task clean, "Removes build folders if it exists":
