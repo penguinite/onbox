@@ -36,6 +36,7 @@ const globalCrashDir* {.strdefine.}: string = "CAR_CRASHED_INTO_POTHOLE!"
 # App version
 const
   phVersion* {.strdefine.}: string = "0.0.2" ## This constant allows you to customize the potholepkg version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
+  phMastoCompat* {.strdefine.}: string = "latest"
   phSourceUrl* {.strdefine.}: string = "https://github.com/penguinite/pothole" ## This constant allows you to customize where the source 
 
 const version*{.deprecated: "Use lib.phVersion instead.".}: string = phVersion ## This is basically just phVersion, but it's copied twice for well, code readability purposes.

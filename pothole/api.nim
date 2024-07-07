@@ -18,7 +18,7 @@
 
 
 # From somewhere in Quark
-import quark/[user, post]
+import quark/[user, post, crypto]
 
 # From somewhere in Pothole
 import conf, database, routeutils, lib, assets
@@ -167,9 +167,22 @@ proc v2InstanceView*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "application/json"
 
+proc phAbout*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+  var result = %* {
+    "version": lib.phVersion,
+    "mastoapi_version": lib.phMastoCompat,
+    "source_url": lib.phSourceUrl,
+    "kdf": crypto.kdf,
+    "crash_dir": lib.globalCrashDir
+  }
+  req.respond(200, headers, $(result))
+
 const apiRoutes* =  {
   # URLRoute : (HttpMethod, RouteProcedure)
   # /api/ is already inserted before every URLRoute
   "v1/instance": ("GET", v1InstanceView),
   "v2/instance": ("GET", v2InstanceView),
+  "ph/v1/about": ("GET", phAbout)
 }.toTable
