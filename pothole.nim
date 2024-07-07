@@ -28,10 +28,14 @@ from std/strutils import join
 # From nimble
 import mummy, mummy/routers
 
-echo "Pothole version ", lib.version 
+echo "Pothole version ", lib.phVersion 
 echo "Copyright © Leo Gavilieau 2022-2023." 
 echo "Copyright © penguinite <penguinite@tuta.io> 2024." 
 echo "Licensed under the GNU Affero General Public License version 3 or later" 
+
+when not defined(useMalloc):
+  {.warning: "Pothole is suspectible to a memory leak, which, for now, can only be fixed by supplying the -d:useMalloc".}
+  {.warning: "Your build does not supply -d:useMalloc, therefore it is susceptible to a memory leak".}
 
 proc exit() {.noconv.} =
   error "Interrupted by Ctrl+C"
