@@ -73,6 +73,7 @@ proc v1InstanceView*(req: Request) =
 
   var result: JsonNode
   configPool.withConnection config:
+    # Specs tell us to either keep "contact_account" null or to fill it with a staff member's details.
     var contact_account = newJNull()
     
     if adminAccountExists:
@@ -137,7 +138,7 @@ proc v1InstanceView*(req: Request) =
         "approval_required": config.getBoolOrDefault("user", "require_approval", false),
         "configuration": {
           "statuses": {
-            "max_characters": config.getIntOrDefault("instance", "max_chars", 2000),
+            "max_characters": config.getIntOrDefault("user", "max_chars", 2000),
             "max_media_attachments": config.getIntOrDefault("user", "max_attachments", 8),
             "characters_reserved_per_url": 23
           },
@@ -161,11 +162,161 @@ proc v1InstanceView*(req: Request) =
       }
   
   req.respond(200, headers, $(result))
-  ## TODO: WIP, https://docs.joinmastodon.org/entities/V1_Instance
 
 proc v2InstanceView*(req: Request) = 
   var headers: HttpHeaders
   headers["Content-Type"] = "application/json"
+
+  var
+    totalUsers: int
+    adminAccountExists: bool
+  
+  dbPool.withConnection db:
+    totalUsers = db.getTotalLocalUsers()
+    adminAccountExists = db.adminAccountExists()
+  
+  var admin_account = newJNull()
+  if adminAccountExists:
+    # Vars initialized through database:
+    var
+      followers, following, totalPostsAdmin: int
+      admin: User
+      fieldsDb: seq[(string, string, bool, DateTime)]
+
+    dbPool.withConnection db:
+      admin = db.getFirstAdmin()
+      followers = db.getFollowersCount(admin.id)
+      following = db.getFollowingCount(admin.id)
+      totalPostsAdmin = db.getTotalPostsByUserId(admin.id)
+
+    # Vars initialized through config:
+    var avatar, header: string
+    configPool.withConnection config:
+      avatar = config.getAvatar(admin.id)
+      header = config.getHeader(admin.id)
+    
+    # Initialize profile fields
+    var fields: seq[JsonNode] = @[]
+    for key, value, verified, verified_date in fieldsDb.items:
+      var jason = %* {
+        "name": key,
+        "value": value,
+      }
+      
+      if verified:
+        jason["verified_at"] = newJString(verified_date.format("yyyy-mm-dd") & "T" & verified_date.format("hh:mm:ss"))
+      else:
+        jason["verified_at"] = newJNull()
+
+      fields.add(jason)
+
+    admin_account = %* {
+      "id": admin.id,
+      "username": admin.handle,
+      "acct": admin.handle,
+      "display_name": admin.name,
+      "locked": admin.is_frozen,
+      "bot": isBot(admin.kind),
+      "group": isGroup(admin.kind),
+      "discoverable": admin.discoverable,
+      "created_at": "", # TODO: Implement
+      "note": admin.bio,
+      "url": "",
+      "avatar": avatar, # TODO for these 4 media related options: Separate static and animated media.
+      "avatar_static": avatar,
+      "header": header, 
+      "header_static": header,
+      "followers_count": followers,
+      "following_count": following,
+      "statuses_count": totalPostsAdmin,
+      "last_status_at": "", # Tell me, who the hell is using this?!? WHAT FOR?!?
+      "emojis": [], # TODO: I am not sure what this is supposed to be
+      "fields": fields
+    }
+
+  var result: JsonNode
+  configPool.withConnection config:
+    # Handle instance rules
+    var
+      rules: seq[JsonNode] = @[]
+      i = 0
+    for rule in config.getStringArrayOrDefault("instance", "rules", @[]):
+      inc(i)
+      rules.add(
+        %* {
+          "id": $i,
+          "text": rule
+        }
+      )
+
+    result = %*
+      {
+        "domain": config.getString("instance","uri"),
+        "title": config.getString("instance","name"),
+        "version": lib.phVersion,
+        "source_url": lib.phSourceUrl,
+        "description": config.getStringOrDefault(
+          "instance", "description",
+          config.getString("instance","summary")
+        ),
+        "usage": {
+          "users": {
+            "active_month": totalUsers # I am not sure what Mastodon considers "active" to be, but "registered" is good enough for me.
+          }
+        },
+        "thumbail": {
+          # The example has blurhash and multiple versions of an image for high-dpi screens.
+          # Those are marked optional, so I won't bother implementing them.
+          "url": config.getStringOrDefault("instance", "logo", "")
+        },
+        "languages": config.getStringArrayOrDefault("instance", "languages", @["en"]),
+        "configuration": {
+          "urls": {
+            "streaming_api": "wss://" & config.getString("instance","uri")
+          },
+          "vapid": {
+            "public_key": "" # TODO: Implement vapid keys
+          },
+          "accounts": {
+            "max_featured_tags": config.getIntOrDefault("user","max_featured_tags",10),
+            "max_pinned_statuses": config.getIntOrDefault("user","max_pins", 20),
+          },
+          "statuses": {
+            "max_characters": config.getIntOrDefault("user", "max_chars", 2000),
+            "max_media_attachments": config.getIntOrDefault("user", "max_attachments", 8),
+            "characters_reserved_per_url": 23
+          },
+          "media_attachments": {
+            "supported_mime_types": ["image/jpeg", "image/png", "image/gif", "image/heic", "image/heif", "image/webp", "video/webm", "video/mp4", "video/quicktime", "video/ogg", "audio/wave", "audio/wav", "audio/x-wav", "audio/x-pn-wave", "audio/vnd.wave", "audio/ogg", "audio/vorbis", "audio/mpeg", "audio/mp3", "audio/webm", "audio/flac", "audio/aac", "audio/m4a", "audio/x-m4a", "audio/mp4", "audio/3gpp", "video/x-ms-asf"],
+            "image_size_limit": config.getIntOrDefault("storage","upload_size_limit", 10) * 1000000,
+            "image_matrix_limit": 16777216,
+            "video_size_limit": 41943040,
+            "video_frame_rate_limit": 60,
+            "video_matrix_limit": config.getIntOrDefault("storage","upload_size_limit", 10) * 1000000,
+          },
+          "polls": {
+            "max_options": config.getIntOrDefault("instance", "max_poll_options", 20),
+            "max_characters_per_option": 100,
+            "min_expiration": 300,
+            "max_expiration": 2629746
+          },
+          "translation": {
+            "enabled": false, # TODO: Switch to on once translation is enabled.
+          }
+        },
+        "registrations": {
+          "enabled": config.getBoolOrDefault("user", "registrations_open", true),
+          "approval_required": config.getBoolOrDefault("user", "require_approval", true),
+          "message": newJNull() # TODO: Maybe let instance admins customize thru a config option
+        },
+        "contact": {
+          "email": config.getStringOrDefault("instance","email",""),
+          "account": admin_account
+        },
+        "rules": rules
+      }
+  
+  req.respond(200, headers, $(result))
 
 proc phAbout*(req: Request) =
   var headers: HttpHeaders
