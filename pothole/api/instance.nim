@@ -318,3 +318,24 @@ proc v2InstanceView*(req: Request) =
   
   req.respond(200, headers, $(result))
 
+proc v1InstanceExtendedDescription*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+
+  let time = now().utc
+
+  configPool.withConnection config:
+    req.respond(200, headers, $(
+      %* {
+        "updated_at": $(
+          time.format("yyyy-mm-dd") & "T" & time.format("hh:mm:ss") & "Z"
+        ),
+        "content": config.getStringOrDefault(
+          "instance", "description",
+          config.getString(
+            "instance", "summary"
+          )
+        )
+      }
+    ))
+
