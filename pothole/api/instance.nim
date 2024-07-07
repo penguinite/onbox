@@ -339,3 +339,20 @@ proc v1InstanceExtendedDescription*(req: Request) =
       }
     ))
 
+proc v1InstanceRules*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+
+  var result: JsonNode = newJArray()
+  configPool.withConnection config:
+    var i = 0
+    for rule in config.getStringArrayOrDefault("instance", "rules", @[]):
+      inc i
+      result.add(
+        %* {
+          "id": $i,
+          "text": rule
+        }
+      )
+  
+  req.respond(200, headers, $(result))

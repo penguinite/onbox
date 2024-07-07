@@ -28,6 +28,7 @@ const apiRoutes* =  {
   # /api/ is already inserted before every URLRoute
   "v1/instance": ("GET", v1InstanceView),
   "v2/instance": ("GET", v2InstanceView),
+  "v1/instance/rules": ("GET", v1InstanceRules),
   "v1/instance/extended_description": ("GET", v1InstanceExtendedDescription),
   "ph/v1/about": ("GET", phAbout)
 }.toTable
