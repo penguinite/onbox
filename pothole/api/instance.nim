@@ -356,3 +356,10 @@ proc v1InstanceRules*(req: Request) =
       )
   
   req.respond(200, headers, $(result))
+
+# MISSING: [
+# /api/v1/instance/translation_languages
+# /api/v1/instance/domain_blocks
+# /api/v1/instance/activity
+# /api/v1/instance/peers
+# ]
