@@ -28,8 +28,7 @@ from std/strutils import `%`
 import mummy, mummy/multipart, waterpark, waterpark/postgres, temple
 
 # Oh dear god... A "Template Object" pool.
-# I.. I am disgusted
-# Please nim... PLEASE! Make `let`'s actually gc-safe!!! PLEASE I AM BEGGING!
+# TODO: It's obvious why *this* needs refactoring, so in the future, please do that.
 type
   TemplateObj* = object
     staticFolder*: string
@@ -46,6 +45,8 @@ proc prepareTable*(config: ConfigTable, db: DbConn): Table[string, string] =
     "description": config.getString("instance","description"), # Instance description
     "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
     "sign_up": config.getStringOrDefault("web","_signup_link", "/auth/sign_up/"), # Sign up link
+    "source": lib.phSourceUrl,
+    "version": ""
   }.toTable
 
   # Instance staff (Any user with the admin attribute)
@@ -183,14 +184,14 @@ proc getFormParam*(mp: MultipartEntries, param: string): string =
 
 
 #! These are shared across routes.nim and api.nim
-let configPool* = newConfigPool()
-const mimedb* = newMimetypes()
-
-var
-  dbPool*: PostgresPool
-  templatePool*: TemplatingPool
-
 when not defined(potholectl):
+  let configPool* = newConfigPool()
+  const mimedb* = newMimetypes()
+
+  var
+    dbPool*: PostgresPool
+    templatePool*: TemplatingPool
+
   configPool.withConnection config:
     dbPool = newPostgresPool(
       config.getIntOrDefault("db", "pool_size", 10),

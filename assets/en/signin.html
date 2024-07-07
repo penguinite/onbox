@@ -28,7 +28,11 @@
         <input type="submit">
       </form>
     </main>
+    <footer>
+      $if(source)$
+        <p>This server is powered by <a href="$source$">Pothole $version$</a></p>
+      $end$
+    </footer>
   </div>
-  <p>This server is powered by <a href="https://github.com/penguinite/pothole/">Pothole $version$</a></p>
 </body>
 </html>

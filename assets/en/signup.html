@@ -18,27 +18,29 @@
     <main>
       $if(signup_enabled)$
 	
-	$if(result)$
+	  $if(result)$
         <div class="box result">
             $result$
         </div>
-	$end$
-	<p>Before you sign up, make sure you <a href="/about/#rules">read the instance rules</a></p>
-	<form method="post">
+	  $end$
+	  <p>Before you sign up, make sure you <a href="/about/#rules">read the instance rules</a></p>
+	  <form method="post">
             <label for="user">Username:</label> <input type="text" placeholder="einstein" name="user"> <label for="name">Display name:</label> <input type="text"
         placeholder="Albert Einstein" name="name"> <label for="bio">Biography:</label> 
             <textarea name="bio" rows="15" cols="42" placeholder="I am Albert Einstein, I am the best scientist ever. Hail me, you peasants."></textarea>
             <label for="email">Email:</label> <input type="email" name="email" placeholder="albert.einstein@uzh.ch"> <label for="pass">Password:</label>
             <input type="password" placeholder="***************" name="pass"><br>
             <input type="submit">
-	</form>
-	$end$
-	$if(!signup_enabled)$
-	<p>This instance has disabled user registrations.</p>
-	$end$
+	  </form>
+	  $end$
+	  $if(!signup_enabled)$
+	  <p>This instance has disabled user registrations.</p>
+	  $end$
     </main>
     <footer>
-      <p>This server is powered by <a href="https://github.com/penguinite/pothole/">Pothole $version$</a></p>
+      $if(source)$
+        <p>This server is powered by <a href="$source$">Pothole $version$</a></p>
+      $end$
     </footer>
   </div>
 </body>
