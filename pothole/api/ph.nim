@@ -13,20 +13,30 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
-# api.nim:
-## This module just serves as a wrapper for all the modules in the api folder
+# api/ph.nim:
+## This module contains all the routes for the ph method in the api
+
+
+# From somewhere in Quark
+import quark/[crypto]
 
 # From somewhere in Pothole
-import pothole/api/[instance, ph]
-export instance, ph
+import pothole/[lib]
 
 # From somewhere in the standard library
-import std/[tables]
+import std/[json]
 
-const apiRoutes* =  {
-  # URLRoute : (HttpMethod, RouteProcedure)
-  # /api/ is already inserted before every URLRoute
-  "v1/instance": ("GET", v1InstanceView),
-  "v2/instance": ("GET", v2InstanceView),
-  "ph/v1/about": ("GET", phAbout)
-}.toTable
+# From nimble/other sources
+import mummy
+
+proc phAbout*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+  var result = %* {
+    "version": lib.phVersion,
+    "mastoapi_version": lib.phMastoCompat,
+    "source_url": lib.phSourceUrl,
+    "kdf": crypto.kdf,
+    "crash_dir": lib.globalCrashDir
+  }
+  req.respond(200, headers, $(result))
