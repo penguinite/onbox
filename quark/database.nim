@@ -92,7 +92,7 @@ proc setup*(
 
   # Add a default app just in case
   if not result.clientExists("0"):
-    result.createClient(
+    discard result.createClient(
       "0", "", ""
     )
   
