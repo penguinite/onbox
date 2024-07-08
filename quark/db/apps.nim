@@ -22,7 +22,7 @@ import ../private/database
 import rng
 
 # From somewhere in the standard library
-import std/tables
+import std/[tables, strutils]
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # The client Id for the application
@@ -54,3 +54,25 @@ proc getClientSecret*(db: DbConn, id: string): string =
 
 proc clientExists*(db: DbConn, id: string): bool = 
   return has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id))
+
+proc returnStartOrScope(s: string): string =
+  if s.startsWith("read"):
+    return "read"
+  if s.startsWith("write"):
+    return "write"
+  if s.startsWith("admin:read"):
+    return "admin:read"
+  if s.startsWith("admin:write"):
+    return "admin:write"
+  return s
+
+proc hasScope*(db: DbConn, id:string, scope: string): bool =
+  let appScopes = db.getRow(sql"SELECT scopes FROM apps WHERE id = ?;", id)[0].split(" ")
+  result = false
+
+  for appScope in appScopes:
+    if appScope == scope or appScope == scope.returnStartOrScope():
+      result = true
+      break
+  
+  return result
