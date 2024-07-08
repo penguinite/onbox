@@ -184,13 +184,16 @@ proc getFormParam*(mp: MultipartEntries, param: string): string =
 
 
 #! These are shared across routes.nim and api.nim
-when not defined(potholectl):
-  let configPool* = newConfigPool()
-  const mimedb* = newMimetypes()
+const mimedb*: MimeDB = newMimetypes()
 
-  var
-    dbPool*: PostgresPool
-    templatePool*: TemplatingPool
+var
+  configPool*: ConfigPool
+  dbPool*: PostgresPool
+  templatePool*: TemplatingPool
+
+proc initEverythingForRoutes*() =
+  configPool = newConfigPool()
+  
 
   configPool.withConnection config:
     dbPool = newPostgresPool(
@@ -200,7 +203,7 @@ when not defined(potholectl):
       config.getdbPass(),
       config.getdbName()
     )
-  
+
     dbPool.withConnection db:
       templatePool = newTemplatingPool(
         config.getIntOrDefault("misc", "templating_pool_size", 75),

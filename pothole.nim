@@ -19,7 +19,7 @@
 import quark/[database]
 
 # From somewhere in Pothole
-import pothole/[routes, lib, conf, database, assets, api]
+import pothole/[routes, lib, conf, database, assets, api, routeutils]
 
 # From standard library
 import std/[tables]
@@ -76,7 +76,6 @@ discard setup(
 discard initStatic(config)
 discard initTemplates(config)
 
-log "Serving on http://localhost:" & $port
 
 var router: Router
 for url in renderURLs.keys:
@@ -99,4 +98,6 @@ for url, route in apiRoutes.pairs:
   router.addRoute(route[0], "/api/" & url, route[1])
   router.addRoute(route[0], "/api/" & url & "/", route[1]) # Trailing slash fix.
 
+log "Serving on http://localhost:" & $port
+initEverythingForRoutes()
 newServer(router).serve(Port(port))
