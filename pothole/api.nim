@@ -17,8 +17,8 @@
 ## This module just serves as a wrapper for all the modules in the api folder
 
 # From somewhere in Pothole
-import pothole/api/[instance, ph]
-export instance, ph
+import pothole/api/[instance, ph, apps]
+export instance, ph, apps
 
 # From somewhere in the standard library
 import std/[tables]
@@ -30,5 +30,6 @@ const apiRoutes* =  {
   "v2/instance": ("GET", v2InstanceView),
   "v1/instance/rules": ("GET", v1InstanceRules),
   "v1/instance/extended_description": ("GET", v1InstanceExtendedDescription),
+  "v1/apps": ("POST", v1Apps),
   "ph/v1/about": ("GET", phAbout)
 }.toTable
