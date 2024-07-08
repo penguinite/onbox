@@ -25,21 +25,23 @@ import rng
 import std/tables
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL",
-"name": "TEXT NOT NULL", # ID of post that user boosted
-"link": "TEXT NOT NULL" # ID of user that boosted post
+const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # The client Id for the application
+"secret": "TEXT NOT NULL", # The client secret for the application
+"scopes": "TEXT NOT NULL", # Scopes of this application, space-separated.
+"name": "TEXT ", # Name of application
+"link": "TEXT" # The homepage or source code link to the application
 }.toOrderedTable
 
 # TODO: Finish this and test it
 
-proc createClient*(db: DbConn, tmp_id, name: string, link: string = "") =
-  var id = tmp_id
+proc createClient*(db: DbConn, name: string, link: string = "", scopes: string = "read"): string =
+  var id, secret = randstr()
+  # Check if ID already exists first.
   while db.getRow(sql"SELECT name FROM apps WHERE id = ?;", id)[0] != "":
     id = randstr()
-  db.exec(sql"INSERT INTO apps(id, name, link) VALUES (?,?,?);",id,name,link)
 
-proc createClient*(db: DbConn, name: string, link: string = "") =
-  db.createClient(randstr(), name, link)
+  db.exec(sql"INSERT INTO apps VALUES (?,?,?);", id, secret, scopes, name, link)
+  return id
 
 proc getClientLink*(db: DbConn, id: string): string = 
   return db.getRow(sql"SELECT link FROM apps WHERE id = ?;", id)[0]
@@ -47,8 +49,8 @@ proc getClientLink*(db: DbConn, id: string): string =
 proc getClientName*(db: DbConn, id: string): string = 
   return db.getRow(sql"SELECT name FROM apps WHERE id = ?;", id)[0]
 
-proc getClientIdWithName*(db: DbConn, name: string): string = 
-  return db.getRow(sql"SELECT id FROM apps WHERE name = ?;", name)[0]
+proc getClientSecret*(db: DbConn, id: string): string =
+  return db.getRow(sql"SELECT secret FROM apps WHERE id = ?;", id)[0]
 
 proc clientExists*(db: DbConn, id: string): bool = 
   return has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id))
