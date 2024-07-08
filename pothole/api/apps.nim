@@ -16,15 +16,11 @@
 # api/ph.nim:
 ## This module contains all the routes for the ph method in the api
 
-
-# From somewhere in Quark
-import quark/[user, post]
-
 # From somewhere in Pothole
-import pothole/[conf, database, routeutils, lib, assets]
+import pothole/[database, routeutils]
 
 # From somewhere in the standard library
-import std/[json, times, strutils]
+import std/[json, strutils]
 
 # From nimble/other sources
 import mummy
