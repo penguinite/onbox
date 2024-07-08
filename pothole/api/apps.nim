@@ -98,3 +98,9 @@ proc v1Apps*(req: Request) =
 
 
   req.respond(200, headers, $(result))
+
+proc v1AppsVerify*(req: Request) = 
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+  var result = %* {}
+  req.respond(200, headers, $(result))

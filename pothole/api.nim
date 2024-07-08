@@ -31,5 +31,6 @@ const apiRoutes* =  {
   "v1/instance/rules": ("GET", v1InstanceRules),
   "v1/instance/extended_description": ("GET", v1InstanceExtendedDescription),
   "v1/apps": ("POST", v1Apps),
+  "v1/apps/verify_credentials": ("GET", v1AppsVerify),
   "ph/v1/about": ("GET", phAbout)
 }.toTable
