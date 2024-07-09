@@ -29,14 +29,13 @@ import mummy
 
 const apiRoutes* =  {
   # URLRoute : (HttpMethod, RouteProcedure)
-  # /api/ is already inserted before every URLRoute
-  "v1/instance": ("GET", v1InstanceView),
-  "v2/instance": ("GET", v2InstanceView),
-  "v1/instance/rules": ("GET", v1InstanceRules),
-  "v1/instance/extended_description": ("GET", v1InstanceExtendedDescription),
-  "v1/apps": ("POST", v1Apps),
-  "v1/apps/verify_credentials": ("GET", v1AppsVerify),
-  "ph/v1/about": ("GET", phAbout)
+  "/api/v1/instance": ("GET", v1InstanceView),
+  "/api/v2/instance": ("GET", v2InstanceView),
+  "/api/v1/instance/rules": ("GET", v1InstanceRules),
+  "/api/v1/instance/extended_description": ("GET", v1InstanceExtendedDescription),
+  "/api/v1/apps": ("POST", v1Apps),
+  "/api/v1/apps/verify_credentials": ("GET", v1AppsVerify),
+  "/api/ph/v1/about": ("GET", phAbout),
 }.toTable
 
 proc logAPI*(req: Request) =

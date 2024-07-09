@@ -96,11 +96,11 @@ for url in @[
 # Add API routes
 for url, route in apiRoutes.pairs:
   when defined(phLogAPI):
-    router.addRoute(route[0], "/api/" & url, logAPI)
-    router.addRoute(route[0], "/api/" & url & "/", logAPI) # Trailing slash fix.
+    router.addRoute(route[0], url, logAPI)
+    router.addRoute(route[0], url & "/", logAPI) # Trailing slash fix.
   else:
-    router.addRoute(route[0], "/api/" & url, route[1])
-    router.addRoute(route[0], "/api/" & url & "/", route[1]) # Trailing slash fix.
+    router.addRoute(route[0], url, route[1])
+    router.addRoute(route[0], url & "/", route[1]) # Trailing slash fix.
 
 log "Serving on http://localhost:" & $port
 initEverythingForRoutes()
