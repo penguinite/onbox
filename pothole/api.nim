@@ -17,11 +17,15 @@
 ## This module just serves as a wrapper for all the modules in the api folder
 
 # From somewhere in Pothole
+import pothole/lib
 import pothole/api/[instance, ph, apps]
 export instance, ph, apps
 
 # From somewhere in the standard library
 import std/[tables]
+
+# From somewhere else
+import mummy
 
 const apiRoutes* =  {
   # URLRoute : (HttpMethod, RouteProcedure)
@@ -34,3 +38,22 @@ const apiRoutes* =  {
   "v1/apps/verify_credentials": ("GET", v1AppsVerify),
   "ph/v1/about": ("GET", phAbout)
 }.toTable
+
+proc logAPI*(req: Request) =
+  ## This is tremendously slow, *only* use it for logging API routes.
+  ## Do NOT use it ever in production.
+  
+  for key, val in apiRoutes.pairs:
+    if req.path == "/api/" & key:
+      log val[0], ": ", key
+      log "httpVersion: \"", req.httpVersion
+      log "httpMethod: \"", req.httpMethod
+      log "uri: \"", req.uri
+      log "path: \"", req.path
+      log "queryParams: \"", req.queryParams
+      log "pathParams: \"", req.pathParams
+      log "headers: \"", req.headers
+      log "body: \"", req.body
+      log "remoteAddress: \"", req.remoteAddress
+      val[1](req)
+  
