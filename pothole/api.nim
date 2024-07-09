@@ -41,18 +41,17 @@ const apiRoutes* =  {
 proc logAPI*(req: Request) =
   ## This is tremendously slow, *only* use it for logging API routes.
   ## Do NOT use it ever in production.
+  log "httpVersion: \"", req.httpVersion
+  log "httpMethod: \"", req.httpMethod
+  log "uri: \"", req.uri
+  log "path: \"", req.path
+  log "queryParams: \"", req.queryParams
+  log "pathParams: \"", req.pathParams
+  log "headers: \"", req.headers
+  log "body: \"", req.body
+  log "remoteAddress: \"", req.remoteAddress
   
   for key, val in apiRoutes.pairs:
-    if req.path == "/api/" & key:
-      log val[0], ": ", key
-      log "httpVersion: \"", req.httpVersion
-      log "httpMethod: \"", req.httpMethod
-      log "uri: \"", req.uri
-      log "path: \"", req.path
-      log "queryParams: \"", req.queryParams
-      log "pathParams: \"", req.pathParams
-      log "headers: \"", req.headers
-      log "body: \"", req.body
-      log "remoteAddress: \"", req.remoteAddress
+    if req.path == key:
       val[1](req)
   
