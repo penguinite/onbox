@@ -1,0 +1,122 @@
+# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024 <penguinite@tuta.io>
+#
+# This file is part of Pothole. Specifically, the Quark repository.
+# 
+# Pothole is free software: you can redistribute it and/or modify it under the terms of
+# the GNU Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+# 
+# Pothole is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+# for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
+#
+# quark/db/boosts.nim:
+## This module contains all database logic for handling boosts.
+
+import ../private/database
+import quark/db/users
+import quark/post
+import rng
+
+# From somewhere in the standard library
+import std/[tables, times]
+
+# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
+const sessionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY UNIQUE NOT NULL", # The id for the session
+"user": "TEXT NOT NULL", # User ID for the session
+"created": "TIMESTAMP NOT NULL", # When the session was created.
+"__A": "foreign key (user) references users(id)", # Some foreign key for integrity
+}.toOrderedTable
+
+# TODO: Finish this and test it
+proc sessionExists*(db: DbConn, id: string): bool =
+  ## Checks if a session exists and returns whether or not it does.
+  return has(db.getRow(sql"SELECT user FROM sessions WHERE id = ?;", id))
+
+proc createSession*(db: DbConn, user: string, date: DateTime = now().utc): string =
+  ## Creates a session for a user and returns it's id
+  ## The user parameter should contain a user's id.
+  var id = randstr(22)
+  while db.sessionExists(id):
+    id = randstr(22)
+  
+  db.exec(
+    sql"INSERT INTO sessions VALUES (?, ?, ?);",
+    id,
+    user,
+    toDbString(date)
+  )
+  return id
+
+proc getSessionUser*(db: DbConn, id: string): string =
+  ## Retrieves the user id associated with a session.
+  ## The id parameter should contain the session id.
+  return db.getRow(sql"SELECT user FROM sessions WHERE id = ?;", id)[0]
+
+proc getSessionUserHandle*(db: DbConn, id: string): string =
+  ## Retrieves the user handle associated with a session.
+  ## The id parameter should contain the session id.
+  return db.getHandleFromId(db.getSessionUser(id))
+
+proc getSessionDate*(db: DbConn, id: string): DateTime =
+  ## Retrieves the creation date associated with a session.
+  ## The id parameter should contain the session id.
+  return toDateFromDb(
+    db.getRow(sql"SELECT created FROM sessions WHERE id = ?;", id)[0]
+  )
+
+proc sessionExpired*(db: DbConn, id: string): bool =
+  ## Checks if a session has expired, meaning that it is 1 week old.
+  if not db.sessionExists(id):
+    return true
+  return now().utc - db.getSessionDate(id) == initDuration(weeks = 1)
+
+proc sessionValid*(db: DbConn, id, user: string): bool =
+  ## Checks if a session is valid.
+  ## The id parameter should contain the session id,
+  ## The user parameter should contain the user's id.
+  ## 
+  ## Slightly different from `sessionExpired()`, since 
+  ## `sessionExpired()` does not check if the users match
+  if not db.sessionExists(id):
+    return false
+
+  if db.sessionExpired(id):
+    return false
+  
+  # Check if the user provided actually
+  if user != db.getSessionUser(id):
+    return false
+
+  return true
+
+proc dropSession*(db: DbConn, id: string) =
+  ## Deletes a session.
+  db.exec(sql"DELETE FROM sessions WHERE id = ?;", id)
+
+proc cleanSessions*(db: DbConn) =
+  ## Cleans sessions that have expired.
+  for row in db.getAllRows(sql"SELECT id FROM sessions;"):
+    if db.sessionExpired(row[0]):
+      db.dropSession(row[0])
+
+proc cleanSessionsVerbose*(db: DbConn): seq[(string, string)] =
+  ## Cleans sessions that have expired.
+  ## This function is verbose as in, it returns the exact sessions that it deleted.
+  ## So you can log them.
+  ## 
+  ## The output is a sequence containing tulips where each element is the following:
+  ## 1. ID: The ID of the session
+  ## 2. User: The ID of the user that the session belonged to
+  for row in db.getAllRows(sql"SELECT id FROM sessions;"):
+    if db.sessionExpired(row[0]):
+      result.add((
+        row[0],
+        db.getSessionUser(row[0])
+      ))
+      db.dropSession(row[0])
