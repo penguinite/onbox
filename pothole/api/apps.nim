@@ -86,7 +86,7 @@ proc hasValidStrKey(j: JsonNode, k: string): bool =
   if not j.hasKey(k):
     return false
 
-  if j.kind != JString:
+  if j[k].kind != JString:
     return false
 
   try:
