@@ -26,6 +26,7 @@
 # TODO: Remove this module once everything has been properly migrated.
  
 from std/strutils import Whitespace, `%`, toLowerAscii, join
+from std/times import now, utc, format
 import ../quark/[crypto]
 
 const kdf* {.deprecated: "Use quark/crypto.nim:kdf and not lib.kdf".} = crypto.kdf
@@ -43,7 +44,7 @@ const version*{.deprecated: "Use lib.phVersion instead.".}: string = phVersion #
 
 when not defined(phNoLog):
   template log*(str: varargs[string, `$`]) =
-    stdout.write("($#:$#): $#\n" % [instantiationInfo().filename, $instantiationInfo().line, str.join])
+    stdout.write("[$#] ($#:$#): $#\n" % [now().utc.format("yyyy-mm-dd hh:mm:ss"), instantiationInfo().filename, $instantiationInfo().line, str.join])
 else:
   template log*(msg: varargs[string, `$`]) = return
 
@@ -51,5 +52,5 @@ template error*(str: varargs[string, `$`]) =
   ## Exits the program, writes a stacktrace and thats it.
   stderr.write("\nPrinting stacktrace...\n")
   writeStackTrace()  
-  stderr.write("\n[ERROR] ($#:$#): $#\n" % [instantiationInfo().filename, $instantiationInfo().line, str.join])
+  stderr.write("\n!ERROR! [$#] ($#:$#): $#\n" % [now().utc.format("yyyy-mm-dd hh:mm:ss"), instantiationInfo().filename, $instantiationInfo().line, str.join])
   quit(1)
