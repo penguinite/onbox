@@ -30,6 +30,8 @@ import mummy, waterpark/postgres
 const renderURLs*: Table[string,string] = {
   "/": "index.html", 
   "/about": "about.html", "/about/more": "about.html", # About pages, they run off of the same template.
+  "/auth/sign_in": "signin.html",
+  "/auth/sign_up": "signup.html"
 }.toTable
 
 proc serveAndRender*(req: Request) =
