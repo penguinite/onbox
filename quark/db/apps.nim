@@ -90,7 +90,7 @@ proc verifyScope*(pre_scope: string): bool =
   # it's one of the simpler scopes.
   if ':' notin scope:
     case scope:
-    of "read", "write", "push":
+    of "read", "write", "push", "follow": # Yes, follow is a deprecated scope... But that doesn't stop apps from using it! :D
       return true
     else:
       return false
