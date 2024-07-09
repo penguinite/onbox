@@ -46,6 +46,7 @@ proc prepareTable*(config: ConfigTable, db: DbConn): Table[string, string] =
     "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
     "sign_up": config.getStringOrDefault("web","_signup_link", "/auth/sign_up/"), # Sign up link
     "source": lib.phSourceUrl,
+    "signup_enabled": $(config.getBoolOrDefault("user", "registrations_open", true)),
     "version": ""
   }.toTable
 
