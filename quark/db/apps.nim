@@ -76,3 +76,59 @@ proc hasScope*(db: DbConn, id:string, scope: string): bool =
       break
   
   return result
+
+proc verifyScope*(pre_scope: string): bool =
+  ## Just verifies if a scope is valid or not.
+  if len(pre_scope) < 4 or len(pre_scope) > 34:
+    # "read" is the smallest possible scope, so anything less is invalid automatically.
+    # "admin:write:canonical_email_blocks" is the largest possible scope, so anything larger is invalid automatically.
+    return false
+
+  var scope = pre_scope.toLowerAscii()
+
+  # If there is no colon, then it means
+  # it's one of the simpler scopes.
+  if ':' notin scope:
+    case scope:
+    of "read", "write", "push":
+      return true
+    else:
+      return false
+  
+  # Let's get this out of the way
+  # Since the later code does not deal with
+  # admin:read and admin:write
+  case scope:
+  of "admin:read", "admin:write":
+    return true
+  else:
+    discard
+  
+  var list = scope.split(":")
+  if len(list) < 2 or len(list) > 3:
+    return false # A scope has usually 2-3 parts of colons. Anything higher is unusual.
+
+  # Parse the first part.
+  case list[0]:
+  of "read":
+    if len(list) != 2:
+      return false # A read scope only has 2 parts.
+
+    return list[1] in @["accounts", "blocks", "bookmarks", "favorites", "favourites", "filters", "follows", "lists", "mutes", "notifications", "search", "statuses"]
+  of "write":
+    if len(list) != 2:
+      return false # A write scope only has 2 parts.
+    return list[1] in @["accounts", "blocks", "bookmarks", "conversations", "favorites", "favourites", "filters", "follows", "lists", "media", "mutes", "notifications", "reports", "statuses"]
+  of "admin":
+    if len(list) != 3:
+      return false # An admin scope only has 3 parts.
+
+    case list[1]:
+    of "read":
+      return list[2] in @["accounts", "reports", "domain_allows", "domain_blocks", "ip_blocks", "email_domain_blocks", "canonical_domain_blocks"]
+    of "write":
+      return list[2] in @["accounts", "reports", "domain_allows", "domain_blocks", "ip_blocks", "email_domain_blocks", "canonical_domain_blocks"]
+    else:
+      return false
+  else:
+    return false

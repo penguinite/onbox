@@ -25,25 +25,8 @@ import std/[json, strutils]
 # From nimble/other sources
 import mummy
 
-proc verifyScope(scope: string): bool =
-  # Just verifies if a scope is valid or not.
-  if len(scope) < 4 or len(scope) > 34:
-    # "read" is the smallest possible scope, so anything less is invalid automatically.
-    # "admin:write:canonical_email_blocks" is the largest possible scope, so anything larger is invalid automatically.
-    return false
 
-  if scope in @[
-    "read", "write", "push",
-    "read:accounts", "read:blocks", "read:bookmarks", "read:favourites", "read:filters", "read:follows", "read:lists", "read:mutes", "read:notifications", "read:search", "read:statuses",
-    "write:accounts", "write:blocks", "write:bookmarks", "write:conversations", "write:favourites", "write:filters", "write:follows", "write:lists", "write:media", "write:mutes", "write:notifications", "write:reports", "write:statuses",
-    "admin:read", "admin:read:accounts", "admin:read:reports", "admin:read:domain_allows", "admin:read:domain_blocks", "admin:read:ip_blocks", "admin:read:email_domain_blocks", "admin:read:canonical_domain_blocks",
-    "admin:write", "admin:write:accounts", "admin:write:reports", "admin:write:domain_allows", "admin:write:domain_blocks", "admin:write:ip_blocks", "admin:write:email_domain_blocks", "admin:write:canonical_domain_blocks"
-  ]:
-    return true
-  else:
-    return false
-
-proc v1Apps*(req: Request) =
+proc v1AppsMultipart*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "application/json"
 
