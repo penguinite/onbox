@@ -270,10 +270,10 @@ Available commands:
     genCmd("delete", "Deletes specified user"),
     genCmd("del", "(Shorthand for delete)"),
     genCmd("purge", "(Shorthand for delete -p)"),
-    #genCmd("change", "A generic user modification command."),
     genCmd("info", "Displays generic information about the provided user."),
     genCmd("id", "Gets the user ID when given a handle"),
     genCmd("handle", "Gets the handle when given a user ID"),
+    genCmd("hash", "Hashes a password"),
     genCmd("mod", "Changes a user's moderator status"),
     genCmd("admin", "Changes a user's administrator status"),
     genCmd("password", "Changes a user's password"),
@@ -358,6 +358,20 @@ You can also choose to see specific bits with these flags:
     genArg("p","password", "Print user's password (hashed)"),
     genArg("s","salt", "Print user's salt"),
     genArg("t","type", "Print user type")
+  ],
+  "user:hash": @[
+    prefix, 
+    """
+Format: potholectl user hash [PASSWORD] [SALT]
+[PASSWORD] is required, whilst [SALT] can be left out.
+
+This command hashes the given password with the latest KDF function.
+You can also customize what function it will use with the KDF parameter.
+
+The following parameters are available:  
+    """,
+    genArg("q","quiet", "Makes the program a whole lot less noisy."),
+    genArg("k","kdf", "Specifies the KDF function to use when hashing. [Value required]")
   ],
   "post": @[
     prefix,

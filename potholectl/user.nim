@@ -23,7 +23,7 @@
 import shared
 
 # From somewhere in Quark
-import quark/[database, user, strextra]
+import quark/[database, user, strextra, crypto]
 
 # From somewhere in Pothole
 import pothole/[database,lib,conf]
@@ -241,5 +241,34 @@ proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
       printSpecificInfo("t","type", "Type", $user.kind)
     else:
       echo $user
+  of "hash":
+    if len(data) == 0:
+      if args.check("q","quiet"): quit(1)
+      log "You must provide an argument to this command"
+      helpPrompt("user","hash")
+    
+    var
+      password = data[0]
+      salt = ""
+      kdf = crypto.kdf
+
+    if len(data) == 2:
+      salt = data[1]
+    
+    if args.check("k", "kdf"):
+      kdf = StringToKDF(args.get("k", "kdf"))
+    
+    var hash = hash(
+      password, salt, kdf
+    )
+
+    if args.check("q", "quiet"):
+      echo hash
+      quit(0)
+    
+    echo "Hash: \"", hash, "\""
+    echo "Salt: \"", salt, "\""
+    echo "KDF Id: ", kdf
+    echo "KDF Algorithm: ", KDFTOHumanString(kdf)
   else:
     helpPrompt("user")
