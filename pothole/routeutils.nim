@@ -156,10 +156,12 @@ proc getPathParam*(req: Request, path: string): string =
 
 type
   MultipartEntries* = Table[string, string]
+  FormEntries* = Table[string, string]
 
 proc unrollMultipart*(req: Request): MultipartEntries =
   ## Unrolls a Mummy multipart data thing into a table of strings.
   ## which is way easier to handle.
+  ## TODO: Maybe reconsider this approach? The example file mentions a way to do this *without* copying.
   for entry in req.decodeMultipart():
     if entry.data.isNone():
       continue
@@ -172,14 +174,24 @@ proc unrollMultipart*(req: Request): MultipartEntries =
       continue
 
     result[entry.name] = val
-    
   return result
 
-proc isValidFormParam*(mp: MultipartEntries, param: string): bool =
+proc isValidMultipartParam*(mp: MultipartEntries, param: string): bool =
   ## Returns a parameter submitted via a HTML form
   return mp.hasKey(param) and not mp[param].isEmptyOrWhitespace()
 
-proc getFormParam*(mp: MultipartEntries, param: string): string =
+proc getMultipartParam*(mp: MultipartEntries, param: string): string =
+  ## Checks if a parameter submitted via an HTMl form is valid and not empty
+  return mp[param]
+
+proc unrollForm*(req: Request): FormEntries =
+  echo req.body
+
+proc isValidFormParam*(mp: FormEntries, param: string): bool =
+  ## Returns a parameter submitted via a HTML form
+  return mp.hasKey(param) and not mp[param].isEmptyOrWhitespace()
+
+proc getFormParam*(mp: FormEntries, param: string): string =
   ## Checks if a parameter submitted via an HTMl form is valid and not empty
   return mp[param]
 
