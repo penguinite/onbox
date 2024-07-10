@@ -61,3 +61,59 @@ func cleanTrailing*(str: string, charset: set[char] = Whitespace): string =
     dec(endnum)
 
   return str[0 .. endnum]
+
+proc smartSplit*(s: string, specialChar: char = '&'): seq[string] =
+  ## A split function that is both aware of quotes and backslashes.
+  ## Aware, as in, it won't split if it sees the specialCharacter surrounded by quotes, or backslashed.
+  ## 
+  ## Used in (and was originally written for) `pothole/routeutils.nim:unrollForm()`
+  var
+    quoted, backslash = false
+    tmp = ""
+  for ch in s:
+    case ch:
+    of '\\':
+      # If a double backslash has been detected then just
+      # insert a backslash into tmp and set backslash to false
+      if backslash:
+        backslash = false
+        tmp.add(ch)
+      else:
+        # otherwise, set backslash to true
+        backslash = true
+    of '"', '\'': # Note: If someone mixes and matches quotes in a form body then we're fucked but it doesn't matter either way.
+      # If a backslash was previously detected then
+      # add double quotes to tmp instead of toggling the quoted flag
+      if backslash:
+        tmp.add(ch)
+        backslash = false
+        continue
+
+      if quoted:
+        quoted = false
+      else:
+        quoted = true      
+    else:
+      # if the character we are currently parsing is the special character then
+      # check we're not in backslash or quote mode, and if not
+      # then finally split.
+      if ch == specialChar:
+        if backslash or quoted:
+          tmp.add(ch)
+          continue
+
+        result.add(tmp)
+        tmp = ""
+        continue
+      
+      # otherwise, just check for backslash and add it to tmp if it isn't backslashed.
+      if backslash:
+        continue
+      tmp.add(ch)
+  
+  # If tmp is not empty then split!
+  if tmp != "":
+    result.add(tmp)
+
+  # Finally, the good part, return result.
+  return result
