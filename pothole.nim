@@ -102,6 +102,10 @@ for url, route in apiRoutes.pairs:
     router.addRoute(route[0], url, route[1])
     router.addRoute(route[0], url & "/", route[1]) # Trailing slash fix.
 
+# Manual routes
+router.post("/auth/sign_up", signUp)
+router.post("/auth/sign_up/", signUp)
+
 log "Serving on http://localhost:" & $port
 initEverythingForRoutes()
 newServer(router).serve(Port(port))
