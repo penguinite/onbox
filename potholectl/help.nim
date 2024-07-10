@@ -28,7 +28,7 @@ Potholectl $#
 Copyright (c) Leo Gavilieau 2023
 Copyright (c) penguinite 2024
 Licensed under the GNU Affero GPL License under version 3 or later.
-""" % [lib.version]
+""" % [lib.phVersion]
 
 func genArg(short,long,desc: string): string =
   var i = 15

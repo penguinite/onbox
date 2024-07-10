@@ -70,7 +70,7 @@ for kind, key, val in p.getopt():
   of cmdEnd: break
 
 if args.check("v","version"):
-  echo "Potholectl v" & lib.version
+  echo "Potholectl v" & lib.phVersion
   quit(0)
 
 case subsystem.toLowerAscii():
