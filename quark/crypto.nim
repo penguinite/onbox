@@ -95,6 +95,11 @@ proc KDFToString*(kdf: KDF): string =
   case kdf:
   of PBKDF_HMAC_SHA512: return "1"
 
+proc KDFToHumanString*(kdf: KDF): string =
+  case kdf:
+  of PBKDF_HMAC_SHA512: return "PBKDF_HMAC_SHA512 (210000 iterations, 32 outlength)"
+
+
 proc `$`*(k: KDF): string = 
   return KDFToString(k)
 
