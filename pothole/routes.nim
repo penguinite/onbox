@@ -67,7 +67,7 @@ proc serveStatic*(req: Request) =
 
 proc signUp*(req: Request) =
   var
-    mp: MultipartEntries
+    fm: FormEntries
     headers: HttpHeaders
 
   # Check first, if sign ups are enabled.
@@ -79,7 +79,7 @@ proc signUp*(req: Request) =
 
   headers["Content-Type"] = "text/html"
   try:
-    mp = req.unrollMultipart()
+    fm = req.unrollForm()
   except CatchableError as err:
     log "Couldn't process request: ", err.msg
     templatePool.withConnection obj:
@@ -88,23 +88,23 @@ proc signUp*(req: Request) =
   
   # Check first if user, email and password exist.
   # Thats the minimum we need for a user.
-  if not mp.isValidFormParam("user") or not mp.isValidFormParam("email") or not mp.isValidFormParam("pass"):
+  if not fm.isValidFormParam("user") or not fm.isValidFormParam("email") or not fm.isValidFormParam("pass"):
     templatePool.withConnection obj:
       req.respond(401, headers, renderError(obj.templatesFolder, "Missing required fields. Make sure the Username, Password and Email fields are filled out."))
     return
 
   var
-    username = sanitizeHandle(mp.getFormParam("user"))
-    email = mp.getFormParam("email") # There isn't really any point to sanitizing emails...
-    password = mp.getFormParam("pass")
+    username = sanitizeHandle(fm.getFormParam("user"))
+    email = fm.getFormParam("email") # There isn't really any point to sanitizing emails...
+    password = fm.getFormParam("pass")
   
   var display_name = username
-  if mp.isValidFormParam("name"):
-    display_name = mp.getFormParam("name")
+  if fm.isValidFormParam("name"):
+    display_name = fm.getFormParam("name")
   
   var bio = ""
-  if mp.isValidFormParam("bio"):
-    bio = mp.getFormParam("bio")
+  if fm.isValidFormParam("bio"):
+    bio = fm.getFormParam("bio")
   
   var user = newUser(username, true, password)
   user.name = display_name
