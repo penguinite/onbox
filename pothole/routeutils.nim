@@ -185,7 +185,27 @@ proc getMultipartParam*(mp: MultipartEntries, param: string): string =
   return mp[param]
 
 proc unrollForm*(req: Request): FormEntries =
-  echo req.body
+  let entries = req.body.smartSplit('&')
+
+  for entry in entries:
+    if '=' notin entry:
+      continue # Invalid entry: Does not have equal sign.
+
+    let entrySplit = entry.smartSplit('=') # let's just re-use this amazing function.
+
+    if len(entrySplit) != 2:
+      continue # Invalid entry: Does not have precisely two parts.
+
+    var
+      key = entrySplit[0].decodeQueryComponent()
+      val = entrySplit[1].decodeQueryComponent()
+
+    if key.isEmptyOrWhitespace() or val.isEmptyOrWhitespace():
+      continue # Invalid entry: Key or val (or both) are empty or whitespace. Invalid.
+
+    result[key] = val
+  
+  return result
 
 proc isValidFormParam*(mp: FormEntries, param: string): bool =
   ## Returns a parameter submitted via a HTML form
