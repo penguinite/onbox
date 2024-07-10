@@ -16,16 +16,16 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Quark
-#import quark/[user, post]
+import quark/[user, post]
 
 # From somewhere in Pothole
-import conf, assets, database, routeutils
+import pothole/[conf, assets, database, routeutils, lib]
 
 # From somewhere in the standard library
 import std/[tables, mimetypes, os]
 
 # From nimble/other sources
-import mummy, waterpark/postgres
+import mummy, waterpark/postgres, rng
 
 const renderURLs*: Table[string,string] = {
   "/": "index.html", 
@@ -65,4 +65,73 @@ proc serveStatic*(req: Request) =
         return
       req.respond(200, headers, readFile(obj.staticFolder & file & ext))
 
+proc signUp*(req: Request) =
+  var
+    mp: MultipartEntries
+    headers: HttpHeaders
+
+  # Check first, if sign ups are enabled.
+  configPool.withConnection config:
+    if not config.getBoolOrDefault("user", "registrations_open", true):
+      templatePool.withConnection obj:
+        req.respond(401, headers, renderError(obj.templatesFolder, "Signups are disabled on this instance!"))
+        return
+
+  headers["Content-Type"] = "text/html"
+  try:
+    mp = req.unrollMultipart()
+  except CatchableError as err:
+    log "Couldn't process request: ", err.msg
+    templatePool.withConnection obj:
+      req.respond(401, headers, renderError(obj.templatesFolder, "Couldn't process request."))
+      return
   
+  # Check first if user, email and password exist.
+  # Thats the minimum we need for a user.
+  if not mp.isValidFormParam("user") or not mp.isValidFormParam("email") or not mp.isValidFormParam("pass"):
+    templatePool.withConnection obj:
+      req.respond(401, headers, renderError(obj.templatesFolder, "Missing required fields. Make sure the Username, Password and Email fields are filled out."))
+    return
+
+  var
+    username = sanitizeHandle(mp.getFormParam("user"))
+    email = mp.getFormParam("email") # There isn't really any point to sanitizing emails...
+    password = mp.getFormParam("pass")
+  
+  var display_name = username
+  if mp.isValidFormParam("name"):
+    display_name = mp.getFormParam("name")
+  
+  var bio = ""
+  if mp.isValidFormParam("bio"):
+    bio = mp.getFormParam("bio")
+  
+  var user = newUser(username, true, password)
+  user.name = display_name
+  user.email = email
+  user.bio = bio
+
+  var require_approval: bool
+  configPool.withConnection config:
+    require_approval = config.getBoolOrDefault("user", "require_approval", false)
+
+  if require_approval:
+    user.is_approved = false
+  else:
+    user.is_approved = true
+
+  try:
+    dbPool.withConnection db:
+      db.addUser(user)
+  except CatchableError as err:
+    var id = randstr(10)
+    log "(ID: \"", id, "\") Couldn't insert user: ", err.msg
+    templatePool.withConnection obj:
+      req.respond(500, headers, renderError(obj.templatesFolder, "Couldn't register account! Contact the instance administrator, error id: " & id))
+  
+  var msg = "Success! Your account has been registered!"
+  if require_approval:
+    msg.add " but you will have to wait for an administrator to approve it before you can log in."
+  
+  templatePool.withConnection obj:
+    req.respond(200, headers, renderSuccess(obj.templatesFolder, msg))
