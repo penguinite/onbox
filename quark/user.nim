@@ -31,11 +31,11 @@ import rng
 
 # A set of characters that you cannot use at all.
 # this filters anything that doesn't make a valid email.
-const unsafeHandleChars*: set[char] = {
-  '!',' ','"', '#','$','%','&','\'',
-  '(',')','*','+',',',';','<', '=','>',
-  '?','[','\\',']','^','`','{','}','|',
-  '~'
+const safeHandleChars*: set[char] = {
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
+  'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+  'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7',
+  '8', '9', '0', '.', '@', '-'
 }
 
 # A set of characters that you cannot use
@@ -66,7 +66,7 @@ type
     discoverable*: bool # A boolean indicating if the user is discoverable
 
 
-proc sanitizeHandle*(handle: string): string =
+func sanitizeHandle*(handle: string, charset: set[char] = safeHandleChars): string =
   ## Checks a string against user.unsafeHandleChars
   ## This is mostly used for checking for valid emails and handles.
   if handle.isEmptyOrWhitespace():
@@ -75,7 +75,7 @@ proc sanitizeHandle*(handle: string): string =
   var oldhandle = toLowerAscii(handle)
   result = ""
   for ch in oldhandle:
-    if ch notin unsafeHandleChars:
+    if ch in charset:
       result.add(ch)
 
   return result
