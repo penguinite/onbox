@@ -5,6 +5,12 @@
   --s2: #a8692d;
   --s3: #a27b4a;
   --link: #d31348;
+  --successBrd: #2c5238;
+  --successBg: #a3eda3;
+  --successTxt: #836d55;
+  --errorBrd: #c72834;
+  --errorBg:#e8a0a6;
+  --errorTxt: #7a3e03;
 }
 
 body {
@@ -15,6 +21,11 @@ body {
   line-height: 1.7;
   max-width: 700px;
   margin:auto;
+}
+
+header {
+  border-bottom: 3px solid var(--txt);
+  margin-bottom: 2rem;
 }
 
 h1 span:nth-child(1n), .avatar span:nth-child(1n) { color: var(--s1); }
@@ -51,3 +62,19 @@ a:hover {
 .right {float: right;}
 .avatar { overflow:auto }
 .arrows { text-align: center; }
+
+.box {
+  padding: 1%;
+  margin: 1%;
+  font-weight: bold;
+}
+.error {
+  border: 4px solid var(--errorBrd);
+  background-color: var(--errorBg);
+  color: var(--errorTxt);
+}
+.success {
+  border: 4px solid var(--successBrd);
+  background-color: var(--successBg);
+  color: var(--successTxt);
+}
