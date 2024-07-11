@@ -112,29 +112,31 @@ proc renderWithExtras*(obj: TemplateObj, fn: string, extras: openArray[(string,s
     table
   )
 
+proc renderError*(obj: TemplateObj, msg: string, fn: string = "generic.html"): string =
+  return obj.renderWithExtras(
+    fn,
+    {
+      "result_type": "error",
+      "result": msg
+    }
+  )
+
+
+proc renderSuccess*(obj: TemplateObj, msg: string, fn: string = "generic.html"): string =
+  return obj.renderWithExtras(
+    fn,
+    {
+      "result_type": "success",
+      "result": msg
+    }
+  )
+
 proc render*(obj: TemplateObj, fn: string): string =
   ## Renders the template file provided by "filename"
   ## using the usual template table.
   return templateify(
     getAsset(obj.templatesFolder, fn),
     obj.table
-  )
-
-proc renderError*(folder: string, msg: string, file: string = "error.html"): string =
-  ## Helper proc to render a "Error!" webpage.
-  ## Replace file with your template file of choice
-  return templateify(
-    getAsset(folder, file),
-    {"error": msg}.toTable,
-  )
-
-
-proc renderSuccess*(folder: string, msg: string, file: string = "success.html"): string =
-  ## Helper proc to render a "Success!" webpage.
-  ## Replace file with your template file of choice
-  return templateify(
-    getAsset(folder, file),
-    {"result": msg}.toTable,
   )
 
 
