@@ -247,11 +247,18 @@ proc signIn*(req: Request) =
         id, "password", newhash
       )
 
-  templatePool.withConnection obj:
-    req.respond(
-      200, headers,
-      obj.renderSuccess("Successful login!", "signin.html")
-    )
+  if fm.isValidFormParam("rememberme"):
+    var session: string
+    let date = utc(now() + 7.days)
+    dbPool.withConnection db:
+      session = db.createSession(id)
+    #; sameSite=Lax; Secure; HttpOnly;
+    headers["Set-Cookie"] = "session=" & session & "; Expires=" & date.format("ddd") & ", " & date.format("dd MMM hh:mm:ss") & " GMT"
+    templatePool.withConnection obj:
+      req.respond(
+        200, headers,
+        obj.renderSuccess("Successful login!", "signin.html")
+      )
 
   # TODO: Create session cookie.
 
