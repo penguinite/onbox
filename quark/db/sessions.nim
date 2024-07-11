@@ -104,9 +104,9 @@ proc dropAllSessionsForUser*(db: DbConn, user: string) =
   db.exec(sql"DELET FROM sessions WHERE uid = ?;", user)
 
 proc cleanSessions*(db: DbConn) =
-  ## Cleans sessions that have expired.
-  for row in db.getAllRows(sql"SELECT id FROM sessions;"):
-    if db.sessionExpired(row[0]):
+  ## Cleans sessions that have expired or that belong to non-existent users.
+  for row in db.getAllRows(sql"SELECT id,uid FROM sessions;"):
+    if not db.userIdExists(row[1]) or db.sessionExpired(row[0]):
       db.dropSession(row[0])
 
 proc cleanSessionsVerbose*(db: DbConn): seq[(string, string)] =
