@@ -17,10 +17,10 @@
     </header>
     <main>
       $if(result)$
-        <div class="box result">
-          $result$
+        <div class="box result $result_type$">
+            $result$
         </div>
-      $end$
+	  $end$
       <p>Fill out the following information to sign into your account</p>
       <form method="post">
         <label for="user">Username or Email:</label> <input type="text" name="user"> <label for="pass">Password:</label> <input type="password" name="pass">
