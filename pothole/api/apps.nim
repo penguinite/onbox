@@ -62,7 +62,7 @@ proc v1Apps*(req: Request) =
   else:
     # Throw an error if the format of the message can't be understood
     req.respond(
-      401,
+      400,
       headers,
       $(%*{"error": "Couldn't process request!"})
     )
@@ -84,7 +84,7 @@ proc v1Apps*(req: Request) =
   of "application/x-www-form-urlencoded":
     var fm = req.unrollForm()
     if not fm.isValidFormParam("client_name") or not fm.isValidFormParam("redirect_uris"):
-      req.respond(401, headers, $(%*{"error": "Missing required parameters."}))
+      req.respond(400, headers, $(%*{"error": "Missing required parameters."}))
       return
 
     # Get the website if it exists
@@ -103,7 +103,7 @@ proc v1Apps*(req: Request) =
 
     # Check if the required stuff is there
     if not mp.isValidMultipartParam("client_name") or not mp.isValidMultipartParam("redirect_uris"):
-      req.respond(401, headers, $(%*{"error": "Missing required parameters."}))
+      req.respond(400, headers, $(%*{"error": "Missing required parameters."}))
       return
   
     # Get the website if it exists
@@ -122,17 +122,17 @@ proc v1Apps*(req: Request) =
     try:
       json = parseJSON(req.body)
     except:
-      req.respond(401, headers, $(%*{"error": "Invalid JSON."}))
+      req.respond(400, headers, $(%*{"error": "Invalid JSON."}))
       return
 
     # Double check if the parsed JSON is *actually* valid.
     if json.kind == JNull:
-      req.respond(401, headers, $(%*{"error": "Invalid JSON."}))
+      req.respond(400, headers, $(%*{"error": "Invalid JSON."}))
       return
     
     # Check if the required stuff is there
     if not json.hasValidStrKey("client_name") or not json.hasValidStrKey("redirect_uris"):
-      req.respond(401, headers, $(%*{"error": "Missing required parameters."}))
+      req.respond(400, headers, $(%*{"error": "Missing required parameters."}))
       return
 
     # Get the website if it exists
@@ -154,7 +154,7 @@ proc v1Apps*(req: Request) =
   if req_scopes != scopes:
     for scope in req_scopes.split(" "):
       if not scope.verifyScope():
-        req.respond(401, headers, $(%*{"error": "Invalid scope: " & escape(scope)}))
+        req.respond(400, headers, $(%*{"error": "Invalid scope: " & escape(scope)}))
         return
     scopes = req_scopes
   

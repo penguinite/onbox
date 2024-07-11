@@ -76,7 +76,7 @@ proc signUp*(req: Request) =
     if not config.getBoolOrDefault("user", "registrations_open", true):
       templatePool.withConnection obj:
         req.respond(
-          401, headers, 
+          400, headers, 
           obj.renderError("Signups are disabled on this instance!", "signup.html"))
         return
   
@@ -87,7 +87,7 @@ proc signUp*(req: Request) =
     log "Couldn't process request: ", err.msg
     templatePool.withConnection obj:
       req.respond(
-        401, headers,
+        400, headers,
         obj.renderError("Couldn't process requests!","signup.html"))
       return
   
@@ -96,7 +96,7 @@ proc signUp*(req: Request) =
   if not fm.isValidFormParam("user") or not fm.isValidFormParam("email") or not fm.isValidFormParam("pass"):
     templatePool.withConnection obj:
       req.respond(
-        401, headers, 
+        400, headers, 
         obj.renderError("Missing required fields. Make sure the Username, Password and Email fields are filled out properly.","signup.html"))
     return
 
@@ -142,7 +142,7 @@ proc signUp*(req: Request) =
     if db.userHandleExists(user.handle):
       templatePool.withConnection obj:
         req.respond(
-          401, headers, 
+          400, headers, 
           obj.renderError("User with the same username already exists!", "signup.html"))
         return
     
