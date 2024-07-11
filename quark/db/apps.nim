@@ -15,22 +15,41 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# quark/db/boosts.nim:
-## This module contains all database logic for handling boosts.
+# quark/db/apps.nim:
+## This module handles apps
 
-import ../private/database
-import rng
+# From Quark
+import quark/private/database
+import quark/post
 
+# From standard library
 # From somewhere in the standard library
-import std/[tables, strutils]
+import std/[tables, strutils, times]
+
+# From elsewhere (third-party libraries)
+import rng
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # The client Id for the application
 "secret": "TEXT NOT NULL", # The client secret for the application
 "scopes": "TEXT NOT NULL", # Scopes of this application, space-separated.
 "name": "TEXT ", # Name of application
-"link": "TEXT" # The homepage or source code link to the application
+"link": "TEXT", # The homepage or source code link to the application
+"last_accessed": "TIMESTAMP NOT NULL", # Last used timestamp, when this is older than 2 weeks, the row is deleted.
 }.toOrderedTable
+
+proc purgeOldApps*(db: DbConn) =
+  for row in db.getAllRows(sql"SELECT id, last_accessed FROM apps;"):
+    if row[0] == "0":
+      continue
+
+    if now().utc - toDateFromDb(row[1]) == initDuration(weeks = 1):
+      db.exec("DELETE FROM apps WHERE id = ?;", row[0])
+
+proc updateTimestamp*(db: DbConn, id: string) =
+  if not has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id)):
+    return
+  db.exec(sql"UPDATE apps SET last_accessed = ? WHERE id = ?;", now().toDbString(), id)
 
 proc createNullClient*(db: DbConn) =
   db.exec(sql"INSERT INTO apps VALUES (?,?,?,?,?,?);", "0", "0", "read", "", "", now().toDbString())
@@ -41,20 +60,27 @@ proc createClient*(db: DbConn, name: string, link: string = "", scopes: string =
   while db.getRow(sql"SELECT name FROM apps WHERE id = ?;", id)[0] != "":
     id = randstr()
 
-  db.exec(sql"INSERT INTO apps VALUES (?,?,?);", id, secret, scopes, name, link)
+  db.exec(sql"INSERT INTO apps VALUES (?,?,?,?,?,?);", id, secret, scopes, name, link, now().toDbString())
   return id
 
 proc getClientLink*(db: DbConn, id: string): string = 
+  db.updateTimestamp(id)
   return db.getRow(sql"SELECT link FROM apps WHERE id = ?;", id)[0]
 
 proc getClientName*(db: DbConn, id: string): string = 
+  db.updateTimestamp(id)
   return db.getRow(sql"SELECT name FROM apps WHERE id = ?;", id)[0]
 
 proc getClientSecret*(db: DbConn, id: string): string =
+  db.updateTimestamp(id)
   return db.getRow(sql"SELECT secret FROM apps WHERE id = ?;", id)[0]
 
 proc clientExists*(db: DbConn, id: string): bool = 
-  return has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id))
+  if has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id)):
+    db.updateTimestamp(id)
+    return true
+  else:
+    return false
 
 proc returnStartOrScope(s: string): string =
   if s.startsWith("read"):
@@ -68,6 +94,7 @@ proc returnStartOrScope(s: string): string =
   return s
 
 proc hasScope*(db: DbConn, id:string, scope: string): bool =
+  db.updateTimestamp(id)
   let appScopes = db.getRow(sql"SELECT scopes FROM apps WHERE id = ?;", id)[0].split(" ")
   result = false
 
