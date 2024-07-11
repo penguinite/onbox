@@ -137,6 +137,16 @@ proc signUp*(req: Request) =
   else:
     user.is_approved = true
 
+  # Check if a user like this already exists.
+  dbPool.withConnection db:
+    if db.userHandleExists(user.handle):
+      templatePool.withConnection obj:
+        req.respond(
+          401, headers, 
+          obj.renderError("User with the same username already exists!", "signup.html"))
+        return
+    
+
   # Finally, insert the user
   try:
     dbPool.withConnection db:
