@@ -89,8 +89,6 @@ proc getDomains*(db: DbConn): CountTable[string] =
 proc getTotalDomains*(db: DbConn): int =
   return db.getDomains().len()
 
-
-
 proc userIdExists*(db: DbConn, id:string): bool =
   ## A procedure to check if a user exists by id
   ## This procedures does escape IDs by default.
@@ -196,11 +194,8 @@ proc updateUserByHandle*(db: DbConn, handle: string, column, value: string) =
   # Then update!
   db.exec(sql("UPDATE users SET " & column & " = ? WHERE handle = ?;"), value, sanitizeHandle(handle))
   
-proc updateUserById*(db: DbConn, id: User.id, column, value: string) = 
+proc updateUserById*(db: DbConn, id, column, value: string) = 
   ## A procedure to update any user (The user is identified by their ID)
-  ## Like with the updateUserByHandle() function, the only sanitized parameter is the id. 
-  ## You *have* to sanitize the value argument yourself
-  ## For guidance, look at the sanitizeHandle() procedure in user.nim or the escape() procedure in the strutils module
   
   # Check if the user or column exists
   if not db.userIdExists(id):
