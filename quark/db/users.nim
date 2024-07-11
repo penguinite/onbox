@@ -101,7 +101,7 @@ proc userHandleExists*(db: DbConn, handle:string): bool =
 
 proc userEmailExists*(db: DbConn, email: string): bool =
   ## Checks if a user with a specific email exists.
-  return has(db.getRow(sql"SELECT local FROM users WHER email = ?;", email))
+  return has(db.getRow(sql"SELECT local FROM users WHERE email = ?;", email))
 
 proc getUserIdByEmail*(db: DbConn, email: string): string =
   ## Retrieves the user id by using the email associated with the user
