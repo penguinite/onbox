@@ -104,6 +104,9 @@ for url, route in apiRoutes.pairs:
 
 # Manual routes
 router.post("/auth/sign_up", signUp)
+router.post("/auth/sign_up/", signIn)
+router.post("/auth/sign_in", signUp)
+router.post("/auth/sign_in/", signIn)
 router.get("/auth/check", checkSession)
 router.get("/auth/check/", checkSession)
 
