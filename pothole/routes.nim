@@ -16,7 +16,7 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Quark
-import quark/[user, post]
+import quark/[user, post, crypto]
 
 # From somewhere in Pothole
 import pothole/[conf, assets, database, routeutils, lib]
@@ -173,3 +173,87 @@ proc signUp*(req: Request) =
     req.respond(
       500, headers, 
       obj.renderSuccess(msg, "signup.html"))
+
+proc signIn*(req: Request) =
+  var
+    fm: FormEntries
+    headers: HttpHeaders
+  headers["Content-Type"] = "text/html"
+
+  # Unroll form submission data.
+  try:
+    fm = req.unrollForm()
+  except CatchableError as err:
+    log "Couldn't process request: ", err.msg
+    templatePool.withConnection obj:
+      req.respond(
+        400, headers,
+        obj.renderError("Couldn't process requests!","signin.html"))
+      return
+
+  # Check first if user and password exist.
+  if not fm.isValidFormParam("user") or not fm.isValidFormParam("pass"):
+    templatePool.withConnection obj:
+      req.respond(
+        400, headers, 
+        obj.renderError("Missing required fields. Make sure the Username and Password fields are filled out properly.","signin.html"))
+    return
+
+  # First, see if the user exists at all via handle or email.
+  var id = ""
+  dbPool.withConnection db:
+    var user = fm.getFormParam("user")
+    if db.userEmailExists(user):
+      id = db.getUserIdByEmail(user)
+    
+    if db.userHandleExists(sanitizeHandle(user)):
+      id = db.getIdFromHandle(sanitizeHandle(user))
+  
+  if id == "":
+    templatePool.withConnection obj:
+      req.respond(
+        404, headers, 
+        obj.renderError("User doesn't exist!","signin.html"))
+    return
+
+  # Then retrieve various stuff from the database.
+  var
+    hash, salt = ""
+    kdf = crypto.kdf
+  dbPool.withConnection db:
+    salt = db.getUserSalt(id)
+    kdf = db.getUserKDF(id)
+    hash = db.getUserPass(id)
+  
+  # Finally, compare the hashes.
+  if hash != crypto.hash(fm.getFormParam("pass"), salt, kdf):
+    templatePool.withConnection obj:
+      req.respond(
+        400, headers, 
+        obj.renderError("Invalid password!","signin.html"))
+    return
+
+  # And then, see if we need to update the hash
+  # Since we have the password in memory
+  if kdf != crypto.kdf:
+    log "Updating password hash from KDF:", $kdf, " to KDF:", crypto.kdf, " for user \"", id, "\""
+    var newhash = crypto.hash(
+      fm.getFormParam("pass"),
+      salt, crypto.kdf
+    )
+
+    dbPool.withConnection db:
+      db.updateUserById(
+        id, "password", newhash
+      )
+
+  templatePool.withConnection obj:
+    req.respond(
+      200, headers,
+      obj.renderSuccess("Successful login!", "signin.html")
+    )
+
+  # TODO: Create session cookie.
+
+
+
