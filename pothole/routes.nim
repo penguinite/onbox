@@ -77,7 +77,7 @@ proc signUp*(req: Request) =
       templatePool.withConnection obj:
         req.respond(
           401, headers, 
-          obj.renderError("signup.html", "Signups are disabled on this instance!"))
+          obj.renderError("Signups are disabled on this instance!", "signup.html"))
         return
   
   # Unroll form submission data.
@@ -88,7 +88,7 @@ proc signUp*(req: Request) =
     templatePool.withConnection obj:
       req.respond(
         401, headers,
-        obj.renderError("signup.html", "Couldn't process requests!"))
+        obj.renderError("Couldn't process requests!","signup.html"))
       return
   
   # Check first if user, email and password exist.
@@ -97,12 +97,12 @@ proc signUp*(req: Request) =
     templatePool.withConnection obj:
       req.respond(
         401, headers, 
-        obj.renderError("signup.html", "Missing required fields. Make sure the Username, Password and Email fields are filled out properly."))
+        obj.renderError("Missing required fields. Make sure the Username, Password and Email fields are filled out properly.","signup.html"))
     return
 
   # Then, just retrieve all the data we need.
   var
-    username = sanitizeHandle(fm.getFormParam("user"))
+    username = fm.getFormParam("user")
     email = fm.getFormParam("email") # There isn't really any point to sanitizing emails...
     password = fm.getFormParam("pass")
   
@@ -160,7 +160,7 @@ proc signUp*(req: Request) =
     templatePool.withConnection obj:
       req.respond(
         500, headers, 
-        obj.renderError("signup.html", "Couldn't register account! Contact the instance administrator, error id: " & id))
+        obj.renderError("Couldn't register account! Contact the instance administrator, error id: " & id, "signup.html"))
     return
   
   var msg = "Success! Your account has been registered!"
@@ -172,4 +172,4 @@ proc signUp*(req: Request) =
   templatePool.withConnection obj:
     req.respond(
       500, headers, 
-      obj.renderSuccess("signup.html", msg))
+      obj.renderSuccess(msg, "signup.html"))
