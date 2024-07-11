@@ -58,6 +58,7 @@ proc matchTableSchema*(db: DbConn, tablename: string, table: OrderedTable[string
   ## A mismatch could signify someone forgetting to complete the migration instructions.
   #var cols: seq[string] = @[] # To store the columns that are currently in the database
   #var missing: seq[string] = @[] # To store the columns missing from the database.
+  # TODO:
 
 proc has*(row: Row): bool =
   ## A quick helper function to check if a Row is valid.
