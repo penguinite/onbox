@@ -61,7 +61,7 @@ proc serveStatic*(req: Request) =
     else:
       if not fileExists(obj.staticFolder & file & ext):
         headers["Content-Type"] = "text/html"
-        req.respond(404, headers, renderError(obj.templatesFolder, "File couldn't be found."))
+        req.respond(404, headers, renderError(obj, "File couldn't be found."))
         return
       req.respond(200, headers, readFile(obj.staticFolder & file & ext))
 
@@ -69,48 +69,65 @@ proc signUp*(req: Request) =
   var
     fm: FormEntries
     headers: HttpHeaders
+  headers["Content-Type"] = "text/html"
 
   # Check first, if sign ups are enabled.
   configPool.withConnection config:
     if not config.getBoolOrDefault("user", "registrations_open", true):
       templatePool.withConnection obj:
-        req.respond(401, headers, renderError(obj.templatesFolder, "Signups are disabled on this instance!"))
+        req.respond(
+          401, headers, 
+          obj.renderError("signup.html", "Signups are disabled on this instance!"))
         return
-
-  headers["Content-Type"] = "text/html"
+  
+  # Unroll form submission data.
   try:
     fm = req.unrollForm()
   except CatchableError as err:
     log "Couldn't process request: ", err.msg
     templatePool.withConnection obj:
-      req.respond(401, headers, renderError(obj.templatesFolder, "Couldn't process request."))
+      req.respond(
+        401, headers,
+        obj.renderError("signup.html", "Couldn't process requests!"))
       return
   
   # Check first if user, email and password exist.
   # Thats the minimum we need for a user.
   if not fm.isValidFormParam("user") or not fm.isValidFormParam("email") or not fm.isValidFormParam("pass"):
     templatePool.withConnection obj:
-      req.respond(401, headers, renderError(obj.templatesFolder, "Missing required fields. Make sure the Username, Password and Email fields are filled out."))
+      req.respond(
+        401, headers, 
+        obj.renderError("signup.html", "Missing required fields. Make sure the Username, Password and Email fields are filled out properly."))
     return
 
+  # Then, just retrieve all the data we need.
   var
     username = sanitizeHandle(fm.getFormParam("user"))
     email = fm.getFormParam("email") # There isn't really any point to sanitizing emails...
     password = fm.getFormParam("pass")
   
+  # If a display name hasn't been submitted then
+  # just use the username as fallback
   var display_name = username
   if fm.isValidFormParam("name"):
     display_name = fm.getFormParam("name")
   
+  # If bio hasn't been submitted then just keep it empty.
+  # Its not that important...
   var bio = ""
   if fm.isValidFormParam("bio"):
     bio = fm.getFormParam("bio")
   
+  # Create the user and add in all the stuff
+  # we have.
   var user = newUser(username, true, password)
   user.name = display_name
   user.email = email
   user.bio = bio
 
+  # If the instance requires approval
+  # then set is_approved to false
+  # otherwise set it to true
   var require_approval: bool
   configPool.withConnection config:
     require_approval = config.getBoolOrDefault("user", "require_approval", false)
@@ -120,18 +137,29 @@ proc signUp*(req: Request) =
   else:
     user.is_approved = true
 
+  # Finally, insert the user
   try:
     dbPool.withConnection db:
       db.addUser(user)
   except CatchableError as err:
+    # if we fail, for whatever reason, then log it with an id.
+    # and give the id back to the user so that they can
+    # ask the admin what went wrong.
     var id = randstr(10)
     log "(ID: \"", id, "\") Couldn't insert user: ", err.msg
     templatePool.withConnection obj:
-      req.respond(500, headers, renderError(obj.templatesFolder, "Couldn't register account! Contact the instance administrator, error id: " & id))
+      req.respond(
+        500, headers, 
+        obj.renderError("signup.html", "Couldn't register account! Contact the instance administrator, error id: " & id))
+    return
   
   var msg = "Success! Your account has been registered!"
   if require_approval:
+    msg = msg[0..^2]
     msg.add " but you will have to wait for an administrator to approve it before you can log in."
   
+  # All went well... We now have a user on the instance!
   templatePool.withConnection obj:
-    req.respond(200, headers, renderSuccess(obj.templatesFolder, msg))
+    req.respond(
+      500, headers, 
+      obj.renderSuccess("signup.html", msg))
