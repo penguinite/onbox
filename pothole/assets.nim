@@ -30,6 +30,7 @@ when not defined(phNoEmbeddedAssets):
     "about.html": staticRead("../assets/" & phLang & "/about.html"),
     "signup.html": staticRead("../assets/" & phLang & "/signup.html"),
     "signin.html": staticRead("../assets/" & phLang & "/signin.html"),
+    "check.html": staticRead("../assets/" & phLang & "/check.html"),
     "generic.html": staticRead("../assets/" & phLang & "/generic.html"),
     "reaction.html": staticRead("../assets/" & phLang & "/reaction.html"),
     "user_post.html": staticRead("../assets/" & phLang & "/user_post.html"),

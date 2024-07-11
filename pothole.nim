@@ -104,7 +104,8 @@ for url, route in apiRoutes.pairs:
 
 # Manual routes
 router.post("/auth/sign_up", signUp)
-router.post("/auth/sign_up/", signUp)
+router.get("/auth/check", checkSession)
+router.get("/auth/check/", checkSession)
 
 log "Serving on http://localhost:" & $port
 initEverythingForRoutes()

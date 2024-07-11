@@ -16,7 +16,7 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Quark
-import quark/[user, post, crypto]
+import quark/[user, post, crypto, strextra]
 
 # From somewhere in Pothole
 import pothole/[conf, assets, database, routeutils, lib]
@@ -260,7 +260,27 @@ proc signIn*(req: Request) =
         obj.renderSuccess("Successful login!", "signin.html")
       )
 
-  # TODO: Create session cookie.
+proc checkSession*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/html"
 
+  var session = ""
+  if req.headers.contains("Cookie"):
+    session = req.headers["Cookie"].smartSplit('=')[1]
+  
+  var user = ""
+  dbPool.withConnection db:
+    user = db.getSessionUserHandle(session)
 
-
+  templatePool.withConnection obj:
+    req.respond(
+      200, headers,
+      obj.renderWithExtras(
+        "check.html",
+        {
+          "login": session,
+          "user": user
+        }
+      )  
+    )
+  
