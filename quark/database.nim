@@ -93,12 +93,10 @@ proc setup*(
 
   # Add a default app just in case
   if not result.clientExists("0"):
-    discard result.createClient(
-      "0", "", ""
-    )
+    result.createNullClient()
   
   # Create an index on the post table to speed up post by user searches.
-  result.exec "CREATE INDEX IF NOT EXISTS snd_idx ON posts USING btree (sender);"
+  result.exec sql"CREATE INDEX IF NOT EXISTS snd_idx ON posts USING btree (sender);"
   return result
 
 proc init*(name, user, host, password: string): DbConn = 

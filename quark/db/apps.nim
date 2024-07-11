@@ -32,7 +32,8 @@ const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NUL
 "link": "TEXT" # The homepage or source code link to the application
 }.toOrderedTable
 
-# TODO: Finish this and test it
+proc createNullClient*(db: DbConn) =
+  db.exec(sql"INSERT INTO apps VALUES (?,?,?,?,?,?);", "0", "0", "read", "", "", now().toDbString())
 
 proc createClient*(db: DbConn, name: string, link: string = "", scopes: string = "read"): string =
   var id, secret = randstr()
