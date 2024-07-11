@@ -114,6 +114,12 @@ proc getUserSalt*(db: DbConn, user_id: string): string =
     raise newException(DbError, "User with id \"" & user_id & "\" doesn't exist.")
 
   return db.getRow(sql"SELECT salt FROM users WHERE id = ?;", user_id)[0]
+
+proc getUserPass*(db: DbConn, user_id: string): string = 
+  if not db.userIdExists(user_id):
+    raise newException(DbError, "User with id \"" & user_id & "\" doesn't exist.")
+
+  return db.getRow(sql"SELECT password FROM users WHERE id = ?;", user_id)[0]
 proc constructUserFromRow*(row: Row): User =
   ## A procedure that takes a database Row (From the users table)
   ## And turns it into a User object, ready for processing.
