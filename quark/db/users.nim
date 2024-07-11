@@ -101,6 +101,9 @@ proc userHandleExists*(db: DbConn, handle:string): bool =
   ## This procedure does sanitize and escape handles by default
   return has(db.getRow(sql"SELECT local FROM users WHERE handle = ?;", sanitizeHandle(handle)))
 
+proc userEmailExists*(db: DbConn, email: string): bool =
+  ## Checks if a user with a specific email exists.
+  return has(db.getRow(sql"SELECT local FROM users WHER email = ?;", email))
 proc constructUserFromRow*(row: Row): User =
   ## A procedure that takes a database Row (From the users table)
   ## And turns it into a User object, ready for processing.
