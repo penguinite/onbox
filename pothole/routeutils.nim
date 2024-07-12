@@ -139,6 +139,17 @@ proc render*(obj: TemplateObj, fn: string): string =
     obj.table
   )
 
+proc hasSessionCookie*(req: Request): bool =
+  return req.headers.contains("Cookie") and req.headers["Cookie"].smartSplit('=')[0] == "session"
+
+proc fetchSessionCookie*(req: Request): string = 
+  var i = 0
+  let data = req.headers["Cookie"].smartSplit('=')
+  for thing in data:
+    inc i
+    if thing == "session" and high(data) > i:  
+      return data[i]
+
 
 proc isValidQueryParam*(req: Request, query: string): bool =
   ## Check if a query parameter (such as "?query=parameter") is valid and not empty
