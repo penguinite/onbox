@@ -268,13 +268,11 @@ proc signIn*(req: Request) =
     let date = utc(now() + 7.days)
     dbPool.withConnection db:
       session = db.createSession(id)
-    #; sameSite=Lax; Secure; HttpOnly;
-    headers["Set-Cookie"] = "session=" & session & "; Expires=" & date.format("ddd") & ", " & date.format("dd MMM hh:mm:ss") & " GMT"
-    templatePool.withConnection obj:
-      req.respond(
-        200, headers,
-        obj.renderSuccess("Successful login!", "signin.html")
-      )
+  templatePool.withConnection obj:
+    req.respond(
+      200, headers,
+      obj.renderSuccess("Successful login!", "signin.html")
+    )
 
 proc checkSession*(req: Request) =
   var headers: HttpHeaders
