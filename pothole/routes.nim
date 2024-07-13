@@ -268,6 +268,9 @@ proc signIn*(req: Request) =
     let date = utc(now() + 7.days)
     dbPool.withConnection db:
       session = db.createSession(id)
+    # This is a lengthy one-liner, maybe replace it with something more concise?
+    headers["Set-Cookie"] = "session=" & session & "; Path=/; Priority=High; sameSite=Strict; Secure; HttpOnly; Expires=" & date.format("ddd") & ", " & date.format("dd MMM hh:mm:ss") & " GMT"
+      
   templatePool.withConnection obj:
     req.respond(
       200, headers,
