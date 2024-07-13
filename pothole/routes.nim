@@ -71,7 +71,15 @@ proc signUp*(req: Request) =
     headers: HttpHeaders
   headers["Content-Type"] = "text/html"
 
-  # Check first, if sign ups are enabled.
+  # Check if the user is already logged in.
+  if req.hasSessionCookie():
+    templatePool.withConnection obj:
+      req.respond(
+        400, headers, 
+        obj.renderError("You are already logged in.","signin.html"))
+    return
+
+  # Then check, if sign ups are enabled.
   configPool.withConnection config:
     if not config.getBoolOrDefault("user", "registrations_open", true):
       templatePool.withConnection obj:
@@ -179,6 +187,14 @@ proc signIn*(req: Request) =
     fm: FormEntries
     headers: HttpHeaders
   headers["Content-Type"] = "text/html"
+  
+  # Check if the user is already logged in.
+  if req.hasSessionCookie():
+    templatePool.withConnection obj:
+      req.respond(
+        400, headers, 
+        obj.renderError("You are already logged in.","signin.html"))
+    return
 
   # Unroll form submission data.
   try:
