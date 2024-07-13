@@ -280,13 +280,12 @@ proc checkSession*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "text/html"
 
-  var session = ""
-  if req.headers.contains("Cookie"):
-    session = req.headers["Cookie"].smartSplit('=')[1]
+  var session, user = ""
+  if req.hasSessionCookie():
+    session = req.fetchSessionCookie()
   
-  var user = ""
-  dbPool.withConnection db:
-    user = db.getSessionUserHandle(session)
+    dbPool.withConnection db:
+      user = db.getSessionUserHandle(session)
 
   templatePool.withConnection obj:
     req.respond(
