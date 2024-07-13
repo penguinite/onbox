@@ -140,15 +140,21 @@ proc render*(obj: TemplateObj, fn: string): string =
   )
 
 proc hasSessionCookie*(req: Request): bool =
-  return req.headers.contains("Cookie") and req.headers["Cookie"].smartSplit('=')[0] == "session"
+  if not req.headers.contains("Cookie"):
+    return false
+
+  # Primitive but good enough for now.
+  ## TODO: Replace this with something that can't be easily fooled with
+  ## a simple a=session cookie.
+  return "session" in req.headers["Cookie"].smartSplit('=')
 
 proc fetchSessionCookie*(req: Request): string = 
-  var i = 0
-  let data = req.headers["Cookie"].smartSplit('=')
-  for thing in data:
-    inc i
-    if thing == "session" and high(data) > i:  
-      return data[i]
+  var flag = false
+  for val in req.headers["Cookie"].smartSplit('='):
+    if flag:
+      return val
+    if val == "session":  
+      flag = true
 
 
 proc isValidQueryParam*(req: Request, query: string): bool =
