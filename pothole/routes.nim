@@ -365,4 +365,4 @@ const urlRoutes* = {
   "/auth/sign_in": ("POST", signIn),
   "/auth/check": ("GET", checkSession),
   "/auth/logout": ("GET", logoutSession),
-}
+}.toTable
