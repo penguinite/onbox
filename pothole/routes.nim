@@ -23,6 +23,7 @@ import pothole/[conf, assets, database, routeutils, lib]
 
 # From somewhere in the standard library
 import std/[tables, mimetypes, os]
+from std/strutils import startsWith
 
 # From nimble/other sources
 import mummy, waterpark/postgres, rng
@@ -225,7 +226,8 @@ proc signIn*(req: Request) =
         obj.renderError("Missing required fields. Make sure the Username and Password fields are filled out properly.","signin.html"))
     return
 
-  # First, see if the user exists at all via handle or email.
+
+  # Then, see if the user exists at all via handle or email.
   var id = ""
   dbPool.withConnection db:
     var user = fm.getFormParam("user")
@@ -280,11 +282,37 @@ proc signIn*(req: Request) =
       session = db.createSession(id)
     # This is a lengthy one-liner, maybe replace it with something more concise?
     headers["Set-Cookie"] = "session=" & session & "; Path=/; Priority=High; sameSite=Strict; Secure; HttpOnly; Expires=" & date.format("ddd") & ", " & date.format("dd MMM hh:mm:ss") & " GMT"
-      
+
+  # If there is no need for redirection
+  # then just proceed, and render the "You have logged in!" page
+  if not req.isValidQueryParam("return_to"):
+    templatePool.withConnection obj:
+      req.respond(
+        200, headers,
+        obj.renderSuccess("Successful login!", "signin.html")
+      )
+    return
+
+  # User has requested to return to some place.
+  let loc = req.getQueryParam("return_to")
+
+  # If the return_to starts with javascript: or data:
+  # then it might be some form of XSS attack and its best to not
+  # continue redirecting.
+  if loc.startsWith("javascript:") or loc.startsWith("data:"):
+    templatePool.withConnection obj:
+      req.respond(
+        400,
+        headers,
+        obj.renderError("There might be some form of XSS attack going on, we'll end the request just to be safe. But your login was successful!", "signin.html")
+      )
+    return
+
+  headers["Location"] = loc
   templatePool.withConnection obj:
     req.respond(
-      200, headers,
-      obj.renderSuccess("Successful login!", "signin.html")
+      303, headers,
+      obj.renderSuccess("Successful login, redirecting...", "signin.html")
     )
 
 proc checkSession*(req: Request) =
