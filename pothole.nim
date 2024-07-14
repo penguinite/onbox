@@ -109,6 +109,8 @@ router.post("/auth/sign_in", signIn)
 router.post("/auth/sign_in/", signIn)
 router.get("/auth/check", checkSession)
 router.get("/auth/check/", checkSession)
+router.get("/auth/logout", logoutSession)
+router.get("/auth/logout/", logoutSession)
 
 log "Serving on http://localhost:" & $port
 initEverythingForRoutes()

@@ -299,4 +299,26 @@ proc checkSession*(req: Request) =
         }
       )  
     )
+
+proc logoutSession*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/html"
+
+  # Remove session cookie from user's browser.
+  if req.hasSessionCookie():
+    headers["Set-Cookie"] = "session=\"\"; path=/; Max-Age=0"
+    # Check if it actaully exists in the db before removing.
+    # In theory this shouldn't matter but its a good thing to do anyway
+    dbPool.withConnection db:
+      let id = req.fetchSessionCookie()
+      if db.sessionExists(id):
+        db.deleteSession(id)
+
+  # Just render homepage. We dont have a dedicated page for this.
+  templatePool.withConnection obj:
+    req.respond(
+      200, headers,
+      obj.render("index.html")
+    )
+
   
