@@ -321,4 +321,10 @@ proc logoutSession*(req: Request) =
       obj.render("index.html")
     )
 
-  
+
+const urlRoutes* = {
+  "/auth/sign_up": ("POST", signUp),
+  "/auth/sign_in": ("POST", signIn),
+  "/auth/check": ("GET", checkSession),
+  "/auth/logout": ("GET", logoutSession),
+}

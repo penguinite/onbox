@@ -102,15 +102,12 @@ for url, route in apiRoutes.pairs:
     router.addRoute(route[0], url, route[1])
     router.addRoute(route[0], url & "/", route[1]) # Trailing slash fix.
 
-# Manual routes
-router.post("/auth/sign_up", signUp)
-router.post("/auth/sign_up/", signUp)
-router.post("/auth/sign_in", signIn)
-router.post("/auth/sign_in/", signIn)
-router.get("/auth/check", checkSession)
-router.get("/auth/check/", checkSession)
-router.get("/auth/logout", logoutSession)
-router.get("/auth/logout/", logoutSession)
+# Add magical routes
+for url, route in urlRoutes.pairs:
+  router.addRoute(route[0], url, route[1])
+  router.addRoute(route[0], url & "/", route[1]) # Trailing slash fix.
+
+
 
 log "Serving on http://localhost:" & $port
 initEverythingForRoutes()
