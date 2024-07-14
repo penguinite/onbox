@@ -43,8 +43,9 @@ proc prepareTable*(config: ConfigTable, db: DbConn): Table[string, string] =
   result = {
     "name": config.getString("instance","name"), # Instance name
     "description": config.getString("instance","description"), # Instance description
-    "sign_in": config.getStringOrDefault("web","_signin_link", "/auth/sign_in/"), # Sign in link
-    "sign_up": config.getStringOrDefault("web","_signup_link", "/auth/sign_up/"), # Sign up link
+    "sign_in": config.getStringOrDefault("web","signin_link", "/auth/sign_in/"), # Sign in link
+    "sign_up": config.getStringOrDefault("web","signup_link", "/auth/sign_up/"), # Sign up link
+    "log_out": config.getStringOrDefault("web", "logout_link", "/auth/logout/"), # Log out link
     "source": lib.phSourceUrl,
     "signup_enabled": $(config.getBoolOrDefault("user", "registrations_open", true)),
     "version": ""
