@@ -86,6 +86,7 @@ main{
     margin-left: 200px;
     padding: 1%;
     border-left: 20px solid var(--hbrd);
+    word-wrap: break-word;
 }
 
 h1,h2,h3 { font-family: monospace; }
@@ -96,3 +97,33 @@ h3 { font-size: 1.4rem; }
 h1 span:nth-child(1n) { color: var(--t1); }
 h1 span:nth-child(2n) { color: var(--t2); }
 h1 span:nth-child(3n) { color: var(--t3); }
+
+@media screen and (max-width: 1130px) {
+    #burrito {
+        display: initial;
+        border: unset;
+        justify-content: center;
+    }
+    header {
+        display: block;
+        width: auto;
+        background: initial;
+        border: 20px solid var(--hbrd);
+        margin: auto;
+        margin-bottom: 2rem;
+        
+    }
+    header a {
+        margin: 0;
+        padding: 0;
+        width: auto;
+        margin-right: 1rem;
+        margin-left: 1rem;
+        height: auto;
+    }
+    main {
+        margin: 0;
+        border: 20px solid var(--hbrd);    
+        background-color: var(--hbg)
+    }
+}
