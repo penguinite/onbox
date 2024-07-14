@@ -64,3 +64,19 @@ Imports should always be absolute, unless you can't get absolute imports to work
 
 HTML Files should be formatted with Tidy, using the following command: `tidy -i -m -w 160 -ashtml -utf8 html_file_here`
 You can find Tidy in most distribution repositories, and I don't think it matters what version you choose really.
+
+## How to make changes (and where to)
+
+### Wanna fix an API route? (/api/v1/..., /api/pleroma/...)
+
+All API code for Pothole is stored in `pothole/api`, here you will find a bunch of modules, each module contains the routes for a specific method. (`apps.nim` handles `/api/v1/apps/` and so on)
+
+### Creating a new API route.
+
+First of all, if its a new method then create a new module for it in `pothole/api/` and then edit `pothole/api.nim` with the following changes:
+
+1. Import your new module: `import pothole/api/MODULE`
+2. You should be able to see a big variable named apiRoutes.
+3. Add a new entry to it with the following format: `"/full/route/here": ("HTTP_METHOD_HERE_EITHER_GET_POST_PUT_DELETE", routeHandlerHere)`
+4. Boom! You should be done now!
+
