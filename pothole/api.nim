@@ -35,8 +35,12 @@ const apiRoutes* =  {
   "/api/v1/instance/extended_description": ("GET", v1InstanceExtendedDescription),
   "/api/v1/apps": ("POST", v1Apps),
   "/api/v1/apps/verify_credentials": ("GET", v1AppsVerify),
-  "/api/ph/v1/about": ("GET", phAbout),
+  "/oauth/authorize":  ("GET" , oauthAuthorize),
+  "/oauth/token":  ("POST", oauthToken),
+  "/oauth/revoke":  ("POST", oauthRevoke),
+  "/api/ph/v1/about": ("GET", phAbout)
 }.toTable
+
 
 proc logAPI*(req: Request) =
   ## This is tremendously slow, *only* use it for logging API routes.

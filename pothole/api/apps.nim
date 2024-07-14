@@ -75,7 +75,6 @@ proc v1Apps*(req: Request) =
   var
     client_name, website, req_scopes = ""
 
-    # TODO: What does one do with this???
     # The API docs suggest that we should parse and see if its an absolute uri.
     # Throwing an error if it isn't... But like, what's the point of this anyway???
     redirect_uris = ""
@@ -154,8 +153,7 @@ proc v1Apps*(req: Request) =
   if req_scopes != scopes:
     for scope in req_scopes.split(" "):
       if not scope.verifyScope():
-        req.respond(400, headers, $(%*{"error": "Invalid scope: " & escape(scope)}))
-        return
+        respJsonError("Invalid scope: " & scope)
     scopes = req_scopes
   
   var client_id, client_secret: string
@@ -163,7 +161,8 @@ proc v1Apps*(req: Request) =
     client_id = db.createClient(
       client_name,
       website,
-      scopes
+      scopes,
+      redirect_uris
     )
     client_secret = db.getClientSecret(client_id)
   

@@ -7,6 +7,8 @@ TODO: Migrate information from the site over here
 Despite what it looks like, pothole isn't *just* one project. It's more like three different projects stored in a single repository.
 Why store it all in one? Well for one, it makes it easy to contribute, instead of having to coordinate a change in 3 different repositories, we only have to coordinate it in a single one.
 
+In the future though, it might be worth it to split this into three different repositories.
+
 Here is a list of the different "projects" going on in this repository
 
 ### Pothole
@@ -79,4 +81,6 @@ First of all, if its a new method then create a new module for it in `pothole/ap
 2. You should be able to see a big variable named apiRoutes.
 3. Add a new entry to it with the following format: `"/full/route/here": ("HTTP_METHOD_HERE_EITHER_GET_POST_PUT_DELETE", routeHandlerHere)`
 4. Boom! You should be done now!
+
+### Creating a new potholectl command.
 

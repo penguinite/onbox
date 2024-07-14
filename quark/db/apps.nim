@@ -33,6 +33,7 @@ import rng
 const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # The client Id for the application
 "secret": "TEXT NOT NULL", # The client secret for the application
 "scopes": "TEXT NOT NULL", # Scopes of this application, space-separated.
+"redirect_uri": "TEXT DEFAULT 'urn:ietf:wg:oauth:2.0:oob'", # The redirect uri for the app
 "name": "TEXT ", # Name of application
 "link": "TEXT", # The homepage or source code link to the application
 "last_accessed": "TIMESTAMP NOT NULL", # Last used timestamp, when this is older than 2 weeks, the row is deleted.
@@ -49,18 +50,18 @@ proc purgeOldApps*(db: DbConn) =
 proc updateTimestamp*(db: DbConn, id: string) =
   if not has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id)):
     return
-  db.exec(sql"UPDATE apps SET last_accessed = ? WHERE id = ?;", now().toDbString(), id)
+  db.exec(sql"UPDATE apps SET last_accessed = ? WHERE id = ?;", utc(now()).toDbString(), id)
 
 proc createNullClient*(db: DbConn) =
-  db.exec(sql"INSERT INTO apps VALUES (?,?,?,?,?,?);", "0", "0", "read", "", "", now().toDbString())
+  db.exec(sql"INSERT INTO apps VALUES (?,?,?,?,?,?,?);", "0", "0", "read", "", "", "", utc(now()).toDbString())
 
-proc createClient*(db: DbConn, name: string, link: string = "", scopes: string = "read"): string =
+proc createClient*(db: DbConn, name: string, link: string = "", scopes: string = "read", redirect_uri: string = "urn:ietf:wg:oauth:2.0:oob"): string =
   var id, secret = randstr()
   # Check if ID already exists first.
   while db.getRow(sql"SELECT name FROM apps WHERE id = ?;", id)[0] != "":
     id = randstr()
 
-  db.exec(sql"INSERT INTO apps VALUES (?,?,?,?,?,?);", id, secret, scopes, name, link, now().toDbString())
+  db.exec(sql"INSERT INTO apps VALUES (?,?,?,?,?,?,?);", id, secret, scopes, redirect_uri, name, link, utc(now()).toDbString())
   return id
 
 proc getClientLink*(db: DbConn, id: string): string = 
@@ -74,6 +75,14 @@ proc getClientName*(db: DbConn, id: string): string =
 proc getClientSecret*(db: DbConn, id: string): string =
   db.updateTimestamp(id)
   return db.getRow(sql"SELECT secret FROM apps WHERE id = ?;", id)[0]
+
+proc getClientScopes*(db: DbConn, id: string): seq[string] =
+  db.updateTimestamp(id)
+  return db.getRow(sql"SELECT scopes FROM apps WHERE id = ?;", id)[0].split(" ")
+
+proc getClientRedirectUri*(db: DbConn, id: string): string =
+  db.updateTimestamp(id)
+  return db.getRow(sql"SELECT redirect_uri FROM apps WHERE id = ?;", id)[0]
 
 proc clientExists*(db: DbConn, id: string): bool = 
   if has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id)):
@@ -102,6 +111,19 @@ proc hasScope*(db: DbConn, id:string, scope: string): bool =
     if appScope == scope or appScope == scope.returnStartOrScope():
       result = true
       break
+  
+  return result
+
+proc hasScopes*(db: DbConn, id:string, scopes: seq[string]): bool =
+  db.updateTimestamp(id)
+  let appScopes = db.getRow(sql"SELECT scopes FROM apps WHERE id = ?;", id)[0].split(" ")
+  result = false
+
+  for scope in scopes:
+    for appScope in appScopes:
+      if appScope == scope or appScope == scope.returnStartOrScope():
+        result = true
+        break
   
   return result
 
