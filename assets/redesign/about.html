@@ -23,6 +23,24 @@
                 <h1>$name[span_separated]$</h1>
                 <h2>About this instance</h2>
                 <em>$description$</em>
+                <h2>Instance staff</h2>
+                $if(staff)$
+                <ul>
+                    $staff$
+                </ul>
+                $end$
+                $if(!staff)$
+                <p>There's no staff.</p>
+                $end$
+                <h2>Instance rules</h2>
+                $if(rules)$
+                <ol>
+                    $rules$
+                </ol>
+                $end$
+                $if(!rules)$
+                <p>There aren't any rules.</p>
+                $end$
                 <h2>What is this?</h2>
                 <p>This is the homepage for a website running the <a href=$source$>Pothole</a> server program. Pothole is a program that creates a social media network when you run it! Pothole is free and open-source, so anyone can create their own social media network, with full control over it. The benefits of this approach are endless but here is a small list:</p>
                 <ol>

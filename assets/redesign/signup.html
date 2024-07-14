@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>$title$</title>
+        <link rel="stylesheet" href="/base.css">
+    </head>
+    <body>
+        <div id="burrito">
+            <header>
+                <nav>
+                    <a href="/">Home</a>
+                    <a href="/about/">About</a>
+                    <a href="/auth/sign_up/">Register</a>
+                    <a href="/auth/sign_in/">Login</a>
+                    $if(login)$
+                    <a href="/auth/logout/">Logout</a>
+                    $end$
+                </nav>
+            </header>
+            <main>
+                <h1>$name[span_separated]$</h1>
+                $if(signup_enabled)$
+
+                $if(login)$
+                <div class="box result error">
+                  You are already logged in
+                </div>
+                $end$
+                $if(result)$
+                $if(!login)$
+                  <div class="box result $result_type$">
+                      $result$
+                  </div>
+                  $end$
+                $end$
+                <p>Before you sign up, make sure you <a href="/about/#rules">read the instance rules</a></p>
+                <form method="post">
+                      <label for="user">Username:</label> <input type="text" placeholder="einstein" name="user"> <label for="name">Display name:</label> <input type="text"
+                  placeholder="Albert Einstein" name="name"> <label for="bio">Biography:</label> 
+                      <textarea name="bio" rows="15" cols="42" placeholder="I am Albert Einstein, I am the best scientist ever. Hail me, you peasants."></textarea>
+                      <label for="email">Email:</label> <input type="email" name="email" placeholder="albert.einstein@uzh.ch"> <label for="pass">Password:</label>
+                      <input type="password" placeholder="***************" name="pass"><br>
+                      <input type="submit">
+                </form>
+                $end$
+                $if(!signup_enabled)$
+                <p>This instance has disabled user registrations.</p>
+                $end$
+                $if(version)$
+                <p>This server is powered by <a href="$source$">Pothole</a> $version$</p>
+                $end$
+            </main>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>$title$</title>
+        <link rel="stylesheet" href="/base.css">
+    </head>
+    <body>
+        <div id="burrito">
+            <header>
+                <nav>
+                    <a href="/">Home</a>
+                    <a href="/about/">About</a>
+                    <a href="/auth/sign_up/">Register</a>
+                    <a href="/auth/sign_in/">Login</a>
+                    $if(login)$
+                    <a href="/auth/logout/">Logout</a>
+                    $end$
+                </nav>
+            </header>
+            <main>
+                <h1>$name[span_separated]$</h1>
+                <div class="$message_type$">
+                    <h2>$title$</h2>
+                    <p>$message$</p>
+                </div>
+                $if(version)$
+                <p>This server is powered by <a href="$source$">Pothole</a> $version$</p>
+                $end$
+            </main>
+        </div>
+    </body>
+</html>
