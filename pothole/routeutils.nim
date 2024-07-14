@@ -21,7 +21,7 @@ import quark/strextra
 import pothole/[conf, database, lib, assets]
 
 # From somewhere in the standard library
-import std/[tables, options, mimetypes]
+import std/[tables, options, mimetypes, macros, json]
 from std/strutils import `%`
 
 # From nimble/other sources
@@ -166,6 +166,27 @@ proc fetchSessionCookie*(req: Request): string =
     if val == "session":  
       flag = true
 
+proc createHeaders*(a: string): HttpHeaders =
+  result["Content-Type"] = a
+  return
+
+macro respJsonError*(msg: string, code = 400, headers = createHeaders("application/json")) =
+  var req = ident"req"
+
+  result = quote do:
+    `req`.respond(
+      `code`, `headers`, $(%*{"error": `msg`})
+    )
+    return
+
+macro respJson*(msg: JsonNode, code = 200, headers = createHeaders("application/json")) =
+  var req = ident"req"
+
+  result = quote do:
+    `req`.respond(
+      `code`, `headers`, $(msg)
+    )
+    return
 
 proc isValidQueryParam*(req: Request, query: string): bool =
   ## Check if a query parameter (such as "?query=parameter") is valid and not empty
