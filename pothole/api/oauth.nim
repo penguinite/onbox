@@ -104,7 +104,7 @@ proc oauthAuthorize*(req: Request) =
     var headers: HttpHeaders
     configPool.withConnection config:
       var return_to = "response_type=code&client_id=\"$#\"&redirect_uri=\"$#\"&scope=\"$#\"&force_login=$#&lang=en" % [client_id, req.getQueryParam("redirect_uri"), scopes.join(" "), $force_login]
-      headers["Location"] = config.getStringOrDefault("web", "api_endpoint", "/") & "auth/sign_in/?return_to=" & return_to
+      headers["Location"] = config.getStringOrDefault("web", "endpoint", "/") & "auth/sign_in/?return_to=" & return_to
 
     req.respond(
       303, headers, ""
