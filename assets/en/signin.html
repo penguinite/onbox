@@ -15,10 +15,17 @@
       </nav>
     </header>
     <main>
+      $if(login)$
+      <div class="box result error">
+        You are already logged in
+      </div>
+      $end$
       $if(result)$
+      $if(!login)$
         <div class="box result $result_type$">
             $result$
         </div>
+        $end$
 	  $end$
       <p>Fill out the following information to sign into your account</p>
       <form method="post">

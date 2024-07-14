@@ -17,10 +17,17 @@
     <main>
       $if(signup_enabled)$
 
-	  $if(result)$
+      $if(login)$
+      <div class="box result error">
+        You are already logged in
+      </div>
+      $end$
+      $if(result)$
+      $if(!login)$
         <div class="box result $result_type$">
             $result$
         </div>
+        $end$
 	  $end$
 	  <p>Before you sign up, make sure you <a href="/about/#rules">read the instance rules</a></p>
 	  <form method="post">

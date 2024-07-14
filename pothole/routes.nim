@@ -42,11 +42,21 @@ proc serveAndRender*(req: Request) =
   if path[high(path)] == '/' and path != "/":
     path = path[0..^2] # Remove last slash at the end of the path
   
-  templatePool.withConnection obj:
-    req.respond(
-      200, headers,
-      obj.render(renderURLs[path])
-    )
+
+  # If the user has a cookie, then let the templating engine know.
+  # signin.html and signup.html have some login-related conditionals in the template.
+  if req.hasSessionCookie():
+    templatePool.withConnection obj:
+      req.respond(
+        200, headers,
+        obj.renderWithExtras(renderURLs[path], {"login": req.fetchSessionCookie()})
+      )
+  else:
+    templatePool.withConnection obj:
+      req.respond(
+        200, headers,
+        obj.render(renderURLs[path])
+      )
 
 proc serveStatic*(req: Request) =
   var headers: HttpHeaders
