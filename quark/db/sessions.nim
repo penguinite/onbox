@@ -95,11 +95,11 @@ proc sessionValid*(db: DbConn, id, user: string): bool =
 
   return true
 
-proc dropSession*(db: DbConn, id: string) =
+proc deleteSession*(db: DbConn, id: string) =
   ## Deletes a session.
   db.exec(sql"DELETE FROM sessions WHERE id = ?;", id)
 
-proc dropAllSessionsForUser*(db: DbConn, user: string) =
+proc deleteAllSessionsForUser*(db: DbConn, user: string) =
   ## Deletes all the sessions that a single user has.
   db.exec(sql"DELET FROM sessions WHERE uid = ?;", user)
 
@@ -107,7 +107,7 @@ proc cleanSessions*(db: DbConn) =
   ## Cleans sessions that have expired or that belong to non-existent users.
   for row in db.getAllRows(sql"SELECT id,uid FROM sessions;"):
     if not db.userIdExists(row[1]) or db.sessionExpired(row[0]):
-      db.dropSession(row[0])
+      db.deleteSession(row[0])
 
 proc cleanSessionsVerbose*(db: DbConn): seq[(string, string)] =
   ## Cleans sessions that have expired.
@@ -123,4 +123,4 @@ proc cleanSessionsVerbose*(db: DbConn): seq[(string, string)] =
         row[0],
         db.getSessionUser(row[0])
       ))
-      db.dropSession(row[0])
+      db.deleteSession(row[0])
