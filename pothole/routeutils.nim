@@ -144,10 +144,19 @@ proc hasSessionCookie*(req: Request): bool =
   if not req.headers.contains("Cookie"):
     return false
 
-  # Primitive but good enough for now.
-  ## TODO: Replace this with something that can't be easily fooled with
-  ## a simple a=session cookie.
-  return "session" in req.headers["Cookie"].smartSplit('=')
+  var
+    val = ""
+    flag = false
+  for item in req.headers["Cookie"].smartSplit('='):
+    if flag:
+      val = item
+      flag = false
+    if item == "session":
+      flag = true
+  
+  if val.isEmptyOrWhitespace() and val != "null":
+    return false
+  return true
 
 proc fetchSessionCookie*(req: Request): string = 
   var flag = false
