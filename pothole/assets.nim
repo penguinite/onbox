@@ -30,6 +30,7 @@ when not defined(phNoEmbeddedAssets):
     "about.html": staticRead("../assets/" & phLang & "/about.html"),
     "signup.html": staticRead("../assets/" & phLang & "/signup.html"),
     "signin.html": staticRead("../assets/" & phLang & "/signin.html"),
+    "oauth.html": staticRead("../assets/" & phLang & "/oauth.html"),
     "generic.html": staticRead("../assets/" & phLang & "/generic.html"),
     "style.css": staticRead("../assets/style.css") # CSS doesn't need language.
   }.toTable
