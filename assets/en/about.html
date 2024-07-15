@@ -42,7 +42,7 @@
                 <p>There aren't any rules.</p>
                 $end$
                 <h2>What is this?</h2>
-                <p>This is the homepage for a website running the <a href=$source$>Pothole</a> server program. Pothole is a program that creates a social media network when you run it! Pothole is free and open-source, so anyone can create their own social media network, with full control over it. The benefits of this approach are endless but here is a small list:</p>
+                <p>This is the homepage for a website running the <a href="$source$"">Pothole</a> server program. Pothole is a program that creates a social media network when you run it! Pothole is free and open-source, so anyone can create their own social media network, with full control over it. The benefits of this approach are endless but here is a small list:</p>
                 <ol>
                     <li>Privacy: All your data is in your hands, and not in the hands of some Big Tech conglomerate that will eventually get leaked. (Examples include: <a href="https://www.wired.com/story/twitter-leak-200-million-user-email-addresses/">Twitter</a>, <a href="https://www.androidpolice.com/google-leak-data-privacy-breach/">Google</a>, <a href="https://en.wikipedia.org/wiki/Facebook%E2%80%93Cambridge_Analytica_data_scandal">Facebook/Meta</a>, but these examples usually get old quite quickly)</li>
                     <li>Freedom: You're free to run your own instance, however you wish. But remember: <a href="https://github.com/penguinite/pothole/blob/d22fd8ca67196fc2d1483eaee7b0c6f727200807/LICENSE#L587">the Pothole developers are in <b>no way</b> liable for any damages whatsoever.</a></li>
@@ -60,8 +60,10 @@
                 <p>The fediverse is a growing collection of servers all running programs that can interoperate with each other. What this means is that if you have an account here, then you can talk to others on different websites, without having to make an account there as well.</p>
                 $end$
                 $if(version)$
-                <p>This server is powered by <a href="$source$">Pothole</a> $version$</p>
-                $end$
+                <footer>
+                    <p>This server is powered by <a href="$source$">Pothole</a> $version$</p>
+                </footer>
+                    $end$
             </main>
         </div>
     </body>

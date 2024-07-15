@@ -39,9 +39,11 @@
         <label for="rememberme">Remember me:<input type="checkbox" name="rememberme" checked="true"></label>
         <input type="submit">
       </form>
-                $if(version)$
-                <p>This server is powered by <a href="$source$">Pothole</a> $version$</p>
-                $end$
+      $if(version)$
+      <footer>
+          <p>This server is powered by <a href="$source$">Pothole</a> $version$</p>
+      </footer>
+      $end$
             </main>
         </div>
     </body>
