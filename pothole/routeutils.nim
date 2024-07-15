@@ -101,7 +101,7 @@ template withConnection*(pool: TemplatingPool, obj, body) =
     finally:
       pool.recycle(obj)
 
-proc renderWithExtras*(obj: TemplateObj, fn: string, extras: openArray[(string,string)]): string =
+proc render*(obj: TemplateObj, fn: string, extras: openArray[(string,string)] = @[]): string =
   ## Renders the "fn" template file using the usual template table + any extras provided by the extras parameter
   var table = obj.table
 
@@ -114,30 +114,24 @@ proc renderWithExtras*(obj: TemplateObj, fn: string, extras: openArray[(string,s
   )
 
 proc renderError*(obj: TemplateObj, msg: string, fn: string = "generic.html"): string =
-  return obj.renderWithExtras(
+  return obj.render(
     fn,
     {
-      "result_type": "error",
-      "result": msg
+      "message_type": "error",
+      "title": "Error!",
+      "message": msg
     }
   )
 
 
 proc renderSuccess*(obj: TemplateObj, msg: string, fn: string = "generic.html"): string =
-  return obj.renderWithExtras(
+  return obj.render(
     fn,
     {
-      "result_type": "success",
-      "result": msg
+      "message_type": "success",
+      "title": "Success!",
+      "message": msg
     }
-  )
-
-proc render*(obj: TemplateObj, fn: string): string =
-  ## Renders the template file provided by "filename"
-  ## using the usual template table.
-  return templateify(
-    getAsset(obj.templatesFolder, fn),
-    obj.table
   )
 
 proc hasSessionCookie*(req: Request): bool =

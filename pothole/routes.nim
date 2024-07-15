@@ -50,7 +50,7 @@ proc serveAndRender*(req: Request) =
     templatePool.withConnection obj:
       req.respond(
         200, headers,
-        obj.renderWithExtras(renderURLs[path], {"login": req.fetchSessionCookie()})
+        obj.render(renderURLs[path], {"login": req.fetchSessionCookie()})
       )
   else:
     templatePool.withConnection obj:
@@ -319,21 +319,21 @@ proc checkSession*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "text/html"
 
-  var session, user = ""
+  var msg = "Not logged in at all"
+
   if req.hasSessionCookie():
-    session = req.fetchSessionCookie()
-  
+    msg = "Logged in as "
     dbPool.withConnection db:
-      user = db.getSessionUserHandle(session)
+      msg.add(db.getSessionUserHandle(req.fetchSessionCookie()))
 
   templatePool.withConnection obj:
     req.respond(
       200, headers,
-      obj.renderWithExtras(
+      obj.render(
         "check.html",
         {
-          "login": session,
-          "user": user
+          "title": "Login check",
+          "message": msg
         }
       )  
     )
