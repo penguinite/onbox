@@ -101,6 +101,11 @@ proc getStringArrayOrDefault*(config: ConfigTable, section, key: string, default
     return config.getStringArray(section, key)
   return default
 
+proc getEnvOrDefault*(env: string, default: string): string =
+  if not existsEnv(env):
+    return default
+  return getEnv(env)
+
 import waterpark
 
 type
@@ -113,7 +118,7 @@ proc borrow*(pool: ConfigPool): ConfigTable {.inline, raises: [], gcsafe.} =
 proc recycle*(pool: ConfigPool, conn: ConfigTable) {.inline, raises: [], gcsafe.} =
   pool.pool.recycle(conn)
 
-proc newConfigPool*(size: int = 10, filename: string = getConfigFilename()): ConfigPool =
+proc newConfigPool*(size: int, filename: string = getConfigFilename()): ConfigPool =
   result.pool = newPool[ConfigTable]()
   try:
     for _ in 0 ..< size:

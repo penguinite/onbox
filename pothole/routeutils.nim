@@ -22,7 +22,7 @@ import pothole/[conf, database, lib, assets]
 
 # From somewhere in the standard library
 import std/[tables, options, mimetypes, macros, json]
-from std/strutils import `%`
+from std/strutils import `%`, parseInt
 
 # From nimble/other sources
 import mummy, mummy/multipart, waterpark, waterpark/postgres, temple
@@ -269,7 +269,7 @@ var
   templatePool*: TemplatingPool
 
 proc initEverythingForRoutes*() =
-  configPool = newConfigPool()
+  configPool = newConfigPool(parseInt(getEnvOrDefault("POTHOLE_CONFIG_SIZE", "75")))
   
 
   configPool.withConnection config:
