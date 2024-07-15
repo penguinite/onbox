@@ -1,152 +1,166 @@
-:root {
-    --bg: #1c1c1c;
-    --hbrd: #2b2b2b;
-    --hbg: #232323; 
-    --txt: #ededed;
-    --t1: #fff;
-    --t2: #e7e7e7;
-    --t3: #c4c4c4;
-    --successBrd: #2c5238;
-    --successBg: #a3eda3;
-    --successTxt: #836d55;
-    --errorBrd: #c72834;
-    --errorBg:#e8a0a6;
-    --errorTxt: #7a3e03;
-}
-@media (prefers-color-scheme: light) {
-    :root {
-        --bg: #ededed;
-        --txt: #282828;
-    }
-}
-
-html,body{height:100%;}
-
-.fancy {
-    font-family: Iowan Old Style, Apple Garamond, Baskerville, Times New Roman, Droid Serif, Times, Source Serif Pro, serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
-}
-
-code, pre, .code {
-    font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
-}
-
 body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif; 
-    background-color: var(--bg);
-    color: var(--txt);
-}
+  font-family: system-ui, sans-serif;
+  background-color: #c8bee4;
+  color: #fff; }
+
+body, html {
+  width: 100vw;
+  height: 100vh; }
 
 #burrito {
-    border: 20px solid var(--hbrd);
-    border-radius: 0.75rem;
-    width: 90%;
-    margin:auto;
-    padding-bottom: 0;
-    margin-bottom: 0;
-    background-color: var(--hbg);
-    display: flex;
-    justify-content: space-between;
-}
+  width: 80%;
+  height: auto;
+  margin: auto;
+  display: flex;
+  border: 10px solid #000; }
+
+header, main, #burrito {
+  color: #f6daef;
+  background-color: #141414; }
 
 header {
-    width: 0px;
-    padding: 1%;
-    background-color: var(--hbg);
-    float:left;
-}
+  width: 200px;
+  border-right: 10px solid #000; }
+  header a {
+    display: inline-block;
+    font-size: 1.2rem;
+    margin: 0.5rem 0 0.5rem 0.5rem;
+    width: 180px; }
+  header a::before {
+    content: "> "; }
 
-nav {
-    width: 100%;
-    height: 100%;
-}
+main {
+  width: auto;
+  margin-left: 1%;
+  padding: 1%;
+  flex: 1; }
+
+footer, h1 {
+  text-align: center; }
+
+h1 {
+  font-size: 3rem; }
+
+h2 {
+  font-size: 2rem; }
+
+h3 {
+  font-size: 1.5rem; }
 
 a {
-    font-family: monospace;
-    border-radius: 0.1rem;
-    transition: color 0.25s, background-color 0.25s;
-    color: var(--txt);
-    font-size: 1rem;
-}
-
-header a {
-    display:inline-block;
-    width: 185px;
-    line-height: 30px;
-    margin: 1%;
-    font-size: 1.1rem;
-    height: 30px;
-    padding-left: 5%;
-}
-
-nav:first-child {
-    margin-top: 1rem;
-}
+  color: #aae040;
+  transition: color 0.2s, background-color 0.2s;
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 1.1rem; }
 
 a:hover {
-    color: var(--hbg);
-    background-color: var(--txt);
-}
+  color: #141414;
+  background-color: #aae040; }
 
-main{
-    float:right;
-    margin-left: 200px;
-    padding: 1%;
-    border-left: 20px solid var(--hbrd);
-    word-wrap: break-word;
-}
+p, li, a {
+  font-size: 1.1rem;
+  letter-spacing: 0.025rem;
+  line-height: 1.4; }
 
-h1,h2,h3 { font-family: monospace; }
-
-h1 { font-size: 2.5rem; }
-h2 { font-size: 1.7rem; }
-h3 { font-size: 1.4rem; }
-h1 span:nth-child(1n) { color: var(--t1); }
-h1 span:nth-child(2n) { color: var(--t2); }
-h1 span:nth-child(3n) { color: var(--t3); }
+li {
+  margin: 0.75rem 0 0.75rem 0; }
 
 .box {
-    padding: 1%;
-    margin: 1%;
-    font-weight: bold;
-    border: 4px solid var(--hbrd);
-}
-.error {
-    border: 4px solid var(--errorBrd);
-    background-color: var(--errorBg);
-    color: var(--errorTxt);
-}
-.success {
-    border: 4px solid var(--successBrd);
-    background-color: var(--successBg);
-    color: var(--successTxt);
-}
+  max-width: 50%;
+  margin: auto;
+  padding: 2%;
+  border: 10px solid #000;
+  height: auto;
+  padding-bottom: 5%; }
 
-@media screen and (max-width: 1130px) {
-    #burrito {
-        display: initial;
-        border: unset;
-        justify-content: center;
-    }
-    header {
-        display: block;
-        width: auto;
-        background: initial;
-        border: 20px solid var(--hbrd);
-        margin: auto;
-        margin-bottom: 2rem;
-        
-    }
+button.oauth {
+  width: 15rem;
+  padding: 1%;
+  color: #f6daef;
+  font-size: 1.3rem; }
+
+button.green {
+  background-color: #1dac41;
+  border: 3px solid #14895e;
+  float: left; }
+  button.green:hover, button.green:focus {
+    background-color: #14895e; }
+
+button.red {
+  background-color: #fc0e46;
+  border: 3px solid #c40a0c;
+  float: right; }
+  button.red:hover, button.red:focus {
+    background-color: #c40a0c; }
+
+@media screen and (max-width: 1150px) {
+  .box {
+    padding-bottom: 2rem; }
+
+  button.oauth {
+    margin: auto;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    width: 99%;
+    float: initial; } }
+@media screen and (max-width: 830px) {
+  #burrito {
+    width: 90%; } }
+@media screen and (max-width: 680px) {
+  #burrito {
+    display: block; }
+
+  header {
+    border-right: none;
+    width: auto;
+    text-align: center; }
     header a {
-        margin: 0;
-        padding: 0;
-        width: auto;
-        margin-right: 1rem;
-        margin-left: 1rem;
-        height: auto;
-    }
-    main {
-        margin: 0;
-        border: 20px solid var(--hbrd);    
-        background-color: var(--hbg)
-    }
-}
+      width: auto;
+      font-size: 1.45rem;
+      margin: 0 1rem 0 1rem; }
+    header a::before {
+      content: ''; }
+
+  .box {
+    width: 90%;
+    max-width: none; } }
+@media screen and (max-width: 400px) {
+  .box, #burrito {
+    border: 3px solid #000; } }
+@media screen and (max-width: 250px) {
+  #burrito {
+    width: 100%;
+    margin: 0; }
+
+  .box, #burrito {
+    border: none; } }
+@media print {
+  * {
+    color: black;
+    background-color: white; }
+
+  #burrito {
+    width: 95%;
+    border: none; }
+
+  main, header, #burrito {
+    border: none; }
+
+  header, footer {
+    display: none; }
+
+  a {
+    color: blue; }
+
+  .box {
+    border: 2px solid #000;
+    max-width: fit-content;
+    padding-bottom: 4rem; }
+
+  button .green {
+    border: 1px solid #1dac41; }
+  button .red {
+    border: 1px solid #fc0e46; } }
+
+/*# sourceMappingURL=style.css.map */
