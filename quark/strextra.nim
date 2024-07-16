@@ -1,4 +1,4 @@
-from std/strutils import Whitespace, `%`, toLowerAscii
+from std/strutils import Whitespace, `%`, toLowerAscii, startsWith
 
 func isEmptyOrWhitespace*(str: string, charset: set[char] = Whitespace): bool =
   ## A faster implementation of strutils.isEmptyOrWhitespace
@@ -117,3 +117,22 @@ proc smartSplit*(s: string, specialChar: char = '&'): seq[string] =
 
   # Finally, the good part, return result.
   return result
+
+proc htmlEscape*(pre_s: string): string =
+  ## Very basic HTML escaping function.
+  var s = pre_s
+  if s.startsWith("javascript:"):
+    s = s[11..^1]
+  if s.startsWith("script:"):
+    s = s[7..^1]
+  if s.startsWith("java:"):
+    s = s[5..^1]
+
+  for ch in s:
+    case ch:
+    of '<':
+      result.add("&lt;")
+    of '>':
+      result.add("&gt;")
+    else:
+      result.add(ch)
