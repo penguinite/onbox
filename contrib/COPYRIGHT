@@ -17,8 +17,3 @@ Path: /spongebob_case_mrf.nim
 Description: MRF Policy that adds spongebob case to every post
 Copyright: © penguinite <penguinite@tuta.io> 2024
 License: AGPL-3.0-or-later
-
-Path: /config_pool.nim
-Description: A waterpark-based config pool just to clean up preRouteInit in the future
-Copyright: © penguinite <penguinite@tuta.io> 2024
-License: AGPL-3.0-or-later
