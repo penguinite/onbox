@@ -18,13 +18,14 @@
 
 
 # From somewhere in Quark
-import quark/[crypto]
+import quark/[crypto, strextra]
 
 # From somewhere in Pothole
 import pothole/[lib, database, routeutils, conf]
 
 # From somewhere in the standard library
-import std/[json, strutils]
+import std/[json]
+import std/strutils except isEmptyOrWhitespace, parseBool
 
 # From nimble/other sources
 import mummy
@@ -38,8 +39,42 @@ proc getSeparator(s: string): char =
       continue
   return ' '
 
+proc renderAuthForm(req: Request, scopes: seq[string], client_id, redirect_uri: string) =
+  ## A function to render the auth form.
+  ## I don't want to repeat myself 2 times in the POST and GET section so...
+  ## here it is.
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/html"
 
-proc oauthAuthorize*(req: Request) =
+  var human_scopes = ""
+  for scope in scopes:
+    human_scopes.add(
+      "<li>" & scope & ": " & humanizeScope(scope) & "</li>"
+    )
+  
+  let session = req.fetchSessionCookie()
+  var appname, login = ""
+  dbPool.withConnection db:
+    appname = db.getClientName(client_id)
+    login = db.getSessionUserHandle(session)
+
+  templatePool.withConnection obj:
+    req.respond(
+      200, headers, 
+      obj.render(
+        "oauth.html",
+        {
+          "human_scope": human_scopes,
+          "scope": scopes.join(" "),
+          "login": login,
+          "session": session,
+          "client_id": client_id,
+          "redirect_uri": redirect_uri
+        }
+      )
+      )
+
+proc oauthAuthorizeGET*(req: Request) =
   # If response_type exists
   if not req.isValidQueryParam("response_type"):
     respJsonError("Missing required field: response_type")
@@ -61,7 +96,7 @@ proc oauthAuthorize*(req: Request) =
   # If redirect_uri exists
   if not req.isValidQueryParam("redirect_uri"):
     respJsonError("Missing required field: redirect_uri")
-  var redirect_uri = req.getQueryParam("redirect_uri")
+  var redirect_uri = htmlEscape(req.getQueryParam("redirect_uri"))
 
   # Check if redirect_uri matches the redirect_uri for the app
   dbPool.withConnection db:
@@ -77,12 +112,12 @@ proc oauthAuthorize*(req: Request) =
     scopeSeparator = getSeparator(req.getQueryParam("scope")) 
     scopes = req.getQueryParam("scope").split(scopeSeparator)
   
-  dbPool.withConnection db:
     for scope in scopes:
       # Then verify if every scope is valid.
       if not scope.verifyScope():
         respJsonError("Invalid scope: \"" & scope & "\" (Separator: " & scopeSeparator & ")")
 
+  dbPool.withConnection db:
     # And then we see if the scopes have been specified during app registration
     # This isn't in the for loop above, since this uses db calls, and I don't wanna
     # flood the server with excessive database calls.
@@ -98,12 +133,16 @@ proc oauthAuthorize*(req: Request) =
   
   #var lang = "en" # Unused and unparsed. TODO: Implement checks for this.
 
-  # Check for authorization
+  # Check for authorization or "force_login" parameter
+  # If auth isnt present or force_login is true then redirect user to the login page
   if not req.hasSessionCookie() or force_login:
-    # Redirect user to the login page
     var headers: HttpHeaders
     configPool.withConnection config:
-      var return_to = "response_type=code&client_id=\"$#\"&redirect_uri=\"$#\"&scope=\"$#\"&force_login=$#&lang=en" % [client_id, req.getQueryParam("redirect_uri"), scopes.join(" "), $force_login]
+      # If the client has requested force login then remove the session cookie.
+      if force_login:
+        headers["Set-Cookie"] = deleteSessionCookie()
+        
+      var return_to = "\"response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en\"" % [client_id, req.getQueryParam("redirect_uri"), scopes.join(" ")]
       headers["Location"] = config.getStringOrDefault("web", "endpoint", "/") & "auth/sign_in/?return_to=" & return_to
 
     req.respond(
@@ -111,6 +150,79 @@ proc oauthAuthorize*(req: Request) =
     )
     return
 
+  req.renderAuthForm(scopes, client_id, redirect_uri)
+
+
+proc oauthAuthorizePOST*(req: Request) =
+  let fm = req.unrollForm()
+
+  # If response_type exists
+  if not fm.isValidFormParam("response_type"):
+    respJsonError("Missing required field: response_type")
+  
+  # If response_type doesn't match "code"
+  if req.getFormParam("response_type") != "code":
+    respJsonError("Required field response_type has been set to an invalid value.")
+
+  # If client id exists
+  if not req.isValidFormParam("client_id"):
+    respJsonError("Missing required field: response_type")
+
+  # Check if client_id is associated with a valid app
+  dbPool.withConnection db:
+    if not db.clientExists(req.getFormParam("client_id")):
+      respJsonError("Client_id isn't registered to a valid app.")
+  var client_id = req.getFormParam("client_id")
+  
+  # If redirect_uri exists
+  if not req.isValidFormParam("redirect_uri"):
+    respJsonError("Missing required field: redirect_uri")
+  var redirect_uri = htmlEscape(req.getFormParam("redirect_uri"))
+
+  # Check if redirect_uri matches the redirect_uri for the app
+  dbPool.withConnection db:
+    if redirect_uri != db.getClientRedirectUri(client_id):
+      respJsonError("The redirect_uri used doesn't match the one provided during app registration")
+
+  var
+    scopes = @["read"]
+    scopeSeparator = ' '
+  if req.isValidFormParam("scope"):
+    # According to API, we can either split by + or space.
+    # so we run this to figure it out. Defaulting to spaces if need
+    scopeSeparator = getSeparator(req.getFormParam("scope")) 
+    scopes = req.getFormParam("scope").split(scopeSeparator)
+  
+    for scope in scopes:
+      # Then verify if every scope is valid.
+      if not scope.verifyScope():
+        respJsonError("Invalid scope: \"" & scope & "\" (Separator: " & scopeSeparator & ")")
+
+  dbPool.withConnection db:
+    # And then we see if the scopes have been specified during app registration
+    # This isn't in the for loop above, since this uses db calls, and I don't wanna
+    # flood the server with excessive database calls.
+    if not db.hasScopes(client_id, scopes):
+      respJsonError("An attached scope wasn't specified during app registration.")
+  
+  var force_login = false
+  if req.isValidFormParam("force_login"):
+    try:
+      force_login = req.getFormParam("force_login").parseBool()
+    except:
+      force_login = true
+
+  if not fm.isValidFormParam("action"):
+    renderAuthForm()
+    return
+
+  case fm.getFormParam("action").toLowerAscii():
+  of "authorized":
+    discard # TODO
+  of "denied":
+    discard
+      
+proc oauth
   
 proc oauthToken*(req: Request) =
   return

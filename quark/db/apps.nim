@@ -46,6 +46,8 @@ proc purgeOldApps*(db: DbConn) =
 
     if now().utc - toDateFromDb(row[1]) == initDuration(weeks = 1):
       db.exec("DELETE FROM apps WHERE id = ?;", row[0])
+      db.exec("DELETE FROM auth_codes WHERE cid = ?;", row[0])
+      db.exec("DELETE FROM oauth_tokens WHERE cid = ?;", row[0])
 
 proc updateTimestamp*(db: DbConn, id: string) =
   if not has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id)):
@@ -160,25 +162,80 @@ proc verifyScope*(pre_scope: string): bool =
 
   # Parse the first part.
   case list[0]:
-  of "read":
+  of "read", "write":
     if len(list) != 2:
       return false # A read scope only has 2 parts.
-
     return list[1] in @["accounts", "blocks", "bookmarks", "favorites", "favourites", "filters", "follows", "lists", "mutes", "notifications", "search", "statuses"]
-  of "write":
-    if len(list) != 2:
-      return false # A write scope only has 2 parts.
-    return list[1] in @["accounts", "blocks", "bookmarks", "conversations", "favorites", "favourites", "filters", "follows", "lists", "media", "mutes", "notifications", "reports", "statuses"]
   of "admin":
     if len(list) != 3:
       return false # An admin scope only has 3 parts.
-
+    
     case list[1]:
-    of "read":
-      return list[2] in @["accounts", "reports", "domain_allows", "domain_blocks", "ip_blocks", "email_domain_blocks", "canonical_domain_blocks"]
-    of "write":
+    of "read", "write":
       return list[2] in @["accounts", "reports", "domain_allows", "domain_blocks", "ip_blocks", "email_domain_blocks", "canonical_domain_blocks"]
     else:
       return false
   else:
     return false
+
+proc humanizeScope*(pre_scope: string): string =
+  ## When given a scope, it returns a string containing a human explanation for what it does.
+  ## This is used in the OAuth authorization page (among other places)
+  let scope = pre_scope.toLowerAscii()
+  case scope:
+  of "read": return "Full read access for everything except admin actions."
+  of "write": return "Full write access for everything except admin actions."
+  of "push": return "Access to the Web Push API."
+  of "admin:write": return "Full write access for everything admin-related."
+  of "admin:read": return "Full read access for everything admin-related."
+  of "follow": return "Full read and write access to user blocks, mutes and followers/following."
+  else:
+    discard
+
+  if scope.startsWith("write"):
+    result = "Full write access for "
+  
+  if scope.startsWith("read"):
+    result = "Full read access for "
+  
+  if scope.startsWith("admin:write"):
+    result = "Full administrator write access for "
+  
+  if scope.startsWith("admin:read"):
+    result = "Full administrator read access for "
+
+  let scopeList = scope.split(':')
+  case scopeList[0]:
+  of "read", "write":
+    case scopeList[1]:
+    of "accounts": return result & "account details."
+    of "blocks": return result & "user blocks."
+    of "bookmarks": return result & "user bookmarks."
+    of "conversations": return result & "direct user conversations."
+    of "favourites", "write:favorites": return result & "user favorites."
+    of "filters": return result & "user filters."
+    of "follows": return result & "list of followers and following."
+    of "lists": return result & "other user lists."
+    of "media": return result & "media attachments."
+    of "mutes": return result & "user mutes."
+    of "notifications": return result & "notification and notification settings."
+    of "reports": return result & "reports."
+    of "statuses": return result & "posts."
+    else:
+      return "Unknown scope."
+  of "admin":
+    if scopeList.len() != 2:
+      return "Unknown admin scope."
+
+    case scopeList[2]:
+    of "accounts": return result & "user accounts and account details."
+    of "reports": return result & "reports against users, posts and instances."
+    of "domain_allows": return result & "domain allows"
+    of "domain_blocks": return result & "domain blocks"
+    of "ip_blocks": return result & "IP address blocks"
+    of "email_domain_blocks": return result & "email provider blocks"
+    of "canonical_email_blocks": return result & "email blocks"
+    else:
+      return "Unknown admin scope."
+  else:
+    return "Unknown scope."
