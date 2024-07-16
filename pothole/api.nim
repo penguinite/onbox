@@ -26,19 +26,20 @@ import std/[tables]
 # From somewhere else
 import mummy
 
-const apiRoutes* =  {
-  # URLRoute : (HttpMethod, RouteProcedure)
-  "/api/v1/instance": ("GET", v1InstanceView),
-  "/api/v2/instance": ("GET", v2InstanceView),
-  "/api/v1/instance/rules": ("GET", v1InstanceRules),
-  "/api/v1/instance/extended_description": ("GET", v1InstanceExtendedDescription),
-  "/api/v1/apps": ("POST", v1Apps),
-  "/api/v1/apps/verify_credentials": ("GET", v1AppsVerify),
-  "/oauth/authorize":  ("GET" , oauthAuthorize),
-  "/oauth/token":  ("POST", oauthToken),
-  "/oauth/revoke":  ("POST", oauthRevoke),
-  "/api/ph/v1/about": ("GET", phAbout)
-}.toTable
+const apiRoutes* =  @[
+  # (URLRoute, HttpMethod, RouteProcedure)
+  ("/api/v1/instance", "GET", v1InstanceView),
+  ("/api/v2/instance", "GET", v2InstanceView),
+  ("/api/v1/instance/rules", "GET", v1InstanceRules),
+  ("/api/v1/instance/extended_description", "GET", v1InstanceExtendedDescription),
+  ("/api/v1/apps", "POST", v1Apps),
+  ("/api/v1/apps/verify_credentials", "GET", v1AppsVerify),
+  ("/oauth/authorize", "GET" , oauthAuthorizeGET),
+  ("/oauth/authorize", "POST" , oauthAuthorizePOST),
+  ("/oauth/token",  "POST", oauthToken),
+  ("/oauth/revoke",  "POST", oauthRevoke),
+  ("/api/ph/v1/about", "GET", phAbout)
+]
 
 
 proc logAPI*(req: Request) =
@@ -54,7 +55,7 @@ proc logAPI*(req: Request) =
   log "body: \"", req.body
   log "remoteAddress: \"", req.remoteAddress
   
-  for key, val in apiRoutes.pairs:
-    if req.path == key:
-      val[1](req)
+  for route in apiRoutes:
+    if req.path == route[0] and req.httpMethod == route[1]:
+      route[2](req)
   

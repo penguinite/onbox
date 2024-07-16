@@ -94,13 +94,13 @@ for url in @[
   router.get(url, serveStatic)
 
 # Add API routes
-for url, route in apiRoutes.pairs:
+for route in apiRoutes:
   when defined(phLogAPI):
-    router.addRoute(route[0], url, logAPI)
-    router.addRoute(route[0], url & "/", logAPI) # Trailing slash fix.
+    router.addRoute(route[1], route[0], logAPI)
+    router.addRoute(route[1], route[0] & "/", logAPI) # Trailing slash fix.
   else:
-    router.addRoute(route[0], url, route[1])
-    router.addRoute(route[0], url & "/", route[1]) # Trailing slash fix.
+    router.addRoute(route[1], route[0], route[2])
+    router.addRoute(route[1], route[0] & "/", route[2]) # Trailing slash fix.
 
 # Add magical routes
 for url, route in urlRoutes.pairs:
