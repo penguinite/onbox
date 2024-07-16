@@ -20,7 +20,7 @@ Development is slow because creating anything remotely like this is incredibly d
 
 ## How do I use Pothole?
 
-Install [nim](https://nim-lang.org/), your favorite C compiler (gcc is recommended, clang might not be optimal) and nimble. Run `nimble -d:release build` and it will build with release settings. (You might need to install postgres as a development library)
+Install [nim](https://nim-lang.org/), your favorite C compiler (gcc is recommended, clang might not be optimal) and nimble. Run `nimble -d:release build` and it will build with release settings. (You will also need to install postgres as a library and database server somewhere.)
 
 Pothole's main database is postgres, and so it expects an actively-running postgres server process in the background to work. You can change the database connection settings by editing the `pothole.conf` configuration file. If you don't want to (or can't) install postgres but you have access to docker, then you can run the `potholectl db docker` command to generate a postgres database docker container configured for pothole. `potholectl` can be found in the `build/` folder when you finish building pothole.
 
