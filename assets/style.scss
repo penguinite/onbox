@@ -61,6 +61,11 @@ footer, h1 {
     text-align: center;
 }
 
+footer {
+    display: block;
+    margin-top: 1rem;
+}
+
 h1 { font-size: 3rem; }
 h2 { font-size: 2rem; }
 h3 { font-size: 1.5rem; }
@@ -87,7 +92,7 @@ p, li, a {
 li {
     margin: 0.75rem 0 0.75rem 0;
 }
-.box {
+.box, .error, .success {
     max-width: 50%;
     margin: auto;
     padding: 2%;
@@ -96,14 +101,34 @@ li {
     padding-bottom: 5%;
 }
 
+.error, .success {
+    padding-bottom: 2%;
+}
+
+.error {
+    border: 2px solid $oauthnobrd;
+    background-color: $oauthnobg;
+}
+
+.success {
+    border: 2px solid $oauthokbrd;
+    background-color: $oauthokbg;
+}
+
+.error,.success {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: $wintxt;
+}
+
 button.oauth {
     width: 15rem;
     padding: 1%;
-    color: $wintxt;
-    font-size: 1.3rem;
 }
 
 button.green {
+    color: $wintxt;
+    font-size: 1.3rem;
     background-color: $oauthokbg;
     border:3px solid $oauthokbrd;
     float: left;
@@ -112,11 +137,26 @@ button.green {
     }
 }
 button.red {
+    color: $wintxt;
+    font-size: 1.3rem;
     background-color: $oauthnobg;
     border:3px solid $oauthnobrd;
     float: right;
     &:hover, &:focus {
         background-color: $oauthnobrd;
+    }
+}
+
+form.auth {
+    width: 800px;
+    margin: auto;
+    display: inline-block;
+    label {
+        display: block;
+        clear:left;
+        padding-right: 1%;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
     }
 }
 

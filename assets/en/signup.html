@@ -24,14 +24,14 @@
                 $if(signup_enabled)$
 
                 $if(login)$
-                <div class="box result error">
+                <div class="error">
                   You are already logged in
                 </div>
                 $end$
-                $if(result)$
+                $if(message)$
                 $if(!login)$
-                  <div class="box result $result_type$">
-                      $result$
+                  <div class="$message_type$">
+                      $message$
                   </div>
                   $end$
                 $end$
