@@ -29,6 +29,7 @@ Assuming you did not change the port that pothole uses in the configuration file
 ## Copyright
 
 Copyright © Leo Gavilieau <xmoo@privacyrequired.com> 2022-2023
-Copyright © penguintie <penguinite@tuta.io> 2024
+
+Copyright © penguinite <penguinite@tuta.io> 2024
 
 Licensed under GNU Affero General Public License version 3 or later. A copy is is available as the `LICENSE` file.
