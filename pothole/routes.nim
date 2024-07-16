@@ -47,10 +47,17 @@ proc serveAndRender*(req: Request) =
   # If the user has a cookie, then let the templating engine know.
   # signin.html and signup.html have some login-related conditionals in the template.
   if req.hasSessionCookie():
+    # Fetch user handle and verify cookie before sending it to the template.
+    var user = ""
+    let session = req.fetchSessionCookie()
+    dbPool.withConnection db:
+      if db.sessionExists(session):
+        user = db.getSessionUserHandle(session)
+
     templatePool.withConnection obj:
       req.respond(
         200, headers,
-        obj.render(renderURLs[path], {"login": req.fetchSessionCookie()})
+        obj.render(renderURLs[path], {"login": user})
       )
   else:
     templatePool.withConnection obj:
