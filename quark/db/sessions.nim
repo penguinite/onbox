@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# quark/db/boosts.nim:
-## This module contains all database logic for handling boosts.
+# quark/db/sessions.nim:
+## This module contains all database logic for handling user sessions.
 
 import ../private/database
 import quark/db/users
@@ -29,13 +29,18 @@ import std/[tables, times]
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 const sessionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY UNIQUE NOT NULL", # The id for the session
 "uid": "TEXT NOT NULL", # User ID for the session
-"created": "TIMESTAMP NOT NULL", # When the session was created.
+"last_used": "TIMESTAMP NOT NULL", # When the session was created.
 "__A": "foreign key (uid) references users(id)", # Some foreign key for integrity
 }.toOrderedTable
 
-# TODO: Finish this and test it
+proc updateTimestampForSession*(db: DbConn, id: string) = 
+  if not has(db.getRow(sql"SELECT id FROM sessions WHERE id = ?;", id)):
+    return
+  db.exec(sql"UPDATE sessions SET last_used = ? WHERE id = ?;", utc(now()).toDbString(), id)
+
 proc sessionExists*(db: DbConn, id: string): bool =
   ## Checks if a session exists and returns whether or not it does.
+  db.updateTimestampForSession(id)
   return has(db.getRow(sql"SELECT uid FROM sessions WHERE id = ?;", id))
 
 proc createSession*(db: DbConn, user: string, date: DateTime = now().utc): string =
@@ -56,16 +61,19 @@ proc createSession*(db: DbConn, user: string, date: DateTime = now().utc): strin
 proc getSessionUser*(db: DbConn, id: string): string =
   ## Retrieves the user id associated with a session.
   ## The id parameter should contain the session id.
+  db.updateTimestampForSession(id)
   return db.getRow(sql"SELECT uid FROM sessions WHERE id = ?;", id)[0]
 
 proc getSessionUserHandle*(db: DbConn, id: string): string =
   ## Retrieves the user handle associated with a session.
   ## The id parameter should contain the session id.
+  db.updateTimestampForSession(id)
   return db.getHandleFromId(db.getSessionUser(id))
 
 proc getSessionDate*(db: DbConn, id: string): DateTime =
   ## Retrieves the creation date associated with a session.
   ## The id parameter should contain the session id.
+  db.updateTimestampForSession(id)
   return toDateFromDb(
     db.getRow(sql"SELECT created FROM sessions WHERE id = ?;", id)[0]
   )
@@ -101,7 +109,7 @@ proc deleteSession*(db: DbConn, id: string) =
 
 proc deleteAllSessionsForUser*(db: DbConn, user: string) =
   ## Deletes all the sessions that a single user has.
-  db.exec(sql"DELET FROM sessions WHERE uid = ?;", user)
+  db.exec(sql"DELETE FROM sessions WHERE uid = ?;", user)
 
 proc cleanSessions*(db: DbConn) =
   ## Cleans sessions that have expired or that belong to non-existent users.
