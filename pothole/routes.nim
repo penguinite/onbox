@@ -351,7 +351,7 @@ proc logoutSession*(req: Request) =
 
   # Remove session cookie from user's browser.
   if req.hasSessionCookie():
-    headers["Set-Cookie"] = "session=\"\"; path=/; Max-Age=0"
+    headers["Set-Cookie"] = deleteSessionCookie()
     # Check if it actaully exists in the db before removing.
     # In theory this shouldn't matter but its a good thing to do anyway
     dbPool.withConnection db:

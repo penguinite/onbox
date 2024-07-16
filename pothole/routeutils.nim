@@ -160,6 +160,9 @@ proc fetchSessionCookie*(req: Request): string =
     if val == "session":  
       flag = true
 
+proc deleteSessionCookie*(): string = 
+  return "session=\"\"; path=/; Max-Age=0"
+
 proc createHeaders*(a: string): HttpHeaders =
   result["Content-Type"] = a
   return
