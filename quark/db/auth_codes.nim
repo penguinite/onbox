@@ -52,11 +52,13 @@ proc createAuthCode*(db: DbConn, user, client: string): string =
   if db.authCodeExists(user, client):
     raise newException(DbError, "Code already exists for user \"" & user & "\" and client \"" & client & "\"")
 
-  var id = randstr(22)
+  var id = randstr(32)
   while db.authCodeExists(id):
-    id = randstr(22)
+    id = randstr(32)
   
   db.exec(sql"INSERT INTO auth_codes VALUES (?,?,?);", id, user, client)
+
+  return id
 
 proc deleteAuthCode*(db: DbConn, id: string) =
   ## Deletes an authentication code

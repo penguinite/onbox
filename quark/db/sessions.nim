@@ -61,19 +61,16 @@ proc createSession*(db: DbConn, user: string, date: DateTime = now().utc): strin
 proc getSessionUser*(db: DbConn, id: string): string =
   ## Retrieves the user id associated with a session.
   ## The id parameter should contain the session id.
-  db.updateTimestampForSession(id)
   return db.getRow(sql"SELECT uid FROM sessions WHERE id = ?;", id)[0]
 
 proc getSessionUserHandle*(db: DbConn, id: string): string =
   ## Retrieves the user handle associated with a session.
   ## The id parameter should contain the session id.
-  db.updateTimestampForSession(id)
   return db.getHandleFromId(db.getSessionUser(id))
 
 proc getSessionDate*(db: DbConn, id: string): DateTime =
   ## Retrieves the creation date associated with a session.
   ## The id parameter should contain the session id.
-  db.updateTimestampForSession(id)
   return toDateFromDb(
     db.getRow(sql"SELECT created FROM sessions WHERE id = ?;", id)[0]
   )

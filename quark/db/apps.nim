@@ -47,11 +47,9 @@ proc purgeOldApps*(db: DbConn) =
     if now().utc - toDateFromDb(row[1]) == initDuration(weeks = 1):
       db.exec("DELETE FROM apps WHERE id = ?;", row[0])
       db.exec("DELETE FROM auth_codes WHERE cid = ?;", row[0])
-      db.exec("DELETE FROM oauth_tokens WHERE cid = ?;", row[0])
+      db.exec("DELETE FROM oauth WHERE cid = ?;", row[0])
 
 proc updateTimestamp*(db: DbConn, id: string) =
-  if not has(db.getRow(sql"SELECT id FROM apps WHERE id = ?;", id)):
-    return
   db.exec(sql"UPDATE apps SET last_accessed = ? WHERE id = ?;", utc(now()).toDbString(), id)
 
 proc createNullClient*(db: DbConn) =
@@ -67,23 +65,18 @@ proc createClient*(db: DbConn, name: string, link: string = "", scopes: string =
   return id
 
 proc getClientLink*(db: DbConn, id: string): string = 
-  db.updateTimestamp(id)
   return db.getRow(sql"SELECT link FROM apps WHERE id = ?;", id)[0]
 
 proc getClientName*(db: DbConn, id: string): string = 
-  db.updateTimestamp(id)
   return db.getRow(sql"SELECT name FROM apps WHERE id = ?;", id)[0]
 
 proc getClientSecret*(db: DbConn, id: string): string =
-  db.updateTimestamp(id)
   return db.getRow(sql"SELECT secret FROM apps WHERE id = ?;", id)[0]
 
 proc getClientScopes*(db: DbConn, id: string): seq[string] =
-  db.updateTimestamp(id)
   return db.getRow(sql"SELECT scopes FROM apps WHERE id = ?;", id)[0].split(" ")
 
 proc getClientRedirectUri*(db: DbConn, id: string): string =
-  db.updateTimestamp(id)
   return db.getRow(sql"SELECT redirect_uri FROM apps WHERE id = ?;", id)[0]
 
 proc clientExists*(db: DbConn, id: string): bool = 
@@ -105,7 +98,6 @@ proc returnStartOrScope(s: string): string =
   return s
 
 proc hasScope*(db: DbConn, id:string, scope: string): bool =
-  db.updateTimestamp(id)
   let appScopes = db.getRow(sql"SELECT scopes FROM apps WHERE id = ?;", id)[0].split(" ")
   result = false
 
@@ -117,7 +109,6 @@ proc hasScope*(db: DbConn, id:string, scope: string): bool =
   return result
 
 proc hasScopes*(db: DbConn, id:string, scopes: seq[string]): bool =
-  db.updateTimestamp(id)
   let appScopes = db.getRow(sql"SELECT scopes FROM apps WHERE id = ?;", id)[0].split(" ")
   result = false
 
