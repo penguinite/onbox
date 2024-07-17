@@ -72,7 +72,22 @@ proc renderAuthForm(req: Request, scopes: seq[string], client_id, redirect_uri: 
           "redirect_uri": redirect_uri
         }
       )
-      )
+    )
+
+proc redirectToLogin*(req: Request, client, redirect_uri: string, scopes: seq[string], force_login: bool) =
+  var headers: HttpHeaders
+  configPool.withConnection config:
+    # If the client has requested force login then remove the session cookie.
+    if force_login:
+      headers["Set-Cookie"] = deleteSessionCookie()
+      
+    var return_to = "$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [config.getStringOrDefault("web", "endpoint", "/"), client, redirect_uri, scopes.join(" ")]
+    headers["Location"] = config.getStringOrDefault("web", "endpoint", "/") & "auth/sign_in/?return_to=" & encodeQueryComponent(return_to )
+
+  req.respond(
+    303, headers, ""
+  )
+  return
 
 proc oauthAuthorizeGET*(req: Request) =
   # If response_type exists
@@ -136,19 +151,13 @@ proc oauthAuthorizeGET*(req: Request) =
   # Check for authorization or "force_login" parameter
   # If auth isnt present or force_login is true then redirect user to the login page
   if not req.hasSessionCookie() or force_login:
-    var headers: HttpHeaders
-    configPool.withConnection config:
-      # If the client has requested force login then remove the session cookie.
-      if force_login:
-        headers["Set-Cookie"] = deleteSessionCookie()
-        
-      var return_to = "\"response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en\"" % [client_id, req.getQueryParam("redirect_uri"), scopes.join(" ")]
-      headers["Location"] = config.getStringOrDefault("web", "endpoint", "/") & "auth/sign_in/?return_to=" & return_to
-
-    req.respond(
-      303, headers, ""
-    )
+    req.redirectToLogin(client_id, redirect_uri, scopes, force_login)
     return
+
+  dbPool.withConnection db:
+    if not db.sessionExists(req.fetchSessionCookie()):
+      req.redirectToLogin(client_id, redirect_uri, scopes, force_login)
+      return
 
   req.renderAuthForm(scopes, client_id, redirect_uri)
 
@@ -161,23 +170,23 @@ proc oauthAuthorizePOST*(req: Request) =
     respJsonError("Missing required field: response_type")
   
   # If response_type doesn't match "code"
-  if req.getFormParam("response_type") != "code":
+  if fm.getFormParam("response_type") != "code":
     respJsonError("Required field response_type has been set to an invalid value.")
 
   # If client id exists
-  if not req.isValidFormParam("client_id"):
+  if not fm.isValidFormParam("client_id"):
     respJsonError("Missing required field: response_type")
 
   # Check if client_id is associated with a valid app
   dbPool.withConnection db:
-    if not db.clientExists(req.getFormParam("client_id")):
+    if not db.clientExists(fm.getFormParam("client_id")):
       respJsonError("Client_id isn't registered to a valid app.")
-  var client_id = req.getFormParam("client_id")
+  var client_id = fm.getFormParam("client_id")
   
   # If redirect_uri exists
-  if not req.isValidFormParam("redirect_uri"):
+  if not fm.isValidFormParam("redirect_uri"):
     respJsonError("Missing required field: redirect_uri")
-  var redirect_uri = htmlEscape(req.getFormParam("redirect_uri"))
+  var redirect_uri = htmlEscape(fm.getFormParam("redirect_uri"))
 
   # Check if redirect_uri matches the redirect_uri for the app
   dbPool.withConnection db:
@@ -187,11 +196,11 @@ proc oauthAuthorizePOST*(req: Request) =
   var
     scopes = @["read"]
     scopeSeparator = ' '
-  if req.isValidFormParam("scope"):
+  if fm.isValidFormParam("scope"):
     # According to API, we can either split by + or space.
     # so we run this to figure it out. Defaulting to spaces if need
-    scopeSeparator = getSeparator(req.getFormParam("scope")) 
-    scopes = req.getFormParam("scope").split(scopeSeparator)
+    scopeSeparator = getSeparator(fm.getFormParam("scope")) 
+    scopes = fm.getFormParam("scope").split(scopeSeparator)
   
     for scope in scopes:
       # Then verify if every scope is valid.
@@ -206,23 +215,76 @@ proc oauthAuthorizePOST*(req: Request) =
       respJsonError("An attached scope wasn't specified during app registration.")
   
   var force_login = false
-  if req.isValidFormParam("force_login"):
+  if fm.isValidFormParam("force_login"):
     try:
-      force_login = req.getFormParam("force_login").parseBool()
+      force_login = fm.getFormParam("force_login").parseBool()
     except:
       force_login = true
+  
+  # Check for authorization or "force_login" parameter
+  # If auth isnt present or force_login is true then redirect user to the login page
+  if not req.hasSessionCookie() or force_login:
+    req.redirectToLogin(client_id, redirect_uri, scopes, force_login)
+    return
+  
+  dbPool.withConnection db:
+    if not db.sessionExists(req.fetchSessionCookie()):
+      req.redirectToLogin(client_id, redirect_uri, scopes, force_login)
+      return
 
   if not fm.isValidFormParam("action"):
-    renderAuthForm()
+    req.renderAuthForm(scopes, client_id, redirect_uri)
     return
+  
+  var user = ""
+  dbPool.withConnection db:
+    user = db.getSessionUser(req.fetchSessionCookie())
+    if db.authCodeExists(user, client_id):
+      db.deleteAuthCode(
+        db.getSpecificAuthCode(user, client_id)
+      )
 
   case fm.getFormParam("action").toLowerAscii():
   of "authorized":
-    discard # TODO
-  of "denied":
-    discard
-      
-proc oauth
+    var code = ""
+
+    dbPool.withConnection db:
+      code = db.createAuthCode(user, client_id)
+    
+    if redirect_uri == "urn:ietf:wg:oauth:2.0:oob":
+      ## Show code to user
+      var headers: HttpHeaders
+      headers["Content-Type"] = "text/html"
+
+      templatePool.withConnection obj:
+        req.respond(
+          200, headers,
+          obj.renderSuccess(
+            "Authorization code: " & code
+          )
+        )
+
+    else:
+      ## Redirect them elsewhere
+      var headers: HttpHeaders
+      headers["Location"] = redirect_uri & "?code=" & code
+
+      req.respond(
+        303, headers, ""
+      )
+      return
+  else:
+    # There's not really anything to do.
+    var headers: HttpHeaders
+    headers["Content-Type"] = "text/html"
+
+    templatePool.withConnection obj:
+      req.respond(
+        200, headers,
+        obj.renderSuccess(
+          "Authorization request has been rejected!"
+        )
+      )
   
 proc oauthToken*(req: Request) =
   return
