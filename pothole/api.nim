@@ -38,7 +38,10 @@ const apiRoutes* =  @[
   ("/oauth/authorize", "POST" , oauthAuthorizePOST),
   ("/oauth/token",  "POST", oauthToken),
   ("/oauth/revoke",  "POST", oauthRevoke),
-  ("/api/ph/v1/about", "GET", phAbout)
+  ("/.well-known/nodeinfo", "GET", resolveNodeinfo),
+  ("/nodeinfo/2.0", "GET", nodeInfo2x0),
+  ("/api/ph/v1/about", "GET", phAbout),
+  
 ]
 
 
