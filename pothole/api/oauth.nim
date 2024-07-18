@@ -288,5 +288,76 @@ proc oauthAuthorizePOST*(req: Request) =
   
 proc oauthToken*(req: Request) =
   return
+  
 proc oauthRevoke*(req: Request) =
-  return
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+
+  ## We gotta check for both url-form-encoded or whatever
+  ## And for JSON body requests.
+  var client_id, client_secret, token = ""
+  case req.headers["Content-Type"]:
+  of "application/x-www-form-urlencoded":
+    let fm = req.unrollForm()
+
+    # Check if the required stuff is there
+    for thing in @["client_id", "client_secret", "token"]:
+      if not fm.isValidFormParam(thing): 
+        respJsonError("Missing required parameter: " & thing)
+
+    client_id = fm.getFormParam("client_id")
+    client_secret = fm.getFormParam("client_secret")
+    token = fm.getFormParam("token")
+  of "application/json":
+    var json: JsonNode = newJNull()
+    try:
+      json = parseJSON(req.body)
+    except:
+      respJsonError("Invalid JSON.")
+
+    # Double check if the parsed JSON is *actually* valid.
+    if json.kind == JNull:
+      respJsonError("Invalid JSON.")
+    
+    # Check if the required stuff is there
+    for thing in @["client_id", "client_secret", "token"]:
+      if not json.hasValidStrKey(thing): 
+        respJsonError("Missing required parameter: " & thing)
+
+    client_id = json["client_id"].getStr()
+    client_secret = json["client_secret"].getStr()
+    token = json["token"].getStr()
+  else:
+    respJsonError("Unknown content-type.")
+
+  # Now we check if the data submitted is actually valid.
+  dbPool.withConnection db:
+    if not db.clientExists(client_id):
+      respJsonError("Client doesn't exist", 403)
+      
+    if not db.tokenExists(token):
+      respJsonError("Token doesn't exist.", 403)
+
+    if not db.tokenMatchesClient(token, client_id):
+      respJsonError("Client doesn't own this token", 403)
+
+    if not db.getClientSecret(client_id) != client_secret:
+      respJsonError("Client secret doesn't match client id", 403)
+
+  # Finally, delete the OAuth token.
+  db.deleteOAuthToken(token)
+  # And respond with nothing
+  respJson(%*{})
+
+  # By the way, how is this API supposed to be idempotent?
+  # You're supposed to simultaneously check if the token exists and to let it be deleted multiple times?
+  # I think Mastodon either doesn't actually delete the token (they just mark it as deleted, which is stupid)
+  # or they don't check for the existence of the token before deleting it.
+  # Anyway, this API is not idempotent because thats stupid
+  #
+  # In our case, if we delete a non-existent OAuth token, then we will get a database error
+  
+
+  
+    
+    
