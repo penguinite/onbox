@@ -66,8 +66,7 @@ proc v1Apps*(req: Request) =
   of "application/x-www-form-urlencoded":
     var fm = req.unrollForm()
     if not fm.isValidFormParam("client_name") or not fm.isValidFormParam("redirect_uris"):
-      req.respond(400, headers, $(%*{"error": "Missing required parameters."}))
-      return
+      respJsonError("Missing required parameters.")
 
     # Get the website if it exists
     if fm.isValidFormParam("website"):
@@ -85,8 +84,7 @@ proc v1Apps*(req: Request) =
 
     # Check if the required stuff is there
     if not mp.isValidMultipartParam("client_name") or not mp.isValidMultipartParam("redirect_uris"):
-      req.respond(400, headers, $(%*{"error": "Missing required parameters."}))
-      return
+      respJsonError("Missing required parameters.")
   
     # Get the website if it exists
     if mp.isValidMultipartParam("website"):
@@ -104,18 +102,15 @@ proc v1Apps*(req: Request) =
     try:
       json = parseJSON(req.body)
     except:
-      req.respond(400, headers, $(%*{"error": "Invalid JSON."}))
-      return
+      respJsonError("Invalid JSON.")
 
     # Double check if the parsed JSON is *actually* valid.
     if json.kind == JNull:
-      req.respond(400, headers, $(%*{"error": "Invalid JSON."}))
-      return
+      respJsonError("Invalid JSON.")
     
     # Check if the required stuff is there
     if not json.hasValidStrKey("client_name") or not json.hasValidStrKey("redirect_uris"):
-      req.respond(400, headers, $(%*{"error": "Missing required parameters."}))
-      return
+      respJsonError("Missing required parameters.")
 
     # Get the website if it exists
     if json.hasValidStrKey("website"):
@@ -129,6 +124,7 @@ proc v1Apps*(req: Request) =
     client_name = json["client_name"].getStr()
     redirect_uris = json["redirect_uris"].getStr()
   else:
+    respJsonError("Unknown Content-Type.")
     return
 
   # Parse scopes
