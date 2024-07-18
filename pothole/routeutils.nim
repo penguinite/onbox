@@ -262,6 +262,21 @@ proc getFormParam*(mp: FormEntries, param: string): string =
   ## Checks if a parameter submitted via an HTMl form is valid and not empty
   return mp[param]
 
+proc hasValidStrKey*(j: JsonNode, k: string): bool =
+  if not j.hasKey(k):
+    return false
+
+  if j[k].kind != JString:
+    return false
+
+  try:
+    if j[k].getStr().isEmptyOrWhitespace():
+      return false
+  except:
+    return false
+
+  return true
+  
 
 #! These are shared across routes.nim and api.nim
 const mimedb*: MimeDB = newMimetypes()

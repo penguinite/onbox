@@ -25,23 +25,6 @@ import std/[json, strutils]
 # From nimble/other sources
 import mummy
 
-proc hasValidStrKey(j: JsonNode, k: string): bool =
-  if not j.hasKey(k):
-    return false
-
-  if j[k].kind != JString:
-    return false
-
-  try:
-    if j[k].getStr().isEmptyOrWhitespace():
-      return false
-  except:
-    return false
-
-  return true
-
-
-
 proc v1Apps*(req: Request) =
   # This is a big, complex API route as it needs to handle 3 different data form submission methods.
   var headers: HttpHeaders
