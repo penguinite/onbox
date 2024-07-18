@@ -202,7 +202,7 @@ proc getTotalPostsByUserId*(db: DbConn, id: string): int =
 proc getTotalPosts*(db: DbConn): int =
   ## A procedure to get the total number of local posts.
   result = 0
-  for x in db.getAllRows(sql"SELECT local FROM posts;"):
+  for x in db.getAllRows(sql"SELECT local FROM posts WHERE local = true;"):
     inc(result)
   return result
 
