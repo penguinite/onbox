@@ -30,8 +30,8 @@ import std/[tables, strutils, times]
 import rng
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # The client Id for the application
-"secret": "TEXT NOT NULL", # The client secret for the application
+const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL UNIQUE", # The client Id for the application
+"secret": "TEXT NOT NULL UNIQUE", # The client secret for the application
 "scopes": "TEXT NOT NULL", # Scopes of this application, space-separated.
 "redirect_uri": "TEXT DEFAULT 'urn:ietf:wg:oauth:2.0:oob'", # The redirect uri for the app
 "name": "TEXT ", # Name of application
@@ -57,9 +57,14 @@ proc createNullClient*(db: DbConn) =
 
 proc createClient*(db: DbConn, name: string, link: string = "", scopes: string = "read", redirect_uri: string = "urn:ietf:wg:oauth:2.0:oob"): string =
   var id, secret = randstr()
+  
   # Check if ID already exists first.
   while db.getRow(sql"SELECT name FROM apps WHERE id = ?;", id)[0] != "":
     id = randstr()
+
+  # Check if secret already exists.
+  while db.getRow(sql"SELECT name FROM apps WHERE secret = ?;", secret)[0] != "":
+    secret = randstr()
 
   db.exec(sql"INSERT INTO apps VALUES (?,?,?,?,?,?,?);", id, secret, scopes, redirect_uri, name, link, utc(now()).toDbString())
   return id
