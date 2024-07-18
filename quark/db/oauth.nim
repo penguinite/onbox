@@ -88,4 +88,12 @@ proc getTokenApp*(db: DbConn, id: string): string =
 proc getTokenFromCode*(db: DbConn, code: string): string =
   return db.getRow(sql"SELECT id FROM oauth WHERE code = ?;", code)[0]
 
+proc deleteOAuthToken*(db: DbConn, id: string) =
+  if db.tokenUsesCode(id):
+    db.deleteAuthCode(db.getTokenCode(id))
+  db.exec(sql"DELETE FROM oauth WHERE id = ?;", id)
 
+proc tokenMatchesClient*(db: DbConn, id, client_id: string): bool =
+  return db.getRow(sql"SELECT cid FROM oauth WHERE id = ?;", id)[0] == client_id
+
+  
