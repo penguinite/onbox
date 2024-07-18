@@ -129,3 +129,16 @@ proc cleanSessionsVerbose*(db: DbConn): seq[(string, string)] =
         db.getSessionUser(row[0])
       ))
       db.deleteSession(row[0])
+
+proc getTotalSessions*(db: DbConn): int =
+  result = 0
+  for row in db.getAllRows(sql"SELECT id FROM sessions;"):
+    inc(result)
+  return result
+
+proc getTotalValidSessions*(db: DbConn): int =
+  result = 0
+  for row in db.getAllRows(sql"SELECT id FROM sessions;"):
+    if db.sessionValid(id):
+      inc(result)
+  return result 
