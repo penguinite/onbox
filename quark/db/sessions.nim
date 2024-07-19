@@ -93,7 +93,6 @@ proc sessionValid*(db: DbConn, id): bool =
 
   if db.sessionExpired(id):
     return false
-    return false
 
   return true
 
