@@ -22,7 +22,7 @@ import pothole/[conf, database, lib, assets]
 
 # From somewhere in the standard library
 import std/[tables, options, mimetypes, macros, json]
-from std/strutils import `%`, parseInt
+from std/strutils import `%`, parseInt, split
 
 # From nimble/other sources
 import mummy, mummy/multipart, waterpark, waterpark/postgres, temple
@@ -162,6 +162,17 @@ proc fetchSessionCookie*(req: Request): string =
 
 proc deleteSessionCookie*(): string = 
   return "session=\"\"; path=/; Max-Age=0"
+
+proc authHeaderExists*(req: Request): bool =
+  return req.headers.contains("Authorization") and not isEmptyOrWhitespace(req.headers["Authorization"])
+
+proc getAuthHeader*(req: Request): string =
+  let split = req.headers["Authorization"].split("Bearer ")
+
+  if len(split) == 1:
+    return split[0]
+  else:
+    return split[1]
 
 proc createHeaders*(a: string): HttpHeaders =
   result["Content-Type"] = a
