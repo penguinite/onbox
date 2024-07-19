@@ -287,6 +287,89 @@ proc oauthAuthorizePOST*(req: Request) =
       )
   
 proc oauthToken*(req: Request) =
+  var
+    grant_type, code, client_id, client_secret, redirect_uri = ""
+    scopes = @["read"]
+
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+
+  ## We gotta check for both url-form-encoded or whatever
+  ## And for JSON body requests.
+  case req.headers["Content-Type"]:
+  of "application/x-www-form-urlencoded":
+    let fm = req.unrollForm()
+
+    # Check if the required stuff is there
+    for thing in @["client_id", "client_secret", "redirect_uri", "grant_type"]:
+      if not fm.isValidFormParam(thing): 
+        respJsonError("Missing required parameter: " & thing)
+
+    grant_type = fm.getFormParam("grant_type")
+    client_id = fm.getFormParam("client_id")
+    client_secret = fm.getFormParam("client_secret")
+    redirect_uri = fm.getFormParam("redirect_uri")
+
+    if fm.isValidFormParam("code"):
+      code = fm.getFormParam("code")
+    
+    # According to API, we can either split by + or space.
+    # so we run this to figure it out. Defaulting to spaces if need
+    if fm.isValidFormParam("scope"):
+      scopes = fm.getFormParam("scope").split(getSeparator(fm.getFormParam("scope")) )
+  
+  else:
+    respJsonError("Unknown content-type.")
+  
+  for scope in scopes:
+    # Verify if scopes are valid.
+    if not scope.verifyScope():
+      respJsonError("Invalid scope: " & scope)
+
+  if grant_type notin @["authorization_code", "client_credentials"]:
+    respJsonError("Unknown grant_type")
+  
+  var token = ""
+  dbPool.withConnection db:
+    if not db.clientExists(client_id):
+      respJsonError("Client doesn't exist")
+    
+    if db.getClientSecret(client_id) != client_secret:
+      respJsonError("Client secret doesn't match client id")
+    
+    if db.getClientRedirectUri(client_id) != redirect_uri:
+      respJsonError("Redirect_uri not specified during app creation")
+    
+    if not db.hasScopes(client_id, scopes):
+        respJsonError("An attached scope wasn't specified during app registration.")
+    
+    if grant_type == "authorization_code":
+      if not db.authCodeValid(code):
+        respJsonError("Invalid code")
+      
+      scopes = db.getScopesFromCode(code)
+      
+      if not db.codeHasScopes(code, scopes):
+        respJsonError("An attached scope wasn't specified during oauth authorization.")
+    
+      if db.getTokenFromCode(code) != "":
+        respJsonError("Token aleady registered for this auth code.")
+
+    token = db.createToken(client_id, code)
+  
+  req.respond(
+    200, headers,
+    $(%*{
+      "access_token": token,
+      "token_type": "Bearer",
+      "scope": scopes.join(" "),
+      "created_at": toTime(utc(now())).toUnix()
+    })
+  )
+
+    
+
+
   return
   
 proc oauthRevoke*(req: Request) =
