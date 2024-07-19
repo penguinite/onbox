@@ -30,8 +30,9 @@ import std/[json]
 import mummy
 
 proc resolveNodeinfo*(req: Request) =
+  var realURL = ""
   configPool.withConnection config:
-    let realURL = config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/") & "nodeinfo/"
+    realURL = config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/") & "nodeinfo/"
     
   respJson(
     $(%*{
@@ -82,7 +83,7 @@ proc nodeInfo2x0*(req: Request) =
         },
         "metadata": {
           "nodeName": config.getString("instance", "uri"),
-          "nodeDescription": config.getStringOrDefault("instance", "description", config.getStringOrDefault("instance", "summary"), ""),
+          "nodeDescription": config.getStringOrDefault("instance", "description", config.getStringOrDefault("instance", "summary", "")),
           "accountActivationRequired": config.getBoolOrDefault("user", "require_approval", false),
           "features": [
             "mastodon_api",
