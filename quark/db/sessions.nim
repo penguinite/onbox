@@ -81,7 +81,7 @@ proc sessionExpired*(db: DbConn, id: string): bool =
     return true
   return now().utc - db.getSessionDate(id) == initDuration(weeks = 1)
 
-proc sessionValid*(db: DbConn, id): bool =
+proc sessionValid*(db: DbConn, id: string): bool =
   ## Checks if a session is valid.
   ## The id parameter should contain the session id,
   ## The user parameter should contain the user's id.
