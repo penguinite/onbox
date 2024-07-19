@@ -33,6 +33,7 @@ import rng
 const authCodesCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # The code itself
 "uid": "TEXT NOT NULL", # The user id associated with this code.
 "cid": "TEXT NOT NULL", # The client id associated with this code.
+"scopes": "TEXT DEFAULT 'read'", # The scopes that were requested
 "__A": "foreign key (cid) references apps(id)", # Some foreign key for integrity
 "__B": "foreign key (uid) references users(id)", # Some foreign key for integrity
 }.toOrderedTable
@@ -47,7 +48,7 @@ proc authCodeExists*(db: DbConn, user, client: string): bool =
 proc authCodeExists*(db: DbConn, id: string): bool =
   return has(db.getRow(sql"SELECT id FROM auth_codes WHERE id = ?;", id))
 
-proc createAuthCode*(db: DbConn, user, client: string): string =
+proc createAuthCode*(db: DbConn, user, client, scopes: string): string =
   ## Creates a code
   if db.authCodeExists(user, client):
     raise newException(DbError, "Code already exists for user \"" & user & "\" and client \"" & client & "\"")
@@ -56,12 +57,27 @@ proc createAuthCode*(db: DbConn, user, client: string): string =
   while db.authCodeExists(id):
     id = randstr(32)
   
-  db.exec(sql"INSERT INTO auth_codes VALUES (?,?,?);", id, user, client)
-
+  db.exec(sql"INSERT INTO auth_codes VALUES (?,?,?,?);", id, user, client, scopes)
   return id
+
+proc codeHasScopes*(db: DbConn, id:string, scopes: seq[string]): bool =
+  let appScopes = db.getRow(sql"SELECT scopes FROM auth_codes WHERE id = ?;", id)[0].split(" ")
+  result = false
+
+  for scope in scopes:
+    for codeScope in appScopes:
+      if codeScope == scope or codeScope == scope.returnStartOrScope():
+        result = true
+        break
+  
+  return result
+
+proc getScopesFromCode*(db: DbConn, id: string): seq[string] =
+  return db.getRow(sql"SELECT scopes FROM auth_codes WHERE id = ?;", id)[0].split(" ")
 
 proc deleteAuthCode*(db: DbConn, id: string) =
   ## Deletes an authentication code
+  db.exec("DELETE FROM oauth WHERE code = ?;", id)
   db.exec("DELETE FROM auth_codes WHERE id = ?;", id)
 
 proc getUserFromAuthCode*(db: DbConn, id: string): string =

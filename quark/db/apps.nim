@@ -91,7 +91,7 @@ proc clientExists*(db: DbConn, id: string): bool =
   else:
     return false
 
-proc returnStartOrScope(s: string): string =
+proc returnStartOrScope*(s: string): string =
   if s.startsWith("read"):
     return "read"
   if s.startsWith("write"):

@@ -249,7 +249,7 @@ proc oauthAuthorizePOST*(req: Request) =
     var code = ""
 
     dbPool.withConnection db:
-      code = db.createAuthCode(user, client_id)
+      code = db.createAuthCode(user, client_id, scopes.join(" "))
     
     if redirect_uri == "urn:ietf:wg:oauth:2.0:oob":
       ## Show code to user

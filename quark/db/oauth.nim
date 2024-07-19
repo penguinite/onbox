@@ -27,7 +27,7 @@ import rng
 import std/[tables, times]
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const oauthCols*: OrderedTable[string, string] = {"token": "TEXT PRIMARY KEY NOT NULL UNIQUE", # The oauth token
+const oauthCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL UNIQUE", # The oauth token
 "uses_code": "BOOLEAN DEFAULT 'false'", # The type of token.
 "code": "TEXT UNIQUE", # The oauth code that was generated for this tokem
 "cid": "TEXT NOT NULL", # The client id of the app that this token belongs to
@@ -61,6 +61,9 @@ proc tokenExists*(db: DbConn, id: string): bool =
 proc tokenUsesCode*(db: DbConn, id: string): bool =
   return parseBool(db.getRow(sql"SELECT uses_code FROM oauth WHERE id = ?;", id)[0])
 
+proc getTokenFromCode*(db: DbConn, code: string): string =
+  return db.getRow(sql"SELECT id FROM oauth WHERE code = ?;", code)[0]
+
 proc createToken*(db: DbConn, cid: string, code: string = ""): string =
   var id = randstr(32)
 
@@ -69,12 +72,17 @@ proc createToken*(db: DbConn, cid: string, code: string = ""): string =
 
   let uses_code = code != ""
 
+  if db.getTokenFromCode(code) != "":
+
+    return # Token already exist, we dont want a database error.
+
   db.exec(
-    sql"INSERT INTO oauth VALUES (?,?,?,?);",
+    sql"INSERT INTO oauth VALUES (?,?,?,?,?);",
     id, uses_code, code, cid, utc(now()).toDbString()
   )
 
   return id
+
 
 proc getTokenCode*(db: DbConn, id: string): string =
   return db.getRow(sql"SELECT code FROM oauth WHERE id = ?;", id)[0]
@@ -84,9 +92,6 @@ proc getTokenUser*(db: DbConn, id: string): string =
 
 proc getTokenApp*(db: DbConn, id: string): string =
   return db.getRow(sql"SELECT cid FROM oauth WHERE id = ?;", id)[0]
-
-proc getTokenFromCode*(db: DbConn, code: string): string =
-  return db.getRow(sql"SELECT id FROM oauth WHERE code = ?;", code)[0]
 
 proc deleteOAuthToken*(db: DbConn, id: string) =
   if db.tokenUsesCode(id):
