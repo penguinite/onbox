@@ -161,5 +161,24 @@ proc v1Apps*(req: Request) =
 proc v1AppsVerify*(req: Request) = 
   var headers: HttpHeaders
   headers["Content-Type"] = "application/json"
-  var result = %* {}
+
+  if not req.authHeaderExists():
+    respJsonError("The access token is invalid")
+  
+  let token = req.getAuthHeader()
+  var name, website = ""
+
+  dbPool.withConnection db:
+    if not db.tokenExists(token):
+      respJsonError("The access token is invalid")
+    
+    let id = db.getTokenApp(token)
+    name = db.getClientName(id)
+    website = db.getClientLink(id)
+
+  var result = %* {
+    "name": name,
+    "website": website,
+    "vapid_key": "" # TODO: This is deprecated and should be removed.
+  }
   req.respond(200, headers, $(result))
