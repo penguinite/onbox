@@ -344,8 +344,8 @@ proc oauthRevoke*(req: Request) =
     if db.getClientSecret(client_id) != client_secret:
       respJsonError("Client secret doesn't match client id", 403)
 
-  # Finally, delete the OAuth token.
-  db.deleteOAuthToken(token)
+    # Finally, delete the OAuth token.
+    db.deleteOAuthToken(token)
   # And respond with nothing
   respJson($(%*{}))
 
