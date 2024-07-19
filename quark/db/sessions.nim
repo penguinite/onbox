@@ -139,6 +139,6 @@ proc getTotalSessions*(db: DbConn): int =
 proc getTotalValidSessions*(db: DbConn): int =
   result = 0
   for row in db.getAllRows(sql"SELECT id FROM sessions;"):
-    if db.sessionValid(id):
-      inc(result)
+    if not db.sessionExpired(row[0]):
+      inc result
   return result 
