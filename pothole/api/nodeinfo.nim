@@ -34,14 +34,16 @@ proc resolveNodeinfo*(req: Request) =
     let realURL = config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/") & "nodeinfo/"
     
   respJson(
-    %*{
+    $(%*{
       "links": [
         {
           "href": realURL & "2.0",
           "rel":"http://nodeinfo.diaspora.software/ns/schema/2.0"
         }
       ]
-    }
+    })
+  )
+
   
 proc nodeInfo2x0*(req: Request) =
   
@@ -58,7 +60,7 @@ proc nodeInfo2x0*(req: Request) =
       protocols.add("activitypub")
     
     respJson(
-      %* {
+      $(%* {
         "version": "2.0",
         "software": {
           "name": "Pothole",
@@ -93,5 +95,5 @@ proc nodeInfo2x0*(req: Request) =
             "text/x-rst"
           ],
         }
-      }
+      })
     )

@@ -176,12 +176,12 @@ macro respJsonError*(msg: string, code = 400, headers = createHeaders("applicati
     )
     return
 
-macro respJson*(msg: JsonNode, code = 200, headers = createHeaders("application/json")) =
+macro respJson*(msg: string, code = 200, headers = createHeaders("application/json")) =
   var req = ident"req"
 
   result = quote do:
     `req`.respond(
-      `code`, `headers`, $(msg)
+      `code`, `headers`, `msg`
     )
     return
 

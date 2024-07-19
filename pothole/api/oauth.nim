@@ -347,7 +347,7 @@ proc oauthRevoke*(req: Request) =
   # Finally, delete the OAuth token.
   db.deleteOAuthToken(token)
   # And respond with nothing
-  respJson(%*{})
+  respJson($(%*{}))
 
   # By the way, how is this API supposed to be idempotent?
   # You're supposed to simultaneously check if the token exists and to let it be deleted multiple times?
