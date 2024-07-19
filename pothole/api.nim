@@ -18,7 +18,7 @@
 
 # From somewhere in Pothole
 import pothole/lib
-import pothole/api/[instance, ph, apps, oauth]
+import pothole/api/[instance, ph, apps, oauth, nodeinfo]
 
 # From somewhere in the standard library
 import std/[tables]
