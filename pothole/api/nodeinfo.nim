@@ -16,10 +16,6 @@
 # api/nodeinfo.nim:
 ## This module contains all the routes that handle stuff related to the nodeinfo standard.
 
-
-# From somewhere in Quark
-import quark/[crypto]
-
 # From somewhere in Pothole
 import pothole/[lib, conf, routeutils, database]
 
@@ -30,20 +26,18 @@ import std/[json]
 import mummy
 
 proc resolveNodeinfo*(req: Request) =
-  var realURL = ""
-  configPool.withConnection config:
-    realURL = config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/") & "nodeinfo/"
-    
-  respJson(
-    $(%*{
-      "links": [
-        {
-          "href": realURL & "2.0",
-          "rel":"http://nodeinfo.diaspora.software/ns/schema/2.0"
-        }
-      ]
-    })
-  )
+  
+  templatePool.withConnection obj:  
+    respJson(
+      $(%*{
+        "links": [
+          {
+            "href": obj.realURL & "2.0",
+            "rel":"http://nodeinfo.diaspora.software/ns/schema/2.0"
+          }
+        ]
+      })
+    )
 
   
 proc nodeInfo2x0*(req: Request) =

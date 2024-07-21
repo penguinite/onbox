@@ -2,12 +2,13 @@ import pothole/assets
 import std/[tables, macros, json]
 import mummy, temple
 
-# Oh dear god... A "Template Object" pool.
-# TODO: It's obvious why *this* needs refactoring, so in the future, please do that.
+# Oh dear god... A "Template Object"
+# TODO: It's obvious why *this* needs changing, so in the future, please do that.
 type
   TemplateObj* = object
     staticFolder*: string
     templatesFolder*: string
+    realURL*: string
     table*: Table[string, string]
 
 proc createHeaders*(a: string): HttpHeaders =

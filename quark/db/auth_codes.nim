@@ -24,7 +24,7 @@ import quark/db/[apps, users]
 
 # From standard library
 # From somewhere in the standard library
-import std/[tables, strutils, times]
+import std/[tables, strutils]
 
 # From elsewhere (third-party libraries)
 import rng

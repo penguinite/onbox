@@ -18,10 +18,10 @@
 
 
 # From somewhere in Quark
-import quark/[crypto, strextra]
+import quark/[strextra]
 
 # From somewhere in Pothole
-import pothole/[lib, database, routeutils, conf]
+import pothole/[database, routeutils, conf]
 
 # From somewhere in the standard library
 import std/[json]
@@ -80,9 +80,10 @@ proc redirectToLogin*(req: Request, client, redirect_uri: string, scopes: seq[st
     # If the client has requested force login then remove the session cookie.
     if force_login:
       headers["Set-Cookie"] = deleteSessionCookie()
-      
-    var return_to = "$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [config.getStringOrDefault("web", "endpoint", "/"), client, redirect_uri, scopes.join(" ")]
-    headers["Location"] = config.getStringOrDefault("web", "endpoint", "/") & "auth/sign_in/?return_to=" & encodeQueryComponent(return_to )
+    
+    templatePool.withConnection obj:
+      var return_to = "$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [obj.realURL, client, redirect_uri, scopes.join(" ")]
+      headers["Location"] = obj.realURL & "auth/sign_in/?return_to=" & encodeQueryComponent(return_to )
 
   req.respond(
     303, headers, ""

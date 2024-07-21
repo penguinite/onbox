@@ -72,6 +72,7 @@ proc prepareTemplateObj*(db: DbConn, config: ConfigTable): TemplateObj =
   result.staticFolder = initStatic(config)
   result.templatesFolder = initTemplates(config)
   result.table = prepareTable(config, db)
+  result.realURL = config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/")
 
 proc borrow*(pool: TemplatingPool): TemplateObj {.inline, raises: [], gcsafe.} =
   pool.pool.borrow()

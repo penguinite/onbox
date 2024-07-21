@@ -16,16 +16,6 @@
 # api/accounts.nim:
 ## This module contains all the routes for the accounts method in the mastodon api.
 
-
-# From somewhere in Quark
-import quark/[crypto]
-
-# From somewhere in Pothole
-import pothole/[lib]
-
-# From somewhere in the standard library
-import std/[json]
-
 # From nimble/other sources
 import mummy
 
