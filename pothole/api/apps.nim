@@ -178,6 +178,5 @@ proc v1AppsVerify*(req: Request) =
   var result = %* {
     "name": name,
     "website": website,
-    "vapid_key": "" # TODO: This is deprecated and should be removed.
   }
   req.respond(200, headers, $(result))
