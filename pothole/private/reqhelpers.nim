@@ -1,6 +1,7 @@
 import std/tables
 import quark/strextra
 import mummy, mummy/multipart
+from std/strutils import split
 
 proc isValidQueryParam*(req: Request, query: string): bool =
   ## Check if a query parameter (such as "?query=parameter") is valid and not empty
