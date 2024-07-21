@@ -13,8 +13,8 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
-# api/ph.nim:
-## This module contains all the routes for the ph method in the api
+# api/nodeinfo.nim:
+## This module contains all the routes that handle stuff related to the nodeinfo standard.
 
 
 # From somewhere in Quark

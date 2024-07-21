@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 # api/ph.nim:
-## This module contains all the routes for the ph method in the api
+## This module contains all the routes for the Pothole API
 
 
 # From somewhere in Quark
