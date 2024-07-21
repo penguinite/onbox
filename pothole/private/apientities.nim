@@ -57,16 +57,16 @@ proc account*(user_id: string): JsonNode =
 
   dbPool.withConnection db:
     user = db.getUserById(user_id)
-    followers = db.getFollowersCount(user.id)
-    following = db.getFollowingCount(user.id)
-    totalPosts = db.getTotalPostsByUserId(user.id)
+    followers = db.getFollowersCount(user_id)
+    following = db.getFollowingCount(user_id)
+    totalPosts = db.getTotalPostsByUserId(user_id)
 
   configPool.withConnection config:
-    avatar = config.getAvatar(user.id)
-    header = config.getHeader(user.id)
+    avatar = config.getAvatar(user_id)
+    header = config.getHeader(user_id)
 
   return %* {
-    "id": user.id,
+    "id": user_id,
     "username": user.handle,
     "acct": user.handle,
     "display_name": user.name,
