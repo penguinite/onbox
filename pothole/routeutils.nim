@@ -20,7 +20,7 @@ import pothole/[database, conf, lib, assets]
 
 # From the standard library
 import std/mimetypes
-from std/strutils import parseInt
+from std/strutils import parseInt, `%`
 
 # From elsewhere
 import waterpark, waterpark/postgres
