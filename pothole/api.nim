@@ -18,7 +18,7 @@
 
 # From somewhere in Pothole
 import pothole/lib
-import pothole/api/[instance, ph, apps, oauth, nodeinfo]
+import pothole/api/[instance, apps, oauth, nodeinfo, accounts]
 
 # From somewhere in the standard library
 import std/[tables]
@@ -40,8 +40,6 @@ const apiRoutes* =  @[
   ("/oauth/revoke",  "POST", oauthRevoke),
   ("/.well-known/nodeinfo", "GET", resolveNodeinfo),
   ("/nodeinfo/2.0", "GET", nodeInfo2x0),
-  ("/api/ph/v1/about", "GET", phAbout),
-  
 ]
 
 

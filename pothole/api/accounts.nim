@@ -13,8 +13,8 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
-# api/ph.nim:
-## This module contains all the routes for the Pothole API
+# api/accounts.nim:
+## This module contains all the routes for the accounts method in the mastodon api.
 
 
 # From somewhere in Quark
@@ -29,13 +29,7 @@ import std/[json]
 # From nimble/other sources
 import mummy
 
-proc phAbout*(req: Request) =
+proc accountsVerifyCredentials*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "application/json"
-  req.respond(200, headers, $(%* {
-    "version": lib.phVersion,
-    "mastoapi_version": lib.phMastoCompat,
-    "source_url": lib.phSourceUrl,
-    "kdf": crypto.kdf,
-    "crash_dir": lib.globalCrashDir
-  }))
+  req.respond(200, headers, "{}")
