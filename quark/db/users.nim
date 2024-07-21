@@ -154,8 +154,8 @@ proc constructUserFromRow*(row: Row): User =
 
   return result
 
-proc getFirstAdmin*(db: DbConn): User =
-  return constructUserFromRow(db.getRow(sql"SELECT * FROM users WHERE admin = true;"))
+proc getFirstAdmin*(db: DbConn): string =
+  return db.getRow(sql"SELECT id FROM users WHERE admin = true;")[0]
 
 proc adminAccountExists*(db: DbConn): bool = 
   return db.getRow(sql"SELECT id FROM users WHERE admin = true;")[0] != ""
