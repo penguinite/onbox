@@ -29,6 +29,7 @@ import quark/[crypto, database, strextra]
 import pothole/[database, lib, conf]
 
 # From standard libraries
+from std/os import execShellCmd
 from std/strutils import split, `%`
 
 # From elsewhere
@@ -100,17 +101,11 @@ proc docker*(config = "pothole.conf", name = "potholeDb", allow_weak_password = 
     error "Please investigate the above errors before trying again."
   return 0
 
-import cligen
-dispatchMultiGen(
-  ["db"],
-  [check, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
-  [clean, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
-  [docker,
-    help= {
-      "config": "Location to config file",
-      "name": "Sets the name of the database container",
-      "allow_weak_password": "Does not change password automatically if its weak",
-      "expose_externally": "Exposes the database container (potentially to the outside world)",
-      "ipv6": "Sets some IPv6-specific options in the container"
-    }, mergeNames = @["potholectl", "db"]]
-)
+proc psql*(config = "pothole.conf"): int = 
+  ## This command opens a psql shell in the database container.
+  ## This is useful for debugging operations and generally figuring out where we went wrong. (in life)
+  let
+    cnf = conf.setup(config)
+    cmd = "docker exec -it potholeDb psql -U " & cnf.getDbUser() & " " & cnf.getDbName()
+  echo "Executing: ", cmd
+  discard execShellCmd cmd

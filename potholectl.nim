@@ -18,15 +18,34 @@
 ## Potholectl is a command-line tool that provides a nice and simple interface to many of Pothole's internals.
 ## It can be used to create new users, delete posts, add new MRF policies, setup database containers and more!
 ## Generally, this command aims to be a Pothole instance administrator's best friend.
-import potholectl/[misc, mrf, dev, db]
+import potholectl/[misc, smrf, sdb]
 import std/macros
+import cligen
 
-when isMainModule:
-  import cligen
-  dispatchMulti(
-    [db, doc="Operations related to database maintenance, run db help or db -h for help.", stopWords = @["check", "clean", "docker"], suppress = @[ "usage", "prefix" ]],
-    [mrf, doc="Operations related to custom MRF policies, run mrf help or mrf -h for help.", stopWords = @["view", "compile"], suppress = @[ "usage", "prefix" ]],
-    [dev, doc="Helpful commands for Pothole developers, run dev help or dev -h for help.", stopWords = @["db", "clean", "psql"], suppress = @[ "usage", "prefix" ]],
-    [render, help={"filename": "Location to template file", "config": "Location to config file"}],
-    [ids], [handles], [dates]
-  )
+dispatchMultiGen(
+  ["db"],
+  [check, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
+  [clean, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
+  [psql, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
+  [docker,
+    help= {
+      "config": "Location to config file",
+      "name": "Sets the name of the database container",
+      "allow_weak_password": "Does not change password automatically if its weak",
+      "expose_externally": "Exposes the database container (potentially to the outside world)",
+      "ipv6": "Sets some IPv6-specific options in the container"
+    }, mergeNames = @["potholectl", "db"]]
+)
+
+dispatchMultiGen(
+  ["mrf"],
+  [view, help={"filenames": "List of modules to inspect"}, mergeNames = @["potholectl", "mrf"]],
+  [compile, help={"filenames": "List of files to compile"}, mergeNames = @["potholectl", "mrf"]]
+)
+
+dispatchMulti(
+  [db, doc="Operations related to database maintenance, run db help or db -h for help.", stopWords = @["check", "clean", "docker"], suppress = @[ "usage", "prefix" ]],
+  [mrf, doc="Operations related to custom MRF policies, run mrf help or mrf -h for help.", stopWords = @["view", "compile"], suppress = @[ "usage", "prefix" ]],
+  [render, help={"filename": "Location to template file", "config": "Location to config file"}],
+  [ids], [handles], [dates]
+)

@@ -101,10 +101,3 @@ proc compile*(filenames: seq[string]): int =
     discard execShellCmd(cmd)
 
   return 0
-
-import cligen
-dispatchMultiGen(
-  ["mrf"],
-  [view, help={"filenames": "List of modules to inspect"}, mergeNames = @["potholectl", "mrf"]],
-  [compile, help={"filenames": "List of files to compile"}, mergeNames = @["potholectl", "mrf"]]
-)
