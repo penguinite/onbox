@@ -15,77 +15,18 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # potholectl:
-## Potholectl is a command-line tool that aids in diagnosing problems
-## or setting up instances. It provides a low-level tool to access
-## Pothole's internals with.
-{.define: potholectl.} 
+## Potholectl is a command-line tool that provides a nice and simple interface to many of Pothole's internals.
+## It can be used to create new users, delete posts, add new MRF policies, setup database containers and more!
+## Generally, this command aims to be a Pothole instance administrator's best friend.
+import potholectl/[misc, mrf, dev, db]
+import std/macros
 
-# From Pothole
-import pothole/lib
-
-# From Pothole (ctl folder)
-import potholectl/[shared, db, mrf, dev, user, post, templating]
-
-# From standard library
-import std/[os, parseopt, strutils, tables]
-
-# Leave if no parameters were provided
-if paramCount() < 1:
-  helpPrompt()
-
-#! Functions and procedures are declared here or somewhere in the ctl/ folder
-
-var p = initOptParser()
-
-var
-  subsystem = "" # Subsystem is just fancy word for section.
-  command = "" # This is the actual command to execute.
-  data: seq[string] = @[] # Mandatory args are stored here
-  args: Table[string, string] = initTable[string,string]()
-
-# Potholectl follows this format: potholectl SUBSYSTEM [-OPTIONAL_ARGS] COMMAND MANDATORY_ARGS 
-# ie. ./pothole db init --backend=native main.db
-# or ./pothole conf parse pothole.conf
-initStuff()
-for kind, key, val in p.getopt():
-  case kind
-
-  of cmdArgument:
-    if isSubsystem(key) and len(subsystem) < 1:
-      subsystem = toLowerAscii(key)
-      continue
-    
-    if isCommand(subsystem, key) and len(subsystem) > 0:
-      command = toLowerAscii(key)
-      continue
-
-    data.add(key)
-
-  of cmdLongOption, cmdShortOption:
-    if len(val) > 0:
-      args[key] = val
-    else:
-      args[key] = ""
-      
-  of cmdEnd: break
-
-if args.check("v","version"):
-  echo "Potholectl v" & lib.phVersion
-  quit(0)
-
-case subsystem.toLowerAscii():
-of "db": db.processCmd(command, data, args)
-of "mrf": mrf.processCmd(command, data, args)
-of "dev": dev.processCmd(command, data, args)
-of "user": user.processCmd(command, data, args)
-of "post": post.processCmd(command, data, args)
-# Extra short commands
-of "template": templating.processCmd(data, args)
-# Extra educational material
-of "date","dates": helpPrompt("date","")
-of "id","ids": helpPrompt("ids","")
-of "handle", "handles": helpPrompt("handles","")
-else:
-  # Just check the args as-is
-  if args.check("h","help"):
-    helpPrompt()
+when isMainModule:
+  import cligen
+  dispatchMulti(
+    [db, doc="Operations related to database maintenance, run db help or db -h for help.", stopWords = @["check", "clean", "docker"], suppress = @[ "usage", "prefix" ]],
+    [mrf, doc="Operations related to custom MRF policies, run mrf help or mrf -h for help.", stopWords = @["view", "compile"], suppress = @[ "usage", "prefix" ]],
+    [dev, doc="Helpful commands for Pothole developers, run dev help or dev -h for help.", stopWords = @["db", "clean", "psql"], suppress = @[ "usage", "prefix" ]],
+    [render, help={"filename": "Location to template file", "config": "Location to config file"}],
+    [ids], [handles], [dates]
+  )

@@ -21,66 +21,90 @@
 # From somewhere in Quark
 import quark/[strextra]
 
-# From somewhere in Potholectl
-import shared
-
 # From somewhere in Pothole
 import pothole/mrf
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
-import std/[dynlib, os, tables, posix]
+import std/[dynlib, os, posix]
 
-proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
-  if args.check("h","help"):
-    helpPrompt("mrf",cmd)
+proc view*(filenames: seq[string]): int =
+  ## Shows a helpful feature summary for a custom MRF policy.
+  ## 
+  ## When given a filename, or multiple filenames, it will go through and find the module.
+  ## Then it will link it and run a bunch of tests to see what filters it has.
+  ## 
+  ## If there is no output from this command, then you either gave it a module it couldn't load
+  ## or the MRF policy you successfully loaded has no filters.
+  ## 
+  ## Obviously, don't run this command on anything you didn't compile yourself
+  ## Since it's an unsafe command.
+  if len(filenames) == 0:
+    echo "Please provide modules to inspect."
+    quit(1)
 
-  case cmd:
-  of "view":
-    if len(data) == 0:
-      echo "Please provide filename for module to inspect."
+  for filename in filenames:
+    if isEmptyOrWhitespace(filename):
+      continue
 
-    for filename in data:
-      if isEmptyOrWhitespace(filename):
-        continue
+    if not fileExists(filename):
+      echo "File " & filename & " does not exist."
+      continue
+  
+    echo "Inspecting file " & filename
+    var lib: LibHandle
+    if not filename.startsWith('/') or not filename.startsWith("./"):
+      lib = loadLib("./" & filename)
+    else:
+      lib = loadLib(filename)
+      
+    if lib == nil:
+      echo "Failed to load library, dlerror output: ", $dlerror()
 
-      if not fileExists(filename):
-        echo "Filename " & filename & " does not exist."
-        continue
-    
-      log "Inspecting file " & filename
+    if lib.getFilterIncomingPost() != nil:
+      echo "This MRF policy filters incoming posts"
+    if lib.getFilterOutgoingPost() != nil:
+      echo "This MRF policy filters outgoing posts"
 
-      var lib: LibHandle
+    if lib.getFilterIncomingUser() != nil:
+      echo "This MRF policy filters incoming users"
+    if lib.getFilterOutgoingUser() != nil:
+      echo "This MRF policy filters outgoing users"
 
-      if not filename.startsWith('/') or not filename.startsWith("./"):
-        lib = loadLib("./" & filename)
-      else:
-        lib = loadLib(filename)
-        
-      if lib == nil:
-        log "Failed to load library, dlerror output: ", $dlerror()
+    if lib.getFilterIncomingActivity() != nil:
+      echo "This MRF policy filters incoming activities"
+    if lib.getFilterOutgoingActivity() != nil:
+      echo "This MRF policy filters outgoing activities"
+  return 0
 
-      echo "potholectl will run a couple of tests, these try to show what features/filters this MRF policy has."
-      echo "If there is no output then it means this MRF policy has no features or potholectl couldnt detect them."
+proc compile*(filenames: seq[string]): int =
+  ## Compiles an MRF policy from Nim to a dynamic module
+  ## 
+  ## When given a filename, or multiple filenames, it will go through and compile each module.
+  ## 
+  ## Obviously, don't run this command on anything you didn't read the source of
+  ## Since compile-time code *can* be dangerous to run
+  if len(filenames) == 0:
+    echo "Please provide files to compile."
+    quit(1)
 
-      if lib.getFilterIncomingPost() != nil:
-        log "This MRF policy filters incoming posts"
-      if lib.getFilterOutgoingPost() != nil:
-        log "This MRF policy filters outgoing posts"
+  for filename in filenames:
+    if isEmptyOrWhitespace(filename):
+      continue
 
-      if lib.getFilterIncomingUser() != nil:
-        log "This MRF policy filters incoming users"
-      if lib.getFilterOutgoingUser() != nil:
-        log "This MRF policy filters outgoing users"
+    if not fileExists(filename):
+      echo "File " & filename & " does not exist."
+      continue
 
-      if lib.getFilterIncomingActivity() != nil:
-        log "This MRF policy filters incoming activities"
-      if lib.getFilterOutgoingActivity() != nil:
-        log "This MRF policy filters outgoing activities"
-  of "check_config":
-    return # TODO: Implement
-  of "enable":
-    return # TODO: Implement
-  else:
-    helpPrompt("mrf")
-    
+    let cmd = "nim cpp --app:lib " & filename
+    echo "Executing command: " & cmd
+    discard execShellCmd(cmd)
+
+  return 0
+
+import cligen
+dispatchMultiGen(
+  ["mrf"],
+  [view, help={"filenames": "List of modules to inspect"}, mergeNames = @["potholectl", "mrf"]],
+  [compile, help={"filenames": "List of files to compile"}, mergeNames = @["potholectl", "mrf"]]
+)

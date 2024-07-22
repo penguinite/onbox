@@ -20,7 +20,7 @@
 ## and it calls the appropriate function from potholepkg/database.nim and potholepkg/user.nim
 
 # From somewhere in Potholectl
-import shared
+import potholectl/shared
 
 # From somewhere in Quark
 import quark/[post, strextra]

@@ -19,130 +19,49 @@
 ## Anything a contributor to Pothole would need can be found here.
 
 # From somewhere in Potholectl
-import shared
+import potholectl/shared
 
 # From somewhere in Pothole
 import pothole/[lib, conf, database]
 
 # From standard libraries
-import std/[os, osproc, tables, strutils]
+import std/[os, strutils]
 
-const envVars = {
-  "PHDB_HOST": "127.0.0.1:5432",
-  "PHDB_NAME": "pothole",
-  "PHDB_USER": "pothole",
-  "PHDB_PASS": "SOMETHING_SECRET"
-}.toTable
-
-proc initEnv(config: ConfigTable,outputfile: string = "pothole_envs") =
-  var data = ""
-  for env, val in envVars.pairs:
-    # Woah! A powerful oneliner!
-    let key = env.split('_')[1][0..3].toLower()
-    data.add "export " & env & "=\"" & config.getStringOrDefault("db",key,val)  & "\"\n"
-  
-  # Write to file
-  log "Writing script to ", outputfile
-  var file = open(outputfile, fmWrite)
-  file.write(data)
-  file.close()
-
-proc cleanEnv(outputfile: string = "pothole_envs") =
-  var data = ""
-  for env in envVars.keys:
-    try:
-      data.add("unset " & env & "\n")
-    except CatchableError as err:
-      log "Couldn't delete environment variables \"", env, "\": ", err.msg
-  
-  # Write to file
-  log "Writing script to ", outputfile
-  var file = open(outputfile, fmWrite)
-  file.write(data)
-  file.close()
-
-proc initDb(config: ConfigTable) =
+proc db*(config = "pothole.conf"): int =
+  ## This command creates a postgres database container for development purposes.
+  ## 
+  ## It uses the values provided by configuration file, so if you're still using default values then you're using an insecure password.
+  let cnf = conf.setup(config)
   discard exec "docker pull postgres:alpine"
-  let id = exec "docker run --name potholeDb -d -p 5432:5432 -e POSTGRES_USER=$1 -e POSTGRES_PASSWORD=$2 -e POSTGRES_DB=$3 postgres:alpine" % [getDbUser(config), getDbPass(config), getDbName(config)]
+  let id = exec "docker run --name potholeDb -d -p 5432:5432 -e POSTGRES_USER=$1 -e POSTGRES_PASSWORD=$2 -e POSTGRES_DB=$3 postgres:alpine" % [getDbUser(cnf), getDbPass(cnf), getDbName(cnf)]
   if id == "":
     error "Please investigate the above errors before trying again."
+  return 0
 
-proc purgeDb() =
-  exec "docker kill potholeDb"
-  exec "docker rm potholeDb"
+proc clean*(config = "pothole.conf"): int =
+  ## This command clears every table inside the postgres container, useful for when you need a blank slate inbetween tests.
+  let cnf = conf.setup(config)
+  echo "Clearing database."
+  init(
+    cnf.getDbName(),
+    cnf.getDbUser(),
+    cnf.getDbHost(),
+    cnf.getDbPass(),
+  ).cleanDb()
 
-proc envvarsDontExist(): bool =
-  for env in envVars.keys:
-    if not existsEnv(env): return true
-  return false
+proc psql*(config = "pothole.conf"): int = 
+  ## This command opens a psql shell in the database container.
+  ## This is useful for debugging operations and generally figuring out where we went wrong. (in life)
+  let
+    cnf = conf.setup(config)
+    cmd = "docker exec -it potholeDb psql -U " & cnf.getDbUser() & " " & cnf.getDbName()
+  echo "Executing: ", cmd
+  discard execShellCmd cmd
 
-proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
-  if args.check("h","help"):
-    helpPrompt("dev",cmd)
-
-  var config: ConfigTable
-  if args.check("c", "config"):
-    config = conf.setup(args.get("c","config"))
-  else:
-    config = conf.setup(getConfigFilename())
-
-  case cmd:
-  of "setup":
-    initEnv(config)
-    if config.isNil() and envvarsDontExist():
-      log "No way to get the login details required to clean the database."
-      log "Either you have no readable config file or no environment variables"
-      log "You might be able to recover from this error by running the setup_env command first"
-      return
-    initDb(config)
-  of "db":
-    if config.isNil() and envvarsDontExist():
-      log "No way to get the login details required to clean the database."
-      log "Either you have no readable config file or no environment variables"
-      log "You might be able to recover from this error by running the setup_env command first"
-      return
-    if args.check("d","delete"):
-      purgeDb()
-    else:
-      initDb(config)
-  of "env":
-    let outputFile = args.getOrDefault("o","output","pothole_envs")
-    if args.check("d","delete"):
-      cleanEnv(outputFile)
-    else:
-      config.initEnv(outputFile)
-  of "clean":
-    if config.isNil() and envvarsDontExist():
-      log "No way to get the login details required to clean the database."
-      log "Either you have no readable config file or no environment variables"
-      log "You might be able to recover from this error by running the setup_env command first"
-      return
-    init(
-      config.getDbName(),
-      config.getDbUser(),
-      config.getDbHost(),
-      config.getDbPass(),
-    ).cleanDb()
-  of "delete":
-    purgeDb()
-  of "psql":
-    if config.isNil() and envvarsDontExist():
-      log "No way to get the login details required to access the database."
-      log "Either you have no readable config file or no environment variables"
-      log "You might be able to recover from this error by running the setup_env command first"
-      return
-
-    log "Executing: docker exec -it potholeDb psql -U ", config.getDbUser(), " ", config.getDbName()
-    discard execShellCmd "docker exec -it potholeDb psql -U " & config.getDbUser() & " " & config.getDbName()
-
-  of "purge":
-    cleanEnv()
-    purgeDb()
-  
-    log "Executing: docker rmi postgres"
-    discard execCmd "docker rmi postgres"
-
-    for dir in @["static/","uploads/","build/","docs/public/"]:
-      if dirExists(dir): removeDir(dir)
-  else:
-    helpPrompt("dev")
+import cligen
+dispatchMultiGen(
+  ["dev"],
+  [db, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "dev"]],
+  [clean, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "dev"]],
+  [psql, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "dev"]]
+)
