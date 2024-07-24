@@ -49,8 +49,8 @@ proc check*(config = "pothole.conf"): int =
   )
   return 0
 
-proc clean*(config = "pothole.conf"): int =
-  ## This command cleans the entire database, it removes all tables and all the data within them.
+proc purge*(config = "pothole.conf"): int =
+  ## This command purges the entire database, it removes all tables and all the data within them.
   ## It's quite obvious but this command will erase any data you have, so be careful.
   let cnf = conf.setup(config)
   log "Cleaning everything in database"
@@ -109,3 +109,23 @@ proc psql*(config = "pothole.conf"): int =
     cmd = "docker exec -it potholeDb psql -U " & cnf.getDbUser() & " " & cnf.getDbName()
   echo "Executing: ", cmd
   discard execShellCmd cmd
+
+proc clean*(config = "pothole.conf"): int =
+  ## This command runs some cleanup procedures.
+  let cnf = conf.setup(config)
+  let db = init(
+    cnf.getDbName(),
+    cnf.getDbUser(),
+    cnf.getDbHost(),
+    cnf.getDbPass(),
+  )
+  log "Cleaning up sessions"
+  for session in db.cleanSessionsVerbose():
+    log "Cleaned up session belonging to \"", db.getHandleFromId(session[1]), "\""
+  log "Cleaning up authentication codes"
+  for code in db.cleanupCodesVerbose():
+    log "Cleaned up auth code belonging to \"", db.getHandleFromId(code[1]), "\""
+  log "Purging old apps/clients"
+  db.purgeOldApps()
+  log "Purging old oauth tokens"
+  db.purgeOldOauthTokens()

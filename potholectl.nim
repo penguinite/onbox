@@ -19,13 +19,13 @@
 ## It can be used to create new users, delete posts, add new MRF policies, setup database containers and more!
 ## Generally, this command aims to be a Pothole instance administrator's best friend.
 import potholectl/[misc, smrf, sdb]
-import std/macros
 import cligen
 
 dispatchMultiGen(
   ["db"],
   [check, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
   [clean, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
+  [purge, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
   [psql, help= {"config": "Location to config file"}, mergeNames = @["potholectl", "db"]],
   [docker,
     help= {
