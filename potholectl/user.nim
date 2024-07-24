@@ -32,243 +32,273 @@ import pothole/[database,lib,conf]
 from std/tables import Table
 import std/strutils except isEmptyOrWhitespace, parseBool
 
-proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
-  if args.check("h","help"):
-    helpPrompt("user",cmd)
+proc new*(args: seq[string], admin = false, moderator = false, require_approval = false, display = "Default Name", bio = "", config = "pothole.conf"): int =
+  if len(args) != 3:
+    error "Invalid number of arguments, expected 3."
 
-  var config: ConfigTable
-  if args.check("c", "config"):
-    config = conf.setup(args.get("c","config"))
-  else:
-    config = conf.setup(getConfigFilename())
+  # Then we check if our essential args is empty.
+  # If it is, then we error out
+  var
+    handle = args[0]
+    email = args[1]
+    password = args[2]
+  if handle.isEmptyOrWhitespace() or password.isEmptyOrWhitespace() or email.isEmptyOrWhitespace():
+    error "Required argument is either empty or non-existent."
 
-  let db = setup(
-    config.getDbUser(),
-    config.getDbName(),
-    config.getDbHost(),
-    config.getDbPass(),
-    true
+  let
+    cnf = setup(config)
+    db = setup(
+      cnf.getDbUser(),
+      cnf.getDbName(),
+      cnf.getDbHost(),
+      cnf.getDbPass(),
+    )
+  
+  var user = newUser(
+    handle = handle,
+    local = true,
+    password = password
   )
 
-  case cmd:
-  of "new":
-    var
-      name = ""
-      email = ""
-      password = ""
-      display = name
-      bio = ""
+  user.email = email
+  user.name = display
+  user.bio = escape(bio)
+  user.is_approved = not require_approval
+  user.admin = admin
+  user.moderator = moderator
+    
+  try:
+    db.addUser(user)
+  except CatchableError as err:
+    error "Failed to insert user: ", err.msg
+  
+  log "Successfully inserted user"
+  echo "Login details:"
+  echo "name: ", user.handle
+  echo "password: ", password
+  return 0
 
-    # Fill up every bit of info we need
-    # First the plain command-line mandatory arguments
-    if len(data) > 0:
-      name = data[0]
-      password = data[1]
-    
-    # And then the short and long command-line options
-    if args.check("n","name"):
-      name = args.get("n","name")
-    
-    if args.check("e","email"):
-      email = args.get("e","email")
+proc delete*(args: seq[string], purge = false, id = false, name = false, config = "pothole.conf"): int =
+  if len(args) != 1:
+    error "Invalid number of arguments"
+  
+  var
+    thing = args[0]
+    isId = id
 
-    if args.check("d", "display"):
-      display = args.get("d", "display")
-    else:
-      display = sanitizeHandle(name)
-    
-    if args.check("p", "password"):
-      password = args.get("p", "password")
-    
-    if args.check("b", "bio"):
-      bio = args.get("b", "bio")
-    
-    # Then we check if our essential data is empty.
-    # If it is, then we error out and tell the user to RTFM (but kindly)
-    if name.isEmptyOrWhitespace() or password.isEmptyOrWhitespace():
-      if args.check("q","quiet"): quit(1)
-      log "Invalid command usage"
-      log "You can always freshen up your knowledge on the CLI by re-running the same command with -h or --help"
-      log "In fact, for your convenience! That's what we will be doing! :D"
-      helpPrompt("user", cmd)
+  # If the user tells us its a name
+  # or if "thing" has an @ symbol
+  # then its a name.
+  if name or "@" in thing:
+    isId = false
+  
+  # If the user supplies both -i and -n then error out and ask them which it is.
+  if id and name:
+    error "This can't both be a name and id, which is it?"
+  
 
-    var user = newUser(
-      handle = name,
-      local = true,
-      password = password,
+  if thing.isEmptyOrWhitespace():
+    error "Argument is empty"
+
+  let
+    cnf = setup(config)
+    db = setup(
+      cnf.getDbUser(),
+      cnf.getDbName(),
+      cnf.getDbHost(),
+      cnf.getDbPass(),
     )
-
-    user.email = email
-    user.name = display
-    user.bio = escape(bio)
-    user.is_approved = true
-
-    if args.check("a","admin"): user.admin = true
-    if args.check("m","moderator"): user.moderator = true
-    if args.check("r","require-approval"): user.is_approved = false
     
+  if db.userIdExists(thing) and db.userHandleExists(thing) and "@" notin thing:
+    error "Potholectl can't infer whether this is an ID or a handle, please re-run with the -i or -n flag depending on if this is an id or name"
+    
+
+  # Try to convert the thing we received into an ID.
+  # So it's easier to handle
+  var id = ""
+  case isId:
+  of false:
+    # It's a handle
+    if not db.userHandleExists(thing):
+      error "User handle doesn't exist"
+    id = db.getIdFromHandle(thing)
+  of true:
+    # It's an id
+    if not db.userIdExists(thing):
+      error "User id doesn't exist"
+    id = thing
+    
+  # The `null` user is important.
+  # We simply cannot delete it otherwise we will be in database hell.
+  if id == "null":
+    error "Deleting the null user is not allowed."
+
+  if purge:
+    # Delete every post first.
     try:
-      db.addUser(user)
-      if not args.check("q","quiet"):
-        log "Successfully inserted user"
-        echo "Login details:"
-      echo "name: ", user.handle
-      echo "password: ", password
+      db.deletePosts(db.getPostIDsByUserWithID(id))
     except CatchableError as err:
-      if not args.check("q","quiet"):
-        error "Failed to insert user: ", err.msg
-      quit(1)
-  of "delete", "del", "purge":
-    var
-      thing = ""
-      idOrhandle = false # True means it's an id, False means it's a handle.
-    if len(data) > 0:
-      thing = data[0]
-    
-    if db.userIdExists(thing) and db.userHandleExists(thing) and "@" notin thing:
-      error "Potholectl can't infer whether this is an ID or a handle, please re-run with either -i or -n"
-    
-    # If there's an @ symbol then it's highly likely it's a handle
-    if args.check("i", "id"):
-      idOrhandle = true
-    
-    if args.check("n", "name") or "@" in thing:
-      idOrhandle = false
-
-    # Try to convert the thing we received into an ID.
-    # So it's easier    
-    var id = ""
-    case idOrhandle:
-    of false:
-      # It's a handle
-      if not db.userHandleExists(thing):
-        error "User handle doesn't exist"
-      id = db.getIdFromHandle(thing)
-    of true:
-      # It's an id
-      if not db.userIdExists(thing):
-        error "User id doesn't exist"
-      id = thing
-    
-    # The `null` user is important.
-    # We simply cannot delete it otherwise we will be in database hell.
-    if id == "null":
-      error "Deleting the null user is not allowed."
-
-    if args.check("p", "purge") or cmd == "purge":
-      # Delete every post first.
-      try:
-        db.deletePosts(db.getPostIDsByUserWithID(id))
-      except CatchableError as err:
-        error "Failed to delete posts by user: ", err.msg
-    else:
-      # We must reassign every post made this user to the `null` user
-      # Otherwise the database will freakout.
-      try:
-        db.reassignSenderPosts(db.getPostIDsByUserWithID(id), "null")
-      except CatchableError as err:
-        log "There's probably some database error somewhere..."
-        error "Failed to reassign posts by user: ", err.msg
-    
-    # Delete the user
-    try:
-      db.deleteUser(id)
-    except CatchableError as err:
-      error "Failed to delete user: ", err.msg
-    
-    echo "If you're seeing this then there's a high chance your command succeeded."
-  of "id":
-    if len(data) == 0:
-      if args.check("q","quiet"): quit(1)
-      log "You must provide an argument to this command"
-      helpPrompt("user","id")
-
-    if not db.userHandleExists(data[0]):
-      if args.check("q","quiet"): quit(1)
-      log "You must provide a valid user handle to this command"
-      helpPrompt("user","id")
-    
-    echo db.getIdFromHandle(data[0])
-  of "handle":
-    if len(data) == 0:
-      if args.check("q","quiet"): quit(1)
-      log "You must provide an argument to this command"
-      helpPrompt("user","handle")
-    
-    if not db.userIdExists(data[0]):
-      if args.check("q","quiet"): quit(1)
-      log "You must provide a valid user ID to this command"
-      helpPrompt("user","handle")
-    
-    echo db.getHandleFromId(data[0])
-  of "info":
-    if len(data) == 0:
-      if args.check("q","quiet"): quit(1)
-      log "You must provide an argument to this command"
-      helpPrompt("user", "info")
-    
-    var user: User
-    if db.userHandleExists(data[0]):
-      if not args.check("q","quiet"):
-        log "Using provided data as a user handle"
-      user = db.getUserByHandle(data[0])
-    elif db.userIdExists(data[0]):
-      if not args.check("q","quiet"):
-        log "Using provided data as a user ID"
-      user = db.getUserById(data[0])
-    else:
-      error "No valid user handle or id exists for the provided data..."
-    
-    proc printSpecificInfo(short, long, name, data: string) = 
-      if args.check(short, long):
-        if args.check("q","quiet"):
-          echo data
-        else:
-          echo name, ": \"", data , "\""
-    
-    if len(args) > 0:
-      printSpecificInfo("i","id", "ID", user.id)
-      printSpecificInfo("h","handle", "Handle", user.handle)
-      printSpecificInfo("d","display", "Display name", user.name)
-      printSpecificInfo("a","admin", "Admin status", $user.admin)
-      printSpecificInfo("m","moderator", "Moderator status", $user.moderator)
-      printSpecificInfo("r","request", "Approval request status:", $user.is_approved)
-      printSpecificInfo("f","frozen", "Frozen status:", $user.is_frozen)
-      printSpecificInfo("e","email", "Email", user.email)
-      printSpecificInfo("b","bio", "Bio", user.bio)
-      printSpecificInfo("p","password", "Password (hashed)", user.password)
-      printSpecificInfo("s","salt", "Salt", user.salt)
-      printSpecificInfo("t","type", "Type", $user.kind)
-    else:
-      echo $user
-  of "hash":
-    if len(data) == 0:
-      if args.check("q","quiet"): quit(1)
-      log "You must provide an argument to this command"
-      helpPrompt("user","hash")
-    
-    var
-      password = data[0]
-      salt = ""
-      kdf = crypto.kdf
-
-    if len(data) == 2:
-      salt = data[1]
-    
-    if args.check("k", "kdf"):
-      kdf = StringToKDF(args.get("k", "kdf"))
-    
-    var hash = hash(
-      password, salt, kdf
-    )
-
-    if args.check("q", "quiet"):
-      echo hash
-      quit(0)
-    
-    echo "Hash: \"", hash, "\""
-    echo "Salt: \"", salt, "\""
-    echo "KDF Id: ", kdf
-    echo "KDF Algorithm: ", KDFTOHumanString(kdf)
+      error "Failed to delete posts by user: ", err.msg
   else:
-    helpPrompt("user")
+    # We must reassign every post made this user to the `null` user
+    # Otherwise the database will freakout.
+    try:
+      db.reassignSenderPosts(db.getPostIDsByUserWithID(id), "null")
+    except CatchableError as err:
+      log "There's probably some database error somewhere..."
+      error "Failed to reassign posts by user: ", err.msg
+    
+  # Delete the user
+  try:
+    db.deleteUser(id)
+  except CatchableError as err:
+    error "Failed to delete user: ", err.msg
+    
+  echo "If you're seeing this then there's a high chance your command succeeded."
+
+proc id*(args: seq[string], quiet = false, config = "pothole.conf"): int = 
+  if len(args) != 1:
+    if quiet: quit(1)
+    error "Invalid number of arguments"
+  
+  if args[0].isEmptyOrWhitespace():
+    if quiet: quit(1)
+    error "Empty or mostly empty argument"
+  
+  let
+    cnf = setup(config)
+    db = setup(
+      cnf.getDbUser(),
+      cnf.getDbName(),
+      cnf.getDbHost(),
+      cnf.getDbPass(),
+    )
+
+  if not db.userHandleExists(args[0]):
+    if quiet: quit(1)
+    error "You must provide a valid user handle to this command"
+    
+  echo db.getIdFromHandle(args[0])
+  return 0
+
+proc handle*(args: seq[string], quiet = false, config = "pothole.conf"): int =
+  if len(args) != 1:
+    if quiet: quit(1)
+    error "Invalid number of arguments"
+  
+  if args[0].isEmptyOrWhitespace():
+    if quiet: quit(1)
+    error "Empty or mostly empty argument"
+  
+  let
+    cnf = setup(config)
+    db = setup(
+      cnf.getDbUser(),
+      cnf.getDbName(),
+      cnf.getDbHost(),
+      cnf.getDbPass(),
+    )
+
+  if not db.userIdExists(args[0]):
+    if quiet: quit(1)
+    error "You must provide a valid user id to this command"
+    
+  echo db.getHandleFromId(args[0])
+  return 0
+
+{.warning[ImplicitDefaultValue]: off.}
+proc info*(args: seq[string]; id,handle,display,moderator,admin,request,frozen,email,bio,password,salt,kind,quiet = false, config = "pothole.conf"): int = 
+  if len(args) != 1:
+    if quiet: quit(1)
+    error "Invalid number of arguments"
+  
+  if args[0].isEmptyOrWhitespace():
+    if quiet: quit(1)
+    error "Empty or mostly empty argument"
+  
+  let
+    cnf = setup(config)
+    db = setup(
+      cnf.getDbUser(),
+      cnf.getDbName(),
+      cnf.getDbHost(),
+      cnf.getDbPass(),
+    )
+
+  var user: User
+  if db.userHandleExists(args[0]):
+    if not quiet:
+      log "Using provided args as a user handle"
+    user = db.getUserByHandle(args[0])
+  elif db.userIdExists(args[0]):
+    if not quiet:
+      log "Using provided args as a user ID"
+    user = db.getUserById(args[0])
+  else:
+    error "No valid user handle or id exists for the provided args..."
+
+
+  var output = ""
+  proc print(s,s2: string) =
+    if quiet:
+      output.add s2
+    else:
+      output.add s & ": " & s2
+
+  ## TODO: wtf
+  if id: print "ID", user.id
+  if handle: print "Handle", user.handle
+  if display: print "Display name", user.name
+  if admin: print "Admin status", $(user.admin)
+  if moderator: print "Moderator status", $(user.admin)
+  if request: print "Approval status:", $(user.is_approved)
+  if frozen: print "Frozen status:", $(user.is_frozen)
+  if email: print "Email", user.email
+  if bio: print "Bio", user.bio
+  if password: print "Password (hashed)", user.password
+  if salt: print "Salt", user.salt
+  if kind: print "User type": $(user.kind)
+
+  if output == "":
+    echo $user
+  else:
+    echo output
+  return 0
+{.warning[ImplicitDefaultValue]: on.}
+
+proc hash*(args: seq[string], algo = "", quiet = false): int =
+  if len(args) == 0 or len(args) > 2:
+    error "Invalid number of arguments"
+    
+  var
+    password = args[0]
+    salt = ""
+    kdf = crypto.kdf
+  
+  if algo != "":
+    kdf = StringToKDF(algo)
+
+  if len(args) == 2:
+    salt = args[1]
+    
+  var hash = hash(
+    password, salt, kdf
+  )
+
+  if quiet:
+    echo hash
+    return 0
+
+  echo "Hash: \"", hash, "\""
+  echo "Salt: \"", salt, "\""
+  echo "KDF Id: ", kdf
+  echo "KDF Algorithm: ", KDFToHumanString(kdf)
+
+# TODO: Missing commands:
+#   hash: Hashes a password
+#   mod: Changes a user's moderator status
+#   admin: Changes a user's administrator status
+#   password: Changes a user's password
+#   freeze: Change's a user's frozen status
+#   approve: Approves a user's registration
+#   deny: Denies a user's registration
