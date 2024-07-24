@@ -42,7 +42,7 @@ proc updateTimestampForOAuth*(db: DbConn, id: string) =
   db.exec(sql"UPDATE oauth SET last_use = ? WHERE id = ?;", utc(now()).toDbString(), id)
 
 proc purgeOldOauthTokens*(db: DbConn) =
-  for row in db.getAllRows(sql"GET id,code,cid,last_use FROM oauth;"):
+  for row in db.getAllRows(sql"SELECT id,code,cid,last_use FROM oauth;"):
     if row[2] != "" and not db.authCodeExists(row[2]):
       db.exec(sql"DELETE FROM oauth WHERE id = ?;", row[1])
       continue
