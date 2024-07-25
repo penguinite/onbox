@@ -33,6 +33,13 @@ from std/tables import Table
 import std/strutils except isEmptyOrWhitespace, parseBool
 
 proc new*(args: seq[string], admin = false, moderator = false, require_approval = false, display = "Default Name", bio = "", config = "pothole.conf"): int =
+  ## This command creates a new user and adds it to the database.
+  ## It uses the following format: NAME EMAIL PASSWORD
+  ## 
+  ## So to add a new user, john for example, you would run potholectl user new john johns@email.com johns_password
+  ## 
+  ## The users created by this command are approved by default.
+  ## Although that can be changed with the require-approval CLI argument
   if len(args) != 3:
     error "Invalid number of arguments, expected 3."
 
@@ -78,7 +85,8 @@ proc new*(args: seq[string], admin = false, moderator = false, require_approval 
   echo "password: ", password
   return 0
 
-proc delete*(args: seq[string], purge = false, id = false, name = false, config = "pothole.conf"): int =
+proc delete*(args: seq[string], purge = false, id = true, handle = false, config = "pothole.conf"): int =
+  ## This command deletes a user from the database, you can either specify a handle or user id.
   if len(args) != 1:
     error "Invalid number of arguments"
   
@@ -86,14 +94,15 @@ proc delete*(args: seq[string], purge = false, id = false, name = false, config 
     thing = args[0]
     isId = id
 
-  # If the user tells us its a name
+  # If the user tells us its a handle
   # or if "thing" has an @ symbol
-  # then its a name.
-  if name or "@" in thing:
-    isId = false
+  # then its a handle.
+  if not id:
+    if handle or "@" in thing:
+      isId = false
   
   # If the user supplies both -i and -n then error out and ask them which it is.
-  if id and name:
+  if id and handle:
     error "This can't both be a name and id, which is it?"
   
 
@@ -111,7 +120,6 @@ proc delete*(args: seq[string], purge = false, id = false, name = false, config 
     
   if db.userIdExists(thing) and db.userHandleExists(thing) and "@" notin thing:
     error "Potholectl can't infer whether this is an ID or a handle, please re-run with the -i or -n flag depending on if this is an id or name"
-    
 
   # Try to convert the thing we received into an ID.
   # So it's easier to handle
@@ -156,7 +164,10 @@ proc delete*(args: seq[string], purge = false, id = false, name = false, config 
     
   echo "If you're seeing this then there's a high chance your command succeeded."
 
-proc id*(args: seq[string], quiet = false, config = "pothole.conf"): int = 
+proc id*(args: seq[string], quiet = false, config = "pothole.conf"): int =
+  ## This command is a shorthand for user info -i
+  ## 
+  ## It basically prints the user id of whoever's handle we just got
   if len(args) != 1:
     if quiet: quit(1)
     error "Invalid number of arguments"
@@ -182,6 +193,9 @@ proc id*(args: seq[string], quiet = false, config = "pothole.conf"): int =
   return 0
 
 proc handle*(args: seq[string], quiet = false, config = "pothole.conf"): int =
+  ## This command is a shorthand for user info -h
+  ## 
+  ## It basically prints the user handle of whoever's id we just got
   if len(args) != 1:
     if quiet: quit(1)
     error "Invalid number of arguments"
@@ -206,8 +220,15 @@ proc handle*(args: seq[string], quiet = false, config = "pothole.conf"): int =
   echo db.getHandleFromId(args[0])
   return 0
 
-{.warning[ImplicitDefaultValue]: off.}
-proc info*(args: seq[string]; id,handle,display,moderator,admin,request,frozen,email,bio,password,salt,kind,quiet = false, config = "pothole.conf"): int = 
+# I hate this just as much as you do but cligen complains without so here goes.
+proc info*(args: seq[string], id = false, handle = false,
+    display = false, moderator = false, admin = false, request = false, frozen = false,
+    email = false, bio = false, password = false, salt = false, kind = false,
+    quiet = false, config = "pothole.conf"): int = 
+
+  ## This command retrieves information about users.
+  ## By default it will display all information!
+  ## You can also choose to see specific bits with the command flags
   if len(args) != 1:
     if quiet: quit(1)
     error "Invalid number of arguments"
@@ -245,7 +266,6 @@ proc info*(args: seq[string]; id,handle,display,moderator,admin,request,frozen,e
     else:
       output.add s & ": " & s2
 
-  ## TODO: wtf
   if id: print "ID", user.id
   if handle: print "Handle", user.handle
   if display: print "Display name", user.name
@@ -267,6 +287,12 @@ proc info*(args: seq[string]; id,handle,display,moderator,admin,request,frozen,e
 {.warning[ImplicitDefaultValue]: on.}
 
 proc hash*(args: seq[string], algo = "", quiet = false): int =
+  ## This command hashes the given password with the latest KDF function.
+  ## You can also customize what function it will use with the algo command flag.
+  ## 
+  ## Format: potholectl user hash [PASSWORD] [SALT]
+  ## 
+  ## [PASSWORD] is required, whilst [SALT] can be left out.
   if len(args) == 0 or len(args) > 2:
     error "Invalid number of arguments"
     
@@ -295,7 +321,6 @@ proc hash*(args: seq[string], algo = "", quiet = false): int =
   echo "KDF Algorithm: ", KDFToHumanString(kdf)
 
 # TODO: Missing commands:
-#   hash: Hashes a password
 #   mod: Changes a user's moderator status
 #   admin: Changes a user's administrator status
 #   password: Changes a user's password

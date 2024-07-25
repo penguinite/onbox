@@ -18,7 +18,7 @@
 ## Potholectl is a command-line tool that provides a nice and simple interface to many of Pothole's internals.
 ## It can be used to create new users, delete posts, add new MRF policies, setup database containers and more!
 ## Generally, this command aims to be a Pothole instance administrator's best friend.
-import potholectl/[misc, smrf, sdb]
+import potholectl/[misc, smrf, sdb, suser]
 import cligen
 
 dispatchMultiGen(
@@ -38,6 +38,46 @@ dispatchMultiGen(
 )
 
 dispatchMultiGen(
+  ["user"],
+  [suser.new,
+    help = {
+    "admin": "Makes the user an administrator",
+    "moderator": "Makes the user a moderator",
+    "require-approval": "Turns user into an unapproved user",
+    "display": "Specifies the display name for the user",
+    "bio": "Specifies the bio for the user",
+    "config": "Location to config file"
+    }, mergeNames = @["potholectl", "user"]],
+  [suser.delete,
+    help = {
+      "id": "Specifies whether or not the thing provided is an ID",
+      "handle": "Specifies whether or not the thing provided is an handle",
+      "purge": "Whether or not to delete all the user's posts and other data",
+      "config": "Location to config file"
+    }, mergeNames = @["potholectl", "user"]],
+  [suser.info,
+    help = {
+      "quiet": "Makes the program a whole lot less noisy.",
+      "id":"Print only user's ID",
+      "handle":"Print only user's handle",
+      "display":"Print only user's display name",
+      "admin": "Print user's admin status",
+      "moderator": "Print user's moderator status",
+      "request": "Print user's approval request",
+      "frozen": "Print user's frozen status",
+      "email": "Print user's email",
+      "bio":"Print user's biography",
+      "password": "Print user's password (hashed)",
+      "salt": "Print user's salt",
+      "kind": "Print the user's type/kind",
+      "config": "Location to config file"
+    }, mergeNames = @["potholectl", "user"]],
+  [suser.id,help = {"quiet": "Print only the ID and nothing else.","config": "Location to config file"}, mergeNames = @["potholectl", "user"]],
+  [suser.handle,help = {"quiet": "Print only the handle and nothing else.","config": "Location to config file"}, mergeNames = @["potholectl", "user"]],
+  [suser.hash,help = {"quiet": "Print only the hash and nothing else.","algo": "Allows you to specify the KDF algorithm to use."}, mergeNames = @["potholectl", "user"]],
+)
+
+dispatchMultiGen(
   ["mrf"],
   [view, help={"filenames": "List of modules to inspect"}, mergeNames = @["potholectl", "mrf"]],
   [compile, help={"filenames": "List of files to compile"}, mergeNames = @["potholectl", "mrf"]]
@@ -46,6 +86,7 @@ dispatchMultiGen(
 dispatchMulti(
   [db, doc="Operations related to database maintenance, run db help or db -h for help.", stopWords = @["check", "clean", "docker"], suppress = @[ "usage", "prefix" ]],
   [mrf, doc="Operations related to custom MRF policies, run mrf help or mrf -h for help.", stopWords = @["view", "compile"], suppress = @[ "usage", "prefix" ]],
+  [user, doc="Operations related to user and user management, run user help or user -h for help.", stopWords = @["new", "delete", "info", "id", "handle", "hash"], suppress = @[ "usage", "prefix" ]],
   [render, help={"filename": "Location to template file", "config": "Location to config file"}],
   [ids], [handles], [dates]
 )
