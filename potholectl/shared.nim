@@ -23,8 +23,6 @@ import pothole/[lib]
 # From somewhere in the standard library
 import std/[osproc]
 
-const defaultConfigFilename* = "pothole.conf"
-
 proc exec*(cmd: string): string {.discardable.} =
   try:
     log "Executing: ", cmd

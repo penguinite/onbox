@@ -35,7 +35,7 @@ from std/strutils import split, `%`
 # From elsewhere
 import rng
 
-proc check*(config = "pothole.conf"): int =
+proc db_check*(config = "pothole.conf"): int =
   ## This command initializes a database with schema checking enabled,
   ## you can use it to test if the database needs migration.
   let cnf = conf.setup(config)
@@ -49,7 +49,7 @@ proc check*(config = "pothole.conf"): int =
   )
   return 0
 
-proc purge*(config = "pothole.conf"): int =
+proc db_purge*(config = "pothole.conf"): int =
   ## This command purges the entire database, it removes all tables and all the data within them.
   ## It's quite obvious but this command will erase any data you have, so be careful.
   let cnf = conf.setup(config)
@@ -62,7 +62,7 @@ proc purge*(config = "pothole.conf"): int =
   ).cleanDb()
   return 0
 
-proc docker*(config = "pothole.conf", name = "potholeDb", allow_weak_password = false, expose_externally = false, ipv6 = false): int =
+proc db_docker*(config = "pothole.conf", name = "potholeDb", allow_weak_password = false, expose_externally = false, ipv6 = false): int =
   ## This command creates a postgres docker container that automatically works with pothole.
   ## It reads the configuration file and takes note of the database configuration.
   ## And then it pulls the alpine:postgres docker image, and starts it up with the correct port, name, password anything.
@@ -101,7 +101,7 @@ proc docker*(config = "pothole.conf", name = "potholeDb", allow_weak_password = 
     error "Please investigate the above errors before trying again."
   return 0
 
-proc psql*(config = "pothole.conf"): int = 
+proc db_psql*(config = "pothole.conf"): int = 
   ## This command opens a psql shell in the database container.
   ## This is useful for debugging operations and generally figuring out where we went wrong. (in life)
   let
@@ -110,7 +110,7 @@ proc psql*(config = "pothole.conf"): int =
   echo "Executing: ", cmd
   discard execShellCmd cmd
 
-proc clean*(config = "pothole.conf"): int =
+proc db_clean*(config = "pothole.conf"): int =
   ## This command runs some cleanup procedures.
   let cnf = conf.setup(config)
   let db = init(

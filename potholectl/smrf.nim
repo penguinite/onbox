@@ -28,7 +28,7 @@ import pothole/mrf
 import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[dynlib, os, posix]
 
-proc view*(filenames: seq[string]): int =
+proc mrf_view*(filenames: seq[string]): int =
   ## Shows a helpful feature summary for a custom MRF policy.
   ## 
   ## When given a filename, or multiple filenames, it will go through and find the module.
@@ -77,7 +77,7 @@ proc view*(filenames: seq[string]): int =
       echo "This MRF policy filters outgoing activities"
   return 0
 
-proc compile*(filenames: seq[string]): int =
+proc mrf_compile*(filenames: seq[string]): int =
   ## Compiles an MRF policy from Nim to a dynamic module
   ## 
   ## When given a filename, or multiple filenames, it will go through and compile each module.

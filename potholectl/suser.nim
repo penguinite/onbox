@@ -32,7 +32,7 @@ import pothole/[database,lib,conf]
 from std/tables import Table
 import std/strutils except isEmptyOrWhitespace, parseBool
 
-proc new*(args: seq[string], admin = false, moderator = false, require_approval = false, display = "Default Name", bio = "", config = "pothole.conf"): int =
+proc user_new*(args: seq[string], admin = false, moderator = false, require_approval = false, display = "Default Name", bio = "", config = "pothole.conf"): int =
   ## This command creates a new user and adds it to the database.
   ## It uses the following format: NAME EMAIL PASSWORD
   ## 
@@ -85,7 +85,7 @@ proc new*(args: seq[string], admin = false, moderator = false, require_approval 
   echo "password: ", password
   return 0
 
-proc delete*(args: seq[string], purge = false, id = true, handle = false, config = "pothole.conf"): int =
+proc user_delete*(args: seq[string], purge = false, id = true, handle = false, config = "pothole.conf"): int =
   ## This command deletes a user from the database, you can either specify a handle or user id.
   if len(args) != 1:
     error "Invalid number of arguments"
@@ -164,7 +164,7 @@ proc delete*(args: seq[string], purge = false, id = true, handle = false, config
     
   echo "If you're seeing this then there's a high chance your command succeeded."
 
-proc id*(args: seq[string], quiet = false, config = "pothole.conf"): int =
+proc user_id*(args: seq[string], quiet = false, config = "pothole.conf"): int =
   ## This command is a shorthand for user info -i
   ## 
   ## It basically prints the user id of whoever's handle we just got
@@ -192,7 +192,7 @@ proc id*(args: seq[string], quiet = false, config = "pothole.conf"): int =
   echo db.getIdFromHandle(args[0])
   return 0
 
-proc handle*(args: seq[string], quiet = false, config = "pothole.conf"): int =
+proc user_handle*(args: seq[string], quiet = false, config = "pothole.conf"): int =
   ## This command is a shorthand for user info -h
   ## 
   ## It basically prints the user handle of whoever's id we just got
@@ -221,7 +221,7 @@ proc handle*(args: seq[string], quiet = false, config = "pothole.conf"): int =
   return 0
 
 # I hate this just as much as you do but cligen complains without so here goes.
-proc info*(args: seq[string], id = false, handle = false,
+proc user_info*(args: seq[string], id = false, handle = false,
     display = false, moderator = false, admin = false, request = false, frozen = false,
     email = false, bio = false, password = false, salt = false, kind = false,
     quiet = false, config = "pothole.conf"): int = 
@@ -321,9 +321,9 @@ proc hash*(args: seq[string], algo = "", quiet = false): int =
   echo "KDF Algorithm: ", KDFToHumanString(kdf)
 
 # TODO: Missing commands:
-#   mod: Changes a user's moderator status
-#   admin: Changes a user's administrator status
-#   password: Changes a user's password
-#   freeze: Change's a user's frozen status
-#   approve: Approves a user's registration
-#   deny: Denies a user's registration
+#   user_mod: Changes a user's moderator status
+#   user_admin: Changes a user's administrator status
+#   user_password: Changes a user's password
+#   user_freeze: Change's a user's frozen status
+#   user_approve: Approves a user's registration
+#   user_deny: Denies a user's registration

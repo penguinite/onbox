@@ -70,7 +70,7 @@ proc newPost*(
     raise newException(ValueError, "Post is missing content field.")
 
   # Generate post id
-  result.id = randstr(18)
+  result.id = randstr(32)
   
   # Just do this stuff...
   result.sender = sender
