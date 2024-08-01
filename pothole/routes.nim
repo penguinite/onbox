@@ -43,15 +43,27 @@ proc serveAndRender*(req: Request) =
   if path[high(path)] == '/' and path != "/":
     path = path[0..^2] # Remove last slash at the end of the path
   
+  # Remove session cookie from user's browser.
+  if req.hasSessionCookie():
+    headers["Set-Cookie"] = deleteSessionCookie()
+    # Check if it actaully exists in the db before removing.
+    # In theory this shouldn't matter but its a good thing to do anyway
+    dbPool.withConnection db:
+      let id = req.fetchSessionCookie()
+      if db.sessionExists(id):
+        db.deleteSession(id)
 
   # If the user has a cookie, then let the templating engine know.
   # signin.html and signup.html have some login-related conditionals in the template.
   if req.hasSessionCookie():
-    # Fetch user handle and verify cookie before sending it to the template.
+    # Verify if the session exists before sending it to the template.
+    # If it doesn't then, send a cookie deletion header.
     var user = ""
     let session = req.fetchSessionCookie()
     dbPool.withConnection db:
-      if db.sessionExists(session):
+      if not db.sessionExists(session) or db.sessionExpired(session):
+        req.headers["Set-Cookie"] = deleteSessionCookie()
+      else:
         user = db.getSessionUserHandle(session)
 
     templatePool.withConnection obj:
