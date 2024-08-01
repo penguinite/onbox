@@ -363,7 +363,7 @@ proc logoutSession*(req: Request) =
   templatePool.withConnection obj:
     req.respond(
       200, headers,
-      obj.render("index.html")
+      obj.renderSuccess("index.html", "Successfully logged out!")
     )
 
 

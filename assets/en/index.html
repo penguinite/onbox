@@ -21,6 +21,11 @@
                 </nav>
             </header>
             <main>
+                $if(message)$
+                    <div class="$message_type$">
+                        $message$
+                    </div>
+                $end$
                 <h1>$name[span_separated]$</h1>
                 <h2>About this instance</h2>
                 <em>$description$</em>
