@@ -97,6 +97,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   result.admin = false # This is false by default.
   result.moderator = false # This is false by default.
   result.is_frozen = false # Always assume user isn't frozen.
+  result.is_approved = true # Always assume user is approved.
   result.discoverable = true # This is the default.
   result.kind = Person # Even if its a group, service or application then it doesn't matter.
 
