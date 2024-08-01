@@ -284,7 +284,7 @@ proc signIn*(req: Request) =
 
   if fm.isValidFormParam("rememberme"):
     var session: string
-    let date = utc(now() + 7.days)
+    let date = utc(now() + 400.days) # 400 days is the upper limit on cookie age for chrome.
     dbPool.withConnection db:
       session = db.createSession(id)
     # This is a lengthy one-liner, maybe replace it with something more concise?
