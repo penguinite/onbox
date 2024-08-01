@@ -256,6 +256,14 @@ proc signIn*(req: Request) =
     hash, salt = ""
     kdf = crypto.kdf
   dbPool.withConnection db:
+    if not db.userFrozen(id) or not db.userApproved(id):
+      templatePool.withConnection obj:
+        req.respond(
+          404, headers, 
+          obj.renderError("User isn't approved or account has been frozen!","signin.html")
+        )
+      return
+
     salt = db.getUserSalt(id)
     kdf = db.getUserKDF(id)
     hash = db.getUserPass(id)
