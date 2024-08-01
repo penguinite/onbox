@@ -18,8 +18,8 @@
 ## This module contains all database logic for handling users.
 
 # From somewhere in Quark
-import ../[user, strextra, crypto]
-import ../private/[database, macros]
+import quark/[user, strextra, crypto]
+import quark/private/[database, macros]
 
 # From somewhere in the standard library
 import std/[tables]
