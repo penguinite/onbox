@@ -154,6 +154,20 @@ proc constructUserFromRow*(row: Row): User =
 
   return result
 
+proc userFrozen*(db: DbConn, id: string): bool =
+  ## Returns whether or not a user is frozen. ID must be a user id.
+  if not db.userIdExists(id):
+    raise newException(DbError, "Couldn't find user with id \"" & id & "\"")
+
+  return db.getRow(sql"SELECT is_frozen FROM users WHERE id = ?;", id)[0] == "t"
+
+proc userApproved*(db: DbConn, id: string): bool =
+  ## Returns whether or not a user is approved. ID must be a user id.
+  if not db.userIdExists(id):
+    raise newException(DbError, "Couldn't find user with id \"" & id & "\"")
+
+  return db.getRow(sql"SELECT is_approved FROM users WHERE id = ?;", id)[0] == "t"
+
 proc getFirstAdmin*(db: DbConn): string =
   return db.getRow(sql"SELECT id FROM users WHERE admin = true;")[0]
 
