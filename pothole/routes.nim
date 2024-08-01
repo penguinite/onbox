@@ -80,7 +80,6 @@ proc serveAndRender*(req: Request) =
 
 proc serveStatic*(req: Request) =
   var headers: HttpHeaders
-
   let (dir, file, ext) = splitFile(req.path)
   discard dir # Fucking nim.
   templatePool.withConnection obj:
@@ -166,14 +165,9 @@ proc signUp*(req: Request) =
   # If the instance requires approval
   # then set is_approved to false
   # otherwise set it to true
-  var require_approval: bool
   configPool.withConnection config:
-    require_approval = config.getBoolOrDefault("user", "require_approval", false)
-
-  if require_approval:
-    user.is_approved = false
-  else:
-    user.is_approved = true
+    if config.getBoolOrDefault("user", "require_approval", false):
+      user.is_approved = false
 
   # Check if a user like this already exists.
   dbPool.withConnection db:
@@ -202,9 +196,10 @@ proc signUp*(req: Request) =
     return
   
   var msg = "Success! Your account has been registered!"
-  if require_approval:
-    msg = msg[0..^2]
-    msg.add " but you will have to wait for an administrator to approve it before you can log in."
+  configPool.withConnection config:
+    if config.getBoolOrDefault("user", "require_approval", false):
+      msg = msg[0..^2]
+      msg.add " but you will have to wait for an administrator to approve it before you can log in."
   
   # All went well... We now have a user on the instance!
   templatePool.withConnection obj:
@@ -265,8 +260,8 @@ proc signIn*(req: Request) =
 
   # Then retrieve various stuff from the database.
   var
-    hash, salt = ""
-    kdf = crypto.kdf
+    hash, salt: string
+    kdf: KDF
   dbPool.withConnection db:
     if not db.userFrozen(id) or not db.userApproved(id):
       templatePool.withConnection obj:
