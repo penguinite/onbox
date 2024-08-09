@@ -29,7 +29,7 @@ import std/[tables, times]
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 const sessionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY UNIQUE NOT NULL", # The id for the session
 "uid": "TEXT NOT NULL", # User ID for the session
-"last_used": "TIMESTAMP NOT NULL", # When the session was created.
+"last_used": "TIMESTAMP NOT NULL", # When the session was last used.
 "__A": "foreign key (uid) references users(id)", # Some foreign key for integrity
 }.toOrderedTable
 
@@ -69,10 +69,10 @@ proc getSessionUserHandle*(db: DbConn, id: string): string =
   return db.getHandleFromId(db.getSessionUser(id))
 
 proc getSessionDate*(db: DbConn, id: string): DateTime =
-  ## Retrieves the creation date associated with a session.
+  ## Retrieves the last use date associated with a session.
   ## The id parameter should contain the session id.
   return toDateFromDb(
-    db.getRow(sql"SELECT created FROM sessions WHERE id = ?;", id)[0]
+    db.getRow(sql"SELECT last_used FROM sessions WHERE id = ?;", id)[0]
   )
 
 proc sessionExpired*(db: DbConn, id: string): bool =
