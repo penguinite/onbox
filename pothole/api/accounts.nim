@@ -52,7 +52,7 @@ proc accountsVerifyCredentials*(req: Request) =
   
 
   var result = %* {
-    "name": name,
-    "website": website,
+    "name": "TODO",
+    "website": "TODO",
   }
   req.respond(200, headers, $(result))
