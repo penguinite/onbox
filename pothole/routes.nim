@@ -263,7 +263,7 @@ proc signIn*(req: Request) =
     hash, salt: string
     kdf: KDF
   dbPool.withConnection db:
-    if not db.userFrozen(id) or not db.userApproved(id):
+    if db.userFrozen(id) or not db.userApproved(id):
       templatePool.withConnection obj:
         req.respond(
           404, headers, 
