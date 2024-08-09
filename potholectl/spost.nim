@@ -109,35 +109,6 @@ proc post_new*(data: seq[string], mentioned = "", replyto = "", date = "", confi
   except CatchableError as err:
     error "Failed to insert post: ", err.msg
 
-proc processCmd*(cmd: string, data: seq[string], args: Table[string,string]) =
-  var config: ConfigTable
-  config = conf.setup(getConfigFilename())
-
-  let db = database.setup(
-    config.getDbName(),
-    config.getDbUser(),
-    config.getDbHost(),
-    config.getDbPass(),
-    true
-  )
-
-  case cmd:
-  of "new": return
-  of "delete", "del":
-    if len(data) == 0:
-      error "Arguments must be provided for this command to work"
-    # TODO: Implement
-    echo "If you're seeing this then there's a high chance your command succeeded."
-  of "purge":
-    # TODO: Implement
-    echo "If you're seeing this then there's a high chance your command succeeded."
-
 # TODO: Missing commands:
 #   post_del: Deletes a post
 #   post_purge: Deletes old posts made by the null (deleted) user.
-#   user_mod: Changes a user's moderator status
-#   user_admin: Changes a user's administrator status
-#   user_password: Changes a user's password
-#   user_freeze: Change's a user's frozen status
-#   user_approve: Approves a user's registration
-#   user_deny: Denies a user's registration
