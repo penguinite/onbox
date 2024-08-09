@@ -82,8 +82,8 @@ proc redirectToLogin*(req: Request, client, redirect_uri: string, scopes: seq[st
       headers["Set-Cookie"] = deleteSessionCookie()
     
     templatePool.withConnection obj:
-      var return_to = "$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [obj.realURL, client, redirect_uri, scopes.join(" ")]
-      headers["Location"] = obj.realURL & "auth/sign_in/?return_to=" & encodeQueryComponent(return_to )
+      var return_to = "http://$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [obj.realURL, client, redirect_uri, scopes.join(" ")]
+      headers["Location"] = "http://" & obj.realURL & "auth/sign_in/?return_to=" & encodeQueryComponent(return_to)
 
   req.respond(
     303, headers, ""
