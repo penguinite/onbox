@@ -16,16 +16,11 @@
 # api/instance.nim:
 ## This module contains all the routes for the instance method in the api
 
-
-# From somewhere in Quark
-import quark/[user, post]
-
 # From somewhere in Pothole
-import pothole/[conf, database, routeutils, lib, assets]
 import pothole/private/apientities
 
 # From somewhere in the standard library
-import std/[json, times]
+import std/[json]
 
 # From nimble/other sources
 import mummy
