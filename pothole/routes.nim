@@ -48,23 +48,12 @@ proc serveAndRender*(req: Request) =
     headers["Set-Cookie"] = deleteSessionCookie()
     # Check if it actaully exists in the db before removing.
     # In theory this shouldn't matter but its a good thing to do anyway
-    dbPool.withConnection db:
-      let id = req.fetchSessionCookie()
-      if db.sessionExists(id):
-        db.deleteSession(id)
-
-  # If the user has a cookie, then let the templating engine know.
-  # signin.html and signup.html have some login-related conditionals in the template.
-  if req.hasSessionCookie():
-    # Verify if the session exists before sending it to the template.
-    # If it doesn't then, send a cookie deletion header.
+    let id = req.fetchSessionCookie()
     var user = ""
-    let session = req.fetchSessionCookie()
     dbPool.withConnection db:
-      if not db.sessionExists(session) or db.sessionExpired(session):
-        req.headers["Set-Cookie"] = deleteSessionCookie()
-      else:
-        user = db.getSessionUserHandle(session)
+      if db.sessionValid(id):
+        headers["Set-Cookie"] = ""
+        user = db.getSessionUserHandle(id)
 
     templatePool.withConnection obj:
       req.respond(
