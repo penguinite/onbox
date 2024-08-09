@@ -56,3 +56,4 @@ requires "https://github.com/penguinite/temple >= 0.2.3" # TODO: Add this as a n
 requires "db_connector >= 0.1.0"
 requires "mummy >= 0.4.2"
 requires "waterpark >= 0.1.7"
+requires "cligen >= 1.7.3"
