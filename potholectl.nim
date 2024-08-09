@@ -22,6 +22,14 @@ import potholectl/[misc, smrf, sdb, suser, spost]
 import cligen
 
 dispatchMulti(
+  [post_new,
+    help = {
+      "mentioned": "A comma-separated list of users that are mentioned in this post.",
+      "replyto": "The specific post we are replying to by its ID.",
+      "date": "The specific date of when the post was written. See \"potholectl dates\"",
+      "config": "Location to config file"
+    }],
+
   [user_new,
     help = {
     "admin": "Makes the user an administrator",
