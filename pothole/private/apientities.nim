@@ -89,6 +89,63 @@ proc account*(user_id: string): JsonNode =
     "fields": fields(user_id)
   }
 
+proc role*(user_id: string): JsonNode =
+  ## Returns a role entity belonging to a user.
+  # TODO: Implement more dynamic roles rather than just is_admin and is_moderator
+  
+  var is_admin, is_mod: bool
+  dbPool.withConnection db:
+    is_admin = db.isAdmin(user_id)
+    is_mod = db.isModerator(user_id)
+
+  if is_admin:
+    return %* {
+      "id": "0",
+      "name": "Admin",
+      "color": "",
+      "permissions": "1048575",
+      "highlighted": true
+    }
+    
+  if is_mod:
+    return %* {
+      "id": "1",
+      "name": "Moderator",
+      "color": "",
+      "permissions": "1048575",
+      "highlighted": true
+    }
+  
+  
+  
+proc credentialAccount*(user_id: string): JsonNode =
+  ## Create a credential account
+  result = account(user_id)
+  
+  if result.kind == JNull:
+    return result
+
+  var
+    user: User
+    followReqCount: int
+  
+  dbPool.withConnection db:
+    user = db.getUserById(user_id)
+    followReqCount = db.getFollowReqCount(user_id)
+
+  result["source"] = %* {
+    "note": user.bio,
+    "fields": fields(user_id),
+    "privacy": "public", # TODO: Implement source[privacy] properly
+    "sensitive": false, # TODO: Implement source[sensitive] properly
+    "language": "en", # TODO: Implement source[language] properly
+    "follow_requests_count": followReqCount
+   }
+
+  result["role"] = role(user_id)
+
+  return result
+
 proc rules*(): JsonNode =
   result = newJArray()
   configPool.withConnection config:
@@ -181,7 +238,6 @@ proc v1Instance*(): JsonNode =
       }
 
 proc v2Instance*(): JsonNode = 
-
   var
     totalUsers: int
     admin: string

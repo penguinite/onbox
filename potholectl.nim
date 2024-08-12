@@ -78,14 +78,6 @@ dispatchMulti(
       "config": "Location to config file"
     }],
 
-  [post_new, cmdName = "new",
-    help = {
-      "mentioned": "A comma-separated list of users who are mentioned in this post.",
-      "replyto": "Specifies what post we are replying to by its ID.",
-      "date": "Specifies the post's creation date (see potholectl date for the format)",
-      "config": "Location to config file",
-    }],
-
   [db_check, help= {"config": "Location to config file"}],
   [db_clean, help= {"config": "Location to config file"}],
   [db_purge, help= {"config": "Location to config file"}],

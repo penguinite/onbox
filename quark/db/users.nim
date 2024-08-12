@@ -119,6 +119,16 @@ proc getUserPass*(db: DbConn, user_id: string): string =
 
   return db.getRow(sql"SELECT password FROM users WHERE id = ?;", user_id)[0]
 
+proc isAdmin*(db: DbConn, user_id: string): bool =
+  if not db.userIdExists(user_id):
+    raise newException(DbError, "User with id \"" & user_id & "\" doesn't exist.")
+  return db.getRow(sql"SELECT is_admin FROM users WHERE id = ?;", user_id) == @["t"]
+  
+proc isModerator*(db: DbConn, user_id: string): bool =
+  if not db.userIdExists(user_id):
+    raise newException(DbError, "User with id \"" & user_id & "\" doesn't exist.")
+  return db.getRow(sql"SELECT is_moderator FROM users WHERE id = ?;", user_id) == @["t"]
+  
 proc getUserKDF*(db: DbConn, user_id: string): KDF =
   if not db.userIdExists(user_id):
     raise newException(DbError, "User with id \"" & user_id & "\" doesn't exist.")

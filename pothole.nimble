@@ -7,7 +7,7 @@ license       = "AGPL-3.0-or-later"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
 installDirs   = @["quark"]
-backend       = "cpp"
+backend       = "c"
 
 ## The following options are required
 when not defined(phEmbedded):

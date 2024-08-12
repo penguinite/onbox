@@ -16,11 +16,9 @@
 # api/accounts.nim:
 ## This module contains all the routes for the accounts method in the mastodon api.
 
-# From somewhere in Quark
-import quark/user
-
 # From somewhere in Pothole
 import pothole/[routeutils, database]
+import pothole/private/apientities
 
 # From somewhere in the standard library
 import std/json
@@ -36,7 +34,7 @@ proc accountsVerifyCredentials*(req: Request) =
     respJsonError("The access token is invalid")
   
   let token = req.getAuthHeader()
-  var user: User
+  var result: JsonNode
 
   dbPool.withConnection db:
     # Check if token actually exists
@@ -46,13 +44,5 @@ proc accountsVerifyCredentials*(req: Request) =
     # Check if token is assigned to a user
     if not db.tokenUsesCode(token):
       respJsonError("This method requires an authenticated user", 422)
-    
-    # Get the user's id.
-    user = db.getUserById(db.getTokenUser(token))
-  
-
-  var result = %* {
-    "name": "TODO",
-    "website": "TODO",
-  }
+    result = credentialAccount(db.getTokenUser(token))
   req.respond(200, headers, $(result))

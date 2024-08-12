@@ -62,8 +62,12 @@ proc getFollowersCount*(db: DbConn, user: string): int =
 
 proc getFollowingCount*(db: DbConn, user: string): int =
   ## Returns how many people this user follows in a number
-  return len(db.getAllRows(sql"SELECT approved FROM follows WHERE follower = ? AND approved= true;", user))
+  return len(db.getAllRows(sql"SELECT approved FROM follows WHERE follower = ? AND approved = true;", user))
 
+proc getFollowReqCount*(db: DbConn, user: string): int =
+  ## Returns how many pending follow requests a user has.
+  return len(db.getAllRows(sql"SELECT approved FROM follows WHERE following = ? AND approved = false;", user))
+  
 type
   FollowStatus* = enum
     NoFollowRequest, PendingFollowRequest, AcceptedFollowRequest
@@ -76,9 +80,9 @@ proc getFollowStatus*(db: DbConn, follower, following: string): FollowStatus =
   # But no, it does "t" or "f" which, std/strutil's parseBool() can't handle
   # Thankfully, i've been through this rigamarole before,
   # so i already knew boolean handling was garbage
-  if row == @[]: return NoFollowRequest
   if row == @["f"]: return PendingFollowRequest
   if row == @["t"]: return AcceptedFollowRequest
+  return NoFollowRequest
 
 proc followUser*(db: DbConn, follower, following: string, approved: bool = true) =
   ## Follows a user
@@ -104,4 +108,3 @@ proc unfollowUser*(db: DbConn, follower, following: string) =
     sql"DELETE FROM follows WHERE follower = ? AND following = ?;",
     follower, following
   )
-  
