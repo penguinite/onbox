@@ -113,9 +113,7 @@ proc authHeaderExists*(req: Request): bool =
   return req.headers.contains("Authorization") and not isEmptyOrWhitespace(req.headers["Authorization"])
 
 proc getAuthHeader*(req: Request): string =
-  let split = req.headers["Authorization"].split("Bearer ")
+  let split = req.headers["Authorization"].split("Bearer")
 
-  if len(split) == 1:
-    return split[0]
-  else:
-    return split[1]
+  if len(split) > 1: return split[high(split)].cleanString()
+  else: return split[0].cleanString()
