@@ -7,7 +7,7 @@ license       = "AGPL-3.0-or-later"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
 installDirs   = @["quark"]
-backend       = "cpp"
+backend       = "c"
 
 ## The following options are required
 when not defined(phEmbedded):
@@ -51,7 +51,7 @@ after build:
 requires "nim >= 2.0.0"
 requires "nimcrypto >= 0.5.4"
 requires "rng >= 0.1.0"
-requires "iniplus >= 0.3.1"
+requires "iniplus >= 0.3.2"
 requires "https://github.com/penguinite/temple >= 0.2.3" # TODO: Add this as a nimble package
 requires "db_connector >= 0.1.0"
 requires "mummy >= 0.4.2"
