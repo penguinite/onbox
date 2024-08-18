@@ -28,6 +28,7 @@ import std/[json, times]
 
 proc fields*(user_id: string): JsonNode =
   ## Initialize profile fields
+  result = newJArray()
   dbPool.withConnection db:
     for key, value, verified, verified_date in db.getFields(user_id).items:
       var jason = %* {
@@ -92,7 +93,7 @@ proc account*(user_id: string): JsonNode =
 proc role*(user_id: string): JsonNode =
   ## Returns a role entity belonging to a user.
   # TODO: Implement more dynamic roles rather than just is_admin and is_moderator
-  
+  result = newJObject()
   var is_admin, is_mod: bool
   dbPool.withConnection db:
     is_admin = db.isAdmin(user_id)
