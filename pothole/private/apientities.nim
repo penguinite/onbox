@@ -126,15 +126,15 @@ proc credentialAccount*(user_id: string): JsonNode =
     return result
 
   var
-    user: User
+    bio = ""
     followReqCount: int
   
   dbPool.withConnection db:
-    user = db.getUserById(user_id)
+    bio = db.getUserBio(user_id)
     followReqCount = db.getFollowReqCount(user_id)
 
   result["source"] = %* {
-    "note": user.bio,
+    "note": bio,
     "fields": fields(user_id),
     "privacy": "public", # TODO: Implement source[privacy] properly
     "sensitive": false, # TODO: Implement source[sensitive] properly
