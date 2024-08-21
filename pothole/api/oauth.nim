@@ -318,7 +318,34 @@ proc oauthToken*(req: Request) =
     # so we run this to figure it out. Defaulting to spaces if need
     if fm.isValidFormParam("scope"):
       scopes = fm.getFormParam("scope").split(getSeparator(fm.getFormParam("scope")) )
-  
+  of "application/json":
+    var json: JsonNode = newJNull()
+    try:
+      json = parseJSON(req.body)
+    except:
+      respJsonError("Invalid JSON.")
+
+    # Double check if the parsed JSON is *actually* valid.
+    if json.kind == JNull:
+      respJsonError("Invalid JSON.")
+    
+    # Check if the required stuff is there
+    for thing in @["client_id", "client_secret", "redirect_uri", "grant_type"]:
+      if not json.hasValidStrKey(thing): 
+        respJsonError("Missing required parameter: " & thing)
+
+    grant_type = json["grant_type"].getStr()
+    client_id = json["client_id"].getStr()
+    client_secret = json["client_secret"].getStr()
+    redirect_uri = json["redirect_uri"].getStr()
+
+    # Get the website if it exists
+    if json.hasValidStrKey("code"):
+      code = json["code"].getStr()
+
+    # Get the scopes if they exist
+    if json.hasValidStrKey("scope"):
+      scopes = json["scope"].getStr().split(getSeparator(json["scope"].getStr()))
   else:
     respJsonError("Unknown content-type.")
   
