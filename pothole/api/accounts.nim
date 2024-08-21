@@ -16,8 +16,11 @@
 # api/accounts.nim:
 ## This module contains all the routes for the accounts method in the mastodon api.
 
+# From somewhere in Quark
+import quark/strextra
+
 # From somewhere in Pothole
-import pothole/[routeutils, database]
+import pothole/[routeutils, database, conf]
 import pothole/private/apientities
 
 # From somewhere in the standard library
@@ -45,4 +48,55 @@ proc accountsVerifyCredentials*(req: Request) =
     if not db.tokenUsesCode(token):
       respJsonError("This method requires an authenticated user", 422)
     result = credentialAccount(db.getTokenUser(token))
+  req.respond(200, headers, $(result))
+
+proc accountsGet*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+
+  if not req.pathParams.contains("id"):
+    respJsonError("Missing ID parameter")
+  
+  if req.pathParams["id"].isEmptyOrWhitespace():
+    respJsonError("Invalid account id.")
+  
+  configPool.withConnection config:
+    # If the instance has whitelist mode
+    # Then check the oauth token.
+    if config.getBoolOrDefault("web", "whitelist_mode", false):
+      if not req.authHeaderExists():
+        respJsonError("This API requires an authenticated user", 401)
+      
+      let token = req.getAuthHeader()
+      dbPool.withConnection db:
+        # Check if the token exists in the db
+        if not db.tokenExists(token):
+          respJsonError("This API requires an authenticated user", 401)
+        
+        # Check if the token has a user attached
+        if not db.tokenUsesCode(token):
+          respJsonError("This API requires an authenticated user", 401)
+        
+        # Double-check the auth code used.
+        if not db.authCodeValid(db.getTokenCode(token)):
+          respJsonError("This API requires an authenticated user", 401)
+        
+        # Check if the client registered to the token
+        # has a public oauth scope.
+        if not db.hasScope(db.getTokenApp(token), "read:accounts"):
+          respJsonError("This API requires an authenticated user", 401)
+
+  var result: JsonNode  
+  dbPool.withConnection db:
+    if not db.userIdExists(req.pathParams["id"]):
+      respJsonError("Record not found", 404)
+    result = account(req.pathParams["id"])
+
+    # TODO: When support for ActivityPub is added...
+    # Hopefully... then implement support for remote users.
+    # See the Mastodon API docs.
+
+    if db.userFrozen(req.pathParams["id"]):
+      result["suspended"] = newJBool(true)
+    
   req.respond(200, headers, $(result))
