@@ -261,14 +261,21 @@ proc signIn*(req: Request) =
     hash, salt: string
     kdf: KDF
   dbPool.withConnection db:
-    if db.userFrozen(id) or not db.userApproved(id):
-      templatePool.withConnection obj:
-        req.respond(
-          404, headers, 
-          obj.renderError("User isn't approved or account has been frozen!","signin.html")
-        )
-      return
+    templatePool.withConnection obj:
+      if db.userFrozen(id):
+        req.respond(403, headers, obj.renderError("Your account has been frozen. Contact an administrator.", "signin.html"))
+        return
 
+      if not db.userApproved(id):
+        req.respond(403, headers, obj.renderError("Your account hasn't been approved yet, please wait or contact an administrator.", "signin.html"))
+        return
+      
+      configPool.withConnection config:
+        if not db.userVerified(id) and config.getBoolOrDefault("user", "require_verification", true):
+          ## TODO: Send a code if there hasn't been one yet
+          ## TODO: Allow for re-sending codes, say, if a user logins 10 mins after their previous code and still isn't verified.
+          req.respond(403, headers, obj.renderError("Your account hasn't been verified yet. Check your email for a verification link.", "signin.html"))
+          return
     salt = db.getUserSalt(id)
     kdf = db.getUserKDF(id)
     hash = db.getUserPass(id)
