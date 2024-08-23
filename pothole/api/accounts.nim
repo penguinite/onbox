@@ -100,3 +100,56 @@ proc accountsGet*(req: Request) =
       result["suspended"] = newJBool(true)
     
   req.respond(200, headers, $(result))
+
+proc accountsGetMultiple*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+  if not req.queryParams.contains("id[]"):
+    respJsonError("Missing account ID query parameter.")
+
+  var ids: seq[string] = @[]
+  for query in req.queryParams:
+    if query[0] == "id[]" and not query[1].isEmptyOrWhitespace():
+      ids.add(query[1])
+      
+  configPool.withConnection config:
+    # If the instance has whitelist mode
+    # Then check the oauth token.
+    if config.getBoolOrDefault("web", "whitelist_mode", false):
+      if not req.authHeaderExists():
+        respJsonError("This API requires an authenticated user", 401)
+      
+      let token = req.getAuthHeader()
+      dbPool.withConnection db:
+        # Check if the token exists in the db
+        if not db.tokenExists(token):
+          respJsonError("This API requires an authenticated user", 401)
+        
+        # Check if the token has a user attached
+        if not db.tokenUsesCode(token):
+          respJsonError("This API requires an authenticated user", 401)
+        
+        # Double-check the auth code used.
+        if not db.authCodeValid(db.getTokenCode(token)):
+          respJsonError("This API requires an authenticated user", 401)
+        
+        # Check if the client registered to the token
+        # has a public oauth scope.
+        if not db.hasScope(db.getTokenApp(token), "read:accounts"):
+          respJsonError("This API requires an authenticated user", 401)
+
+  var result: JsonNode = newJArray()
+  for id in ids:
+    dbPool.withConnection db:
+      if not db.userIdExists(id):
+        continue
+      var tmp = account(id)
+
+      # TODO: When support for ActivityPub is added...
+      # Hopefully... then implement support for remote users.
+      # See the Mastodon API docs.
+
+      if db.userFrozen(id):
+        tmp["suspended"] = newJBool(true)
+      result.elems.add(tmp)
+  req.respond(200, headers, $(result))
