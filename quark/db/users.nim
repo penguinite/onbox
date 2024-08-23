@@ -40,6 +40,7 @@ const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY NOT NULL
 "moderator":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether or not this user is a Moderator.
 "discoverable": "BOOLEAN NOT NULL DEFAULT TRUE", # A boolean indicating whether or not this user is discoverable in frontends
 "is_frozen":"BOOLEAN NOT NULL", # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
+"is_verified": "BOOLEAN NOT NULL", # A boolean indicating whether this user's email address has been verified (NOT the same as an approval)
 "is_approved":"BOOLEAN NOT NULL"}.toOrderedTable  # A boolean indicating if the user hs been approved by an administrator
 
 
@@ -170,6 +171,13 @@ proc userFrozen*(db: DbConn, id: string): bool =
     raise newException(DbError, "Couldn't find user with id \"" & id & "\"")
 
   return db.getRow(sql"SELECT is_frozen FROM users WHERE id = ?;", id)[0] == "t"
+
+proc userVerified*(db: DbConn, id: string): bool =
+  ## Returns whether or not a user has a verifd email address. ID must be a user id.
+  if not db.userIdExists(id):
+    raise newException(DbError, "Couldn't find user with id \"" & id & "\"")
+
+  return db.getRow(sql"SELECT is_verified FROM users WHERE id = ?;", id)[0] == "t"
 
 proc userApproved*(db: DbConn, id: string): bool =
   ## Returns whether or not a user is approved. ID must be a user id.
