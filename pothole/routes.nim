@@ -132,6 +132,15 @@ proc signUp*(req: Request) =
     email = fm.getFormParam("email") # There isn't really any point to sanitizing emails...
     password = fm.getFormParam("pass")
   
+  # We'll cap the email length to 128 characters just to be safe.
+  if email.len() > 128:
+    templatePool.withConnection obj:
+      req.respond(
+        400, headers,
+        obj.renderError("Email is way too long (over 128 characters)", "signup.html")
+      )
+    return
+  
   # If a display name hasn't been submitted then
   # just use the username as fallback
   var display_name = username
