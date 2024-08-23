@@ -61,7 +61,8 @@ type
     kdf*: KDF # Key derivation function version
     admin*: bool # A boolean indicating if the user is an admin.
     moderator*: bool # A boolean indicating if the user is a moderator.
-    is_frozen*: bool #  A boolean indicating if the user is frozen/banned. 
+    is_frozen*: bool # A boolean indicating if the user is frozen/banned.
+    is_verified*: bool # A boolean indicating if the user's email has been verified. 
     is_approved*: bool # A boolean indicating if the user hs been approved by an administrator
     discoverable*: bool # A boolean indicating if the user is discoverable
 
@@ -98,6 +99,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   result.moderator = false # This is false by default.
   result.is_frozen = false # Always assume user isn't frozen.
   result.is_approved = true # Always assume user is approved.
+  result.is_verified = false # Always assume user isn't verified.
   result.discoverable = true # This is the default.
   result.kind = Person # Even if its a group, service or application then it doesn't matter.
 
