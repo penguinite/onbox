@@ -22,8 +22,7 @@ import quark/[user, post, crypto]
 import pothole/[conf, assets, database, routeutils, lib]
 
 # From somewhere in the standard library
-import std/[tables, mimetypes, os]
-from std/strutils import startsWith
+import std/[tables, mimetypes, os, strutils]
 
 # From nimble/other sources
 import mummy, waterpark/postgres, rng
@@ -132,14 +131,24 @@ proc signUp*(req: Request) =
     email = fm.getFormParam("email") # There isn't really any point to sanitizing emails...
     password = fm.getFormParam("pass")
   
-  # We'll cap the email length to 128 characters just to be safe.
-  if email.len() > 128:
+  # We'll cap the email length to 254 characters just to be safe.
+  if email.len() > 254:
     templatePool.withConnection obj:
       req.respond(
         400, headers,
-        obj.renderError("Email is way too long (over 128 characters)", "signup.html")
+        obj.renderError("Email is way too long (over 254 characters)", "signup.html")
       )
     return
+  
+  # And also strip out any newlines,
+  # Since nim's smtp library will crash if there are any.
+  if "\n" in email:
+    email = ""
+    for ch in fm.getFormParam("email"):
+      case ch:
+      of '\n': continue
+      else:
+        email.add(ch)
   
   # If a display name hasn't been submitted then
   # just use the username as fallback
