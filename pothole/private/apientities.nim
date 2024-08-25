@@ -351,8 +351,8 @@ proc status*(id: string, user_id = ""): JsonNode =
     "language": "en",
     "emojis": newJArray(),
 
-
   }
+  result["account"] = account(post.sender)
 
   if replyto_sender != "":
     result["in_reply_to_id"] = newJString(post.replyto)
