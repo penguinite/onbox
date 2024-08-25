@@ -63,3 +63,6 @@ proc removeReaction*(db: DbConn, pid,uid: string) =
 proc hasReaction*(db: DbConn, pid,uid,reaction: string): bool =
   ## Checks if a post has a reaction. Everything must match.
   return has(db.getRow(sql"SELECT id FROM reactions WHERE pid = ? AND uid = ? AND reaction = ?;", pid, uid, reaction))
+
+proc hasAnyReaction*(db: DbConn, pid, uid: string): bool =
+  return has(db.getRow(sql"SELECT id FROM reactions WHERE pid = ? AND uid = ?;", pid, uid))
