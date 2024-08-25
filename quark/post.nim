@@ -31,6 +31,8 @@ import rng
 
 export DateTime, parse, format, utc
 
+## TODO: This needs a massive refactoring.
+
 # ActivityPub Object/Post
 type
   PostRevision* = object
@@ -39,6 +41,21 @@ type
   
   PostPrivacyLevel* = enum
     Public, Unlisted, FollowersOnly, Private
+
+  PostActivityType* = enum
+    Poll, Media, Card
+
+  PostActivity* = object
+    case kind*: PostActivityType
+    of Poll:
+      id: string # The poll ID
+      question: string # The question that was asked for the poll
+      options: Table[string, seq[string]] # Key: Option, Val: List of users who voted for that option
+      total_votes: int # Total number of votes
+    of Media:
+      id: string
+    else:
+      discard
 
   Post* = object
     id*: string # A unique id.
@@ -54,6 +71,7 @@ type
     reactions*: Table[string, seq[string]] # A sequence of reactions this post has.
     boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post. (Along with what level)
     revisions*: seq[PostRevision] # A sequence of past revisions, this is basically copies of post.content
+    extras*: seq[PostActivity] # A sequence of activities (polls, media, cards and whatnot) that this post has. (Not to be confused with likes, reactions or boosts)
 
 proc newPost*(
     sender, content: string,
