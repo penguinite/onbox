@@ -29,8 +29,8 @@ import user
 import std/strutils
 
 # Export these:
-import db/[users, posts, reactions, boosts, postrevisions, apps, follows, fields, sessions, auth_codes, oauth, email_codes]
-export DbConn, users, posts, reactions, boosts, postrevisions, apps, follows, fields, sessions, auth_codes, oauth, email_codes
+import db/[users, posts, reactions, boosts, postrevisions, apps, follows, fields, sessions, auth_codes, oauth, email_codes, bookmarks]
+export DbConn, users, posts, reactions, boosts, postrevisions, apps, follows, fields, sessions, auth_codes, oauth, email_codes, bookmarks
 
 const databaseTables = @[
   ## Add an extra field to this whenever you need to insert a new table.
@@ -46,7 +46,8 @@ const databaseTables = @[
   ("sessions", sessionsCols),
   ("auth_codes", authCodesCols),
   ("oauth", oauthCols),
-  ("email_codes", emailCodesCols)
+  ("email_codes", emailCodesCols),
+  ("bookmarks", bookmarksCols)
 ]
 
 proc setup*(
