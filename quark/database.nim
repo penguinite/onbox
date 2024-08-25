@@ -37,7 +37,7 @@ const databaseTables = @[
   ## + cleanDb() depends on this! So no need to add a new table there!
   ("users", usersCols),
   ("posts", postsCols),
-  ("postsRevisions", postsRevisionsCols),
+  ("post_revisions", postsRevisionsCols),
   ("reactions", reactionsCols),
   ("boosts", boostsCols),
   ("apps", appsCols),
