@@ -53,7 +53,7 @@ type
       options: Table[string, seq[string]] # Key: Option, Val: List of users who voted for that option
       total_votes: int # Total number of votes
     of Media:
-      id: string
+      media_id: string
     else:
       discard
 
