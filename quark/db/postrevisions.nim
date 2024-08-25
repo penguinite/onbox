@@ -17,8 +17,11 @@
 # db/sqlite/postrevisions.nim:
 ## This module contains all database logic for handling revisions of posts.
 
+# From elsewhere in Quark
+import quark/private/database
+
 # From somewhere in the standard library
-import std/tables
+import std/[tables, times]
 
 const postsRevisionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # This contains the id of the revision, because of course we ought to have an id for everything.
   "published": "TIMESTAMP NOT NULL", # This contains the date of when the revision was made
@@ -27,3 +30,10 @@ const postsRevisionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY K
   # TODO: This __A/__B hack is really, well, hacky. Maybe replace it?
   "__A": "foreign key (pid) references posts(id)",
 }.toOrderedTable()
+
+proc hasRevision*(db: DbConn, pid: string): bool =
+  return has(db.getRow(sql"SELECT id FROM post_revisions WHERE pid = ?;", pid))
+
+proc getLatestRevisionDate*(db: DbConn, pid: string): DateTime =
+  # TODO: I cant anymore
+  return now().utc
