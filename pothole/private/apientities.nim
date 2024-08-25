@@ -355,8 +355,8 @@ proc status*(id: string, user_id = ""): JsonNode =
   }
 
   if replyto_sender != "":
-    result["in_reply_to_id"] = post.replyto
-    result["in_reply_to_account_id"] = replyto_sender
+    result["in_reply_to_id"] = newJString(post.replyto)
+    result["in_reply_to_account_id"] = newJString(replyto_sender)
   else:
     result["in_reply_to_id"] = newJNull()
     result["in_reply_to_account_id"] = newJNull()
