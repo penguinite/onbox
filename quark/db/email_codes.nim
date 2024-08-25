@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# quark/db/apps.nim:
-## This module handles apps
+# quark/db/email_codes.nim:
+## This module handles Email verification codes for users.
 
 # From Quark
 import quark/private/database

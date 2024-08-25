@@ -217,7 +217,7 @@ proc reassignSenderPost*(db: DbConn, post_id, sender: string) =
   db.exec(sql"UPDATE posts SET sender = ? WHERE id = ?;", sender, post_id)
 
 proc getNumOfReplies*(db: DbConn, post_id: string): int =
-  for i in db.getAllRows(sql"SELECT id WHERE replyto = ?;", post_id):
+  for i in db.getAllRows(sql"SELECT id FROM posts WHERE replyto = ?;", post_id):
     inc(result)
   return result
 
