@@ -64,6 +64,11 @@ proc addBoost*(db: DbConn, pid,uid,level: string) =
 
   db.exec(sql"INSERT INTO boosts (id, pid, uid, level) VALUES (?,?,?,?);",id,pid,uid,level)
 
+proc getNumOfBoosts*(db: DbConn, pid: string): int =
+  for i in db.getAllRows(sql"SELECT id FROM boosts WHERE pid = ?;", pid):
+    inc(result)
+  return result
+
 proc addBulkBoosts*(db: DbConn, id: string, table: Table[string, seq[string]]) =
   ## Adds an entire table of boosts to the database
   for boost,list in table.pairs:
