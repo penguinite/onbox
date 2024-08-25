@@ -26,6 +26,9 @@ import pothole/[conf, database, routeutils, lib, assets]
 # From somewhere in the standard library
 import std/[json, times]
 
+proc formatDate(date: DateTime): string =
+  return date.format("yyyy-mm-dd") & "T" & date.format("hh:mm:ss") & "Z"
+
 proc fields*(user_id: string): JsonNode =
   ## Initialize profile fields
   result = newJArray()
@@ -162,13 +165,9 @@ proc rules*(): JsonNode =
   return result
 
 proc extendedDescription*(): JsonNode =
-  let time = now().utc
-
   configPool.withConnection config:
     return %* {
-      "updated_at": $(
-        time.format("yyyy-mm-dd") & "T" & time.format("hh:mm:ss") & "Z"
-      ),
+      "updated_at": formatDate(now().utc),
       "content": config.getStringOrDefault(
         "instance", "description",
         config.getStringOrDefault(
@@ -341,6 +340,7 @@ proc status*(id: string, user_id = ""): JsonNode =
     "id": post.id,
     "uri": realurl & "notice/" & post.id,
     "url": realurl & "notice/" & post.id,
+    "created_at": formatDate(post.written),
     "replies_count": replynum,
     "reblogs_count": boostsnum,
     "favourites_count": reactionnums,
