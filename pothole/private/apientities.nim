@@ -344,6 +344,7 @@ proc status*(id: string, user_id = ""): JsonNode =
     "replies_count": replynum,
     "reblogs_count": boostsnum,
     "favourites_count": reactionnums,
+    "visibility": toAPIString(post.level),
     # TODO: Implement the following:
     "sensitive": false,
     "spoiler_text": "",

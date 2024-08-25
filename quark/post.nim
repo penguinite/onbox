@@ -178,6 +178,13 @@ proc toString*(lvl: PostPrivacyLevel): string =
   of FollowersOnly: return "2"
   of Private: return "3"
 
+proc toAPIString*(lvl: PostPrivacyLevel): string =
+  case lvl:
+  of Public: return "public"
+  of Unlisted: return "unlisted"
+  of FollowersOnly: return "private" # Confusingly, what MastoAPI calls "private" is called followersonly here.
+  of Private: return "direct"
+
 proc toPostPrivacyLevel*(lvl: string): PostPrivacyLevel =
   case lvl:
   of "0": return Public
