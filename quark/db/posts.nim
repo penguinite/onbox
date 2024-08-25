@@ -221,6 +221,9 @@ proc getNumOfReplies*(db: DbConn, post_id: string): int =
     inc(result)
   return result
 
+proc getPostSender*(db: DbConn, post_id: string): string =
+  return db.getRow(sql"SELECT sender FROM posts WHERE id = ?;", post_id)[0]
+
 proc reassignSenderPosts*(db: DbConn, post_ids: seq[string], sender: string) =
   for post_id in post_ids:
     db.reassignSenderPost(post_id, sender)
