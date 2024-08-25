@@ -41,6 +41,11 @@ proc getReactions*(db: DbConn, id: string): Table[string, seq[string]] =
     result[row[1]].add(row[0])
   return result
 
+proc getNumOfReactions*(db: DbConn, id: string): int =
+  for row in db.getAllRows(sql"SELECT reaction FROM reactions WHERE pid = ?;", id):
+    inc(result)
+  return result
+
 proc addReaction*(db: DbConn, pid,uid,reaction: string) =
   ## Adds an individual reaction
   # Check for ID first.
