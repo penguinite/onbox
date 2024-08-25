@@ -18,7 +18,7 @@
 
 
 # From somewhere in Quark
-import quark/[user, post]
+import quark/[user, post, strextra]
 
 # From somewhere in Pothole
 import pothole/[conf, database, routeutils, lib, assets]
@@ -315,4 +315,60 @@ proc v2Instance*(): JsonNode =
         "rules": rules()
       }
   
+proc status*(id: string, user_id = ""): JsonNode =
+  if id == "":
+    return newJNull()
 
+  var
+    post: Post
+    replynum, boostsnum, reactionnums = 0
+    replyto_sender = ""
+
+  dbPool.withConnection db:
+    post = db.getPost(id)
+    replynum = db.getNumOfReplies(post.id)
+    boostsnum = db.getNumOfBoosts(post.id)
+    reactionnums = db.getNumOfReactions(post.id)
+    if not post.replyto.isEmptyOrWhitespace():
+      replyto_sender = db.getPostSender(post.replyto)
+  
+  var realurl = ""
+  configPool.withConnection config:
+    realurl = "http://" & config.getString("instance","uri") & config.getString("instance", "endpoint")
+
+
+  result = %*{
+    "id": post.id,
+    "uri": realurl & "notice/" & post.id,
+    "url": realurl & "notice/" & post.id,
+    "replies_count": replynum,
+    "reblogs_count": boostsnum,
+    "favourites_count": reactionnums,
+    # TODO: Implement the following:
+    "sensitive": false,
+    "spoiler_text": "",
+    "language": "en",
+    "emojis": newJArray(),
+
+
+  }
+
+  if replyto_sender != "":
+    result["in_reply_to_id"] = post.replyto
+    result["in_reply_to_account_id"] = replyto_sender
+  else:
+    result["in_reply_to_id"] = newJNull()
+    result["in_reply_to_account_id"] = newJNull()
+
+  if user_id != "":
+    dbPool.withConnection db:
+      result["favourited"] = newJBool(db.hasAnyReaction(post.id, user_id))
+      result["reblogged"] = newJBool(db.hasAnyBoost(post.id, user_id))
+      result["bookmarked"] = newJBool(db.bookmarkExists(user_id, post.id))
+      ## TODO: If we have implemented mutes and blocks, then add the muted attribute.
+      ## TODO: If we have implemented pinned posts, then add the pinned attribute.
+      ## TODO: If we have implemented filters, then add the filtered attribute.
+      ## or actually, keep it optional, its alright.
+
+
+  return result
