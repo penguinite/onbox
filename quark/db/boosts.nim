@@ -82,3 +82,7 @@ proc removeBoost*(db: DbConn, pid,uid: string) =
 proc hasBoost*(db: DbConn, pid,uid,level: string): bool =
   ## Checks if a post has a boost. Everything must match.
   return has(db.getRow(sql"SELECT id FROM boosts WHERE pid = ? AND uid = ? AND level = ?;", pid, uid, level))
+
+proc hasAnyBoost*(db: DbConn, pid,uid: string): bool =
+  ## Checks if a post has a boost. Everything must match.
+  return has(db.getRow(sql"SELECT id FROM boosts WHERE pid = ? AND uid = ?;", pid, uid))
