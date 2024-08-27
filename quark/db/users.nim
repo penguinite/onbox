@@ -55,8 +55,6 @@ proc addUser*(db: DbConn, user: User) =
   if has(db.getRow(testStmt, "id", user.id)):
     raise newException(DbError, "User with same id as \"" & user.id & "\" already exists")
   
-  # TODO: Likewise with the addPost() proc, there has to be a better way than this.
-  # It's just too ugly.
   db.autoStmt(User, "users", user)
 
 proc getAdmins*(db: DbConn): seq[string] = 
