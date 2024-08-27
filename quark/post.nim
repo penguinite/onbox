@@ -27,6 +27,7 @@ import std/strutils except isEmptyOrWhitespace, parseBool
 import std/[tables, times]
 
 # From somewhere else
+from db_connector/db_postgres import dbQuote
 import rng
 
 export DateTime, parse, format, utc
@@ -45,6 +46,8 @@ type
   PostActivityType* = enum
     Poll, Media, Card
 
+  ## See the "Post activities" section in DESIGN.md
+  ## The explanation is too long to put it here, in code.
   PostActivity* = object
     case kind*: PostActivityType
     of Poll:
@@ -124,6 +127,18 @@ proc escapeCommas*(str: string): string =
     else: result.add(ch)
   return result
 
+proc toDbString*(items: seq[string]): string =
+  result = "ARRAY["
+  for item in items:
+    result.add(item.dbQuote())
+    result.add(",")
+  result = result[0..^2]
+  result.add("]")
+  return result
+
+proc fromDbToSeq*(str: string): seq[string] =
+  return
+  
 proc unescapeCommas*(str: string): seq[string] =
   ## A proc that unescapes commas only.
   var

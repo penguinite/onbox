@@ -117,6 +117,7 @@ I plan eventually on making friendly setup instructions for Pothole, if we kept 
 Package maintainers working with binary-only or hybrid software such as `apt`, `guix`, `dnf`, `pacman` and so on would have to provide 2 packages
 
 So, from now on, pothole only supports postgres irregardless of the `dbEngine` compile-time option.
+
 ### Database migrations
 
 Pothole is versioned, so it would be easy to just say to include a database migration function in potholectl for every new version.
@@ -367,23 +368,138 @@ So simple you could turn it into a flowchart! Yet, I am not gonna do that.
 
 # Quark
 
-This is the first entry in a while I assume, since a lot of information here is old. In fact, git blame tells me the last change was by the original creator 6 months ago. It's only been 4 months since I took over, and it doesn't seem that there were any special changes in that one month, the commit logs only tell me that the creator was working on potholectl, more specifically the `dev` subsystem.
+This is the first entry in a while I assume, since a lot of information here is
+old. In fact, git blame tells me the last change was by the original creator 6
+months ago. It's only been 4 months since I took over, and it doesn't seem that
+there were any special changes in those two months, the commit logs only tell me
+that the creator was working on potholectl, more specifically the `dev`
+subsystem.
 
-Irregardless though, I, myself, have had a lot of rough design decisions that I would have loved to document, if only I knew about the site directory. And honestly, I'm having a bit of a blast exploring all the stuff I have found! It's like an abandoned coal mine! Except without all of the danger maybe, and I am learning a lot about the history of this project.
+Irregardless though, I, myself, have had a lot of rough design decisions that I
+would have loved to document, if only I knew about the site directory. And
+honestly, I'm having a bit of a blast exploring all the stuff I have found! It's
+like an abandoned coal mine! Except without all of the danger maybe, and I am
+learning a lot about the history of this project.
 
-From what I can see in the site, there was a version published roughly 7 months ago. The creator told me the schedule was supposed to be every six months (or bi-annual if you're a fancy nerd), so this is already a month over deadline. But I am abandoning that schedule until I get a stable release without ActivityPub support.
+From what I can see in the site, there was a version published roughly 7 months
+ago. The creator told me the schedule was supposed to be every six months (or
+bi-annual if you're a fancy nerd), so this is already a month over deadline. But
+I am abandoning that schedule until I get a stable release without ActivityPub
+support.
 
-That version, from 7 months ago, it was made for a single reason. It was because the creator split the database logic and whatnot into its own library, presumably because the code was messy and he wanted to write it like a library since it would be cleaner.
+That version, from 7 months ago, it was made for a single reason. It was because
+the creator split the database logic and whatnot into its own library,
+presumably because the code was messy and he wanted to write it like a library
+since it would be cleaner.
 
-But that split never lasted long, and I have no idea why. Now, I could ask the creator, but it takes too long to actually get into contact. And we have to make promises, appointments and ugh, it's too fucking annoying... What we can do instead is hypothesize! From looking at the rest of the codebase, in its historic form, it's clear that there was a huge split.
+But that split never lasted long, and I have no idea why. Now, I could ask the
+creator, but it takes too long to actually get into contact. And we have to make
+promises, appointments and ugh, it's too fucking annoying... What we can do
+instead is hypothesize! From looking at the rest of the codebase, in its
+historic form, it's clear that there was a huge split.
 
-We know the creator split the codebase into two, possibly to ensure their style would become more readable, but also, he moved the code away into a different repository (What was the name of that repo? Idk)
+We know the creator split the codebase into two, possibly to ensure their style
+would become more readable, but also, he moved the code away into a different
+repository (What was the name of that repo? Idk)
 
-I can already tell that this might've been too much for them, and so they probably gave it up because of that. But, I do like the idea of making a social-media library. So with that in mind! I bring to you: Quark!
+I can already tell that this might've been too much for them, and so they
+probably gave it up because of that. But, I do like the idea of making a
+social-media library. So with that in mind! I bring to you: Quark!
 
-It's the database logic, object definitions and everything packed into a different location. I am already re-writing huge parts of the codebase to be more independent, and less pothole-specific. The fun thing is that, soon enough with better documentation, you could very well make your own social media server (or anything that needs a User-Post-Activity framework) using this library!
+It's the database logic, object definitions and everything packed into a
+different location. I am already re-writing huge parts of the codebase to be
+more independent, and less pothole-specific. The fun thing is that, soon enough
+with better documentation, you could very well make your own social media server
+(or anything that needs a User-Post-Activity framework) using this library!
 
-Rather than putting it into its own repo, with its own release schedule and the headaches of versioning two separate apps together. I will just put it into a different folder on **this** repository. So it's easy for people to download, and easy for people to contribute!
+Rather than putting it into its own repo, with its own release schedule and the
+headaches of versioning two separate apps together. I will just put it into a
+different folder on **this** repository. So it's easy for people to download,
+and easy for people to contribute!
 
-I think this can work, I feel like this has to work even! If I put in the work then surely, it will work, right?
-Well we will find out in the coming weeks whether I can handle this or not, if not, then I will just merge the two together.
+I think this can work, I feel like this has to work even! If I put in the work
+then surely, it will work, right?  Well we will find out in the coming weeks
+whether I can handle this or not, if not, then I will just merge the two
+together.
+
+Update from August: I cannot fathom just how quickly Quark got polluted with
+Pothole-specific stuff. It's no longer the independent social-media library I
+envisioned it to be but that's alright, there's still benefit in separating them
+and I won't merge them back unless it's too complex for new developers.
+
+## Post activities
+
+Right now, Pothole only supports text-based messages. Which is okay, for the
+most part and we can do a lot of interesting things if we add support for HTML
+or Markdown, but the Fediverse has been moving on to more complex things, such
+as polls, and media attachments and well, who knows what's next?
+
+Post activities is what I have decided to call these things. These are
+additional items, in addition to (or sometimes replacing) the `content` field.
+
+In `quark/post.nim`, you can see the following:
+```nim
+type
+  PostActivityType* = enum
+    Poll, Media, Card
+
+  ## See the "Post activities" section in DESIGN.md
+  ## The explanation is too long to put it here, in code.
+  PostActivity* = object
+    case kind*: PostActivityType
+    of Poll:
+      id: string # The poll ID
+      question: string # The question that was asked for the poll
+      options: Table[string, seq[string]] # Key: Option, Val: List of users who voted for that option
+      total_votes: int # Total number of votes
+    of Media:
+      media_id: string # Media attachments aren't actually stored in the db.
+    else: discard
+	  
+  Post* = object
+    ...
+	extras*: seq[PostActivity]
+```
+
+There's a special PostActivity object in Quark whose structure changes depending
+on what you're trying to parse.
+
+So, if you're parsing a Poll, then you'll see questions, votes, and any other
+extra info. If you're parsing media attachments then you'll get an ID that you
+can pass onto your **own** storage layer for more info.
+
+Anyway, in the database itself, we will have a text field.
+It's a space-separated sequence of pairs. (In Nim-speak, `seq[(string, string)]`)
+
+The first part of the pair corresponds to the type, fx. `poll` for polls,
+`media` for media attachments.
+
+The second part is the ID of that specific object, so, for polls, we would have
+a separate database table specifically for polls. And the second part
+corresponds to the ID of the poll.
+
+And on the application side (or more specifically, `quark/db/posts.nim`) We run some extra logic to parse these activities and return (or insert) the data in an orderly manner.
+
+What this means is that, from the database side, it's just a text field and a
+database table. But on the application side, it's a dynamic object. And I feel
+like this system can be extended to support new types of activities cleanly from
+the application side.
+
+You'd still have to modify getPost() and addPost() to properly parse and add the
+Post object to the database but to make it slightly easier, I could add some
+abstractions. (or not, we already have too many abstractions)
+
+Right now though, I have to write the initial code for `getPost()` to retrieve
+the extra post activities and the initial code for `addPost()` to actually
+insert the new post activities.
+
+But you also have to pay special care then, because, you shouldn't add new post
+activities in the database directly, and you should instead just modify the
+`extra` field in the Post object and let the database handle it for you.
+
+So, in summary, This system would allow us to support new types of posts. And in
+theory, we could even replace the dull, text-only `content` field with a sparkly
+`content*: seq[PostActivity]` and just have a dull text-only `PostActivity`
+object for normal text messages. And I might do that in the future, but not
+now. I feel like that'd require a re-write of a LOT of code, and I don't feel
+like doing that today.

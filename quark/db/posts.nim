@@ -37,6 +37,7 @@ const postsCols*: OrderedTable[string, string] = {
   "local": "BOOLEAN NOT NULL", # A boolean indicating whether the post originated from this server or other servers.
   "client": "TEXT NOT NULL DEFAULT '0'",
   "level": " smallint NOT NULL DEFAULT 0",
+  "extras": "TEXT[]", # See "Post activities" in DESIGN.md
   # TODO: This __A/__B hack is really, well... hacky. Maybe replace it?
   "__A": "foreign key (sender) references users(id)", # Some foreign key for database integrity
 }.toOrderedTable
@@ -89,7 +90,10 @@ proc addPost*(db: DbConn, post: Post) =
 
   if db.getRow(testStatement, post.id).has():
     return # Someone has tried to add a post twice. We just won't add it.
-  
+
+  # TODO: Add support for post revisions
+  # TODO: Add support for post "activities"
+    
   # TODO: Automate this some day.
   # I believe we can use a template or a macro to automate inserting this stuff in.
   let statement = sql"INSERT INTO posts (id,recipients,sender,replyto,content,written,modified,local,client,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
