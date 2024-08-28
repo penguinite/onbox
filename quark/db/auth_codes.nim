@@ -1,4 +1,3 @@
-# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 # Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole. Specifically, the Quark repository.
@@ -15,28 +14,36 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# quark/db/codes.nim:
+# quark/db/auth_codes.nim:
 ## This module handles authorization code creation, cleanup and processing.
+## Authorization codes refer to the ones generated via the OAuth process.
+## This is usually typically used to authorize apps (such as third party clients)
+## to do various things to your account (or the instance depending on the scopes)
 
 # From Quark
 import quark/private/database
 import quark/db/[apps, users]
 
-# From standard library
 # From somewhere in the standard library
-import std/[tables, strutils]
+import std/[strutils]
 
 # From elsewhere (third-party libraries)
 import rng
 
-# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const authCodesCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL", # The code itself
-"uid": "TEXT NOT NULL", # The user id associated with this code.
-"cid": "TEXT NOT NULL", # The client id associated with this code.
-"scopes": "TEXT DEFAULT 'read'", # The scopes that were requested
-"__A": "foreign key (cid) references apps(id)", # Some foreign key for integrity
-"__B": "foreign key (uid) references users(id)", # Some foreign key for integrity
-}.toOrderedTable
+const authCodesCols* = @[
+  # The code itself (also acts as an id in this case)
+  "id TEXT PRIMARY KEY NOT NULL", 
+  # The user id associated with this code.
+  "uid TEXT NOT NULL", 
+  # The client id associated with this code.
+  "cid TEXT NOT NULL", 
+  # The scopes that were requested
+  "scopes TEXT DEFAULT 'read'", 
+
+  # Some foreign keys for integrity
+  "foreign key (cid) references apps(id)", 
+  "foreign key (uid) references users(id)"
+]
 
 proc getSpecificAuthCode*(db: DbConn, user, client: string): string =
   ## Returns a specific auth code.
@@ -77,13 +84,12 @@ proc getScopesFromCode*(db: DbConn, id: string): seq[string] =
 
 proc deleteAuthCode*(db: DbConn, id: string) =
   ## Deletes an authentication code
-  db.exec("DELETE FROM oauth WHERE code = ?;", id)
-  db.exec("DELETE FROM auth_codes WHERE id = ?;", id)
+  db.exec(sql"DELETE FROM oauth WHERE code = ?;", id)
+  db.exec(sql"DELETE FROM auth_codes WHERE id = ?;", id)
 
 proc getUserFromAuthCode*(db: DbConn, id: string): string =
   ## Returns user id when given auth code
   return db.getRow(sql"SELECT uid FROM auth_codes WHERE id = ?;", id)[0]
-
 
 proc getAppFromAuthCode*(db: DbConn, id: string): string =
   return db.getRow(sql"SELECT cid FROM auth_codes WHERE id = ?;", id)[0]

@@ -17,25 +17,31 @@
 #
 # quark/db/email_codes.nim:
 ## This module handles Email verification codes for users.
+## It does not handle sending them, Pothole, the server program has
+## a module for sending emails, pothole/email
 
 # From Quark
 import quark/private/database
 import quark/db/users
 import quark/post
 
-# From standard library
 # From somewhere in the standard library
-import std/[tables, times]
+import std/[times]
 
 # From elsewhere (third-party libraries)
 import rng
 
-# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const emailCodesCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL UNIQUE", # The email code
-"uid": "TEXT NOT NULL UNIQUE", # The user it belongs to
-"date": "TIMESTAMP NOT NULL", # The date it was created
-"__A": "foreign key (uid) references users(id)", # Some foreign key for database integrity
-}.toOrderedTable
+const emailCodesCols* = @[
+  # The email code
+  "id TEXT PRIMARY KEY NOT NULL UNIQUE", 
+  # The user it belongs to
+  "uid TEXT NOT NULL UNIQUE", 
+   # The date it was created
+  "date TIMESTAMP NOT NULL",
+
+   # A foreign key for database integrity
+  "foreign key (uid) references users(id)"
+]
 
 proc emailCodeExists*(db: DbConn, code: string): bool =
   return has(db.getRow(sql"SELECT id FROM email_codes WHERE id = ?;", code))

@@ -14,23 +14,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# db/follows.nim:
+# quark/db/follows.nim:
 ## This module contains all database logic for handling followers, following and so on.
 
 import quark/private/database
 import quark/db/users
 import quark/user
 
-# From somewhere in the standard library
-import std/tables
+const followsCols* = @[
+  # ID of user that is following
+  "follower TEXT NOT NULL", 
+  # ID of the user that is being followed
+  "following TEXT NOT NULL", 
+  # Whether or not the follow has gone-through, ie. if its approved
+  "approved BOOLEAN NOT NULL", 
 
-# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const followsCols*: OrderedTable[string, string] = { "follower": "TEXT NOT NULL", # ID of user that is following
-"following": "TEXT NOT NULL", # ID of the user that is being followed
-"approved": "BOOLEAN NOT NULL", # Whether or not the follow has gone-through, ie. if its approved
-"__A": "foreign key (follower) references users(id)", # Some foreign key for integrity
-"__B": "foreign key (following) references users(id)", # Same as above
-}.toOrderedTable
+  # Foreign keys for database integrity
+  "foreign key (follower) references users(id)",
+  "foreign key (following) references users(id)",
+]
 
 proc getFollowersQuick*(db: DbConn, user: string): seq[string] =
   ## Returns a set of handles that follow a specific user

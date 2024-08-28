@@ -24,23 +24,16 @@ import std/[tables]
 import db_connector/db_postgres
 export db_postgres
 
-proc createDbTable*(db: DbConn, tablename: string, cols: OrderedTable[string,string]) =
+proc createDbTable*(db: DbConn, tablename: string, cols: seq[string]) =
   ## We use this procedure to create a SQL statement that creates a table using the hard-coded rules
   # We build the sql statement slowly.
   var sqlStatement = "CREATE TABLE IF NOT EXISTS " & tablename & " ("
-  for key, value in cols.pairs:
-    if key.startsWith("__"):
-      sqlStatement.add("$#," % [value])
-    else:
-      sqlStatement.add("$# $#," % [key, value])
-  sqlStatement = sqlStatement[0 .. ^2] # Remove last comma
+  sqlStatement.add(cols.join(";"))
+  sqlStatement = sqlStatement[0 .. ^2] # Remove last semicolon
   sqlStatement.add(");") # Add final two characters
 
   # Now we run and hope for the best!
   db.exec(sql(sqlStatement))
-
-proc exec*(db: DbConn, stmet: string, args: varargs[string, `$`]) =
-  exec(db,sql(stmet),args)
 
 proc update*(db: DbConn, table, condition, column, value: string): bool =
   ## A procedure to update any value, in any column in any table.
@@ -48,7 +41,7 @@ proc update*(db: DbConn, table, condition, column, value: string): bool =
   ## updateUserById() instead of using this directly.
   var sqlStatement = "UPDATE " & table & " SET " & column & " = " & value & " WHERE " & condition & ";"
   try:
-    db.exec(sqlStatement)
+    db.exec(sql(sqlStatement))
     return true
   except:
     return false

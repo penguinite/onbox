@@ -16,28 +16,38 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # quark/db/apps.nim:
-## This module handles apps
+## This module handles apps, it provides functions for creating them,
+## deleting them, modifying them or retrieving them.
+## Apps are a fundamental part of the Mastodon API and they need support
+## at the database level.
 
 # From Quark
 import quark/private/database
 import quark/post
 
-# From standard library
 # From somewhere in the standard library
-import std/[tables, strutils, times]
+import std/[strutils, times]
 
 # From elsewhere (third-party libraries)
 import rng
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const appsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL UNIQUE", # The client Id for the application
-"secret": "TEXT NOT NULL UNIQUE", # The client secret for the application
-"scopes": "TEXT NOT NULL", # Scopes of this application, space-separated.
-"redirect_uri": "TEXT DEFAULT 'urn:ietf:wg:oauth:2.0:oob'", # The redirect uri for the app
-"name": "TEXT ", # Name of application
-"link": "TEXT", # The homepage or source code link to the application
-"last_accessed": "TIMESTAMP NOT NULL", # Last used timestamp, when this is older than 2 weeks, the row is deleted.
-}.toOrderedTable
+const appsCols* = @[
+  # The client Id for the application
+  "id TEXT PRIMARY KEY NOT NULL UNIQUE", 
+  # The client secret for the application
+  "secret TEXT NOT NULL UNIQUE", 
+  # Scopes of this application, space-separated.
+  "scopes TEXT NOT NULL",
+  # The redirect uri for the app
+  "redirect_uri TEXT DEFAULT 'urn:ietf:wg:oauth:2.0:oob'",
+  # Name of application
+  "name TEXT",
+  # The homepage or source code link to the application
+  "link TEXT",
+  # Last used timestamp, when this is older than 2 weeks, the row is deleted.
+  "last_accessed TIMESTAMP NOT NULL"
+]
 
 proc purgeOldApps*(db: DbConn) =
   for row in db.getAllRows(sql"SELECT id, last_accessed FROM apps;"):
@@ -45,9 +55,9 @@ proc purgeOldApps*(db: DbConn) =
       continue
 
     if now().utc - toDateFromDb(row[1]) == initDuration(weeks = 1):
-      db.exec("DELETE FROM apps WHERE id = ?;", row[0])
-      db.exec("DELETE FROM auth_codes WHERE cid = ?;", row[0])
-      db.exec("DELETE FROM oauth WHERE cid = ?;", row[0])
+      db.exec(sql"DELETE FROM apps WHERE id = ?;", row[0])
+      db.exec(sql"DELETE FROM auth_codes WHERE cid = ?;", row[0])
+      db.exec(sql"DELETE FROM oauth WHERE cid = ?;", row[0])
 
 proc updateTimestamp*(db: DbConn, id: string) =
   db.exec(sql"UPDATE apps SET last_accessed = ? WHERE id = ?;", utc(now()).toDbString(), id)

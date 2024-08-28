@@ -1,4 +1,5 @@
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
 # 
@@ -14,8 +15,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# db/sqlite/boosts.nim:
+# quark/db/boosts.nim:
 ## This module contains all database logic for handling boosts.
+## A "boost" is used to promote posts, putting them on a user's profile
+## and thus visible to a user's followers.
+## 
+## There are kinds of boosts, hence why we store an extra "level" column
+## Someone might want to show a post to only their followers and no where else.
+## Quote-boosts are not considered true boosts. They're just posts with a link.
 
 import ../crypto
 import ../private/database
@@ -24,14 +31,20 @@ import users
 # From somewhere in the standard library
 import std/tables
 
-# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const boostsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL",
-"pid": "TEXT NOT NULL", # ID of post that user boosted
-"uid": "TEXT NOT NULL", # ID of user that boosted post
-"level": "TEXT NOT NULL", # The "boost level", ie. is it followers-only or whatever.
-"__A": "foreign key (pid) references posts(id)", # Some foreign key for integrity
-"__B": "foreign key (uid) references users(id)", # Same as above
-}.toOrderedTable
+const boostsCols* = @[
+  # The ID for the boost
+  "id TEXT PRIMARY KEY NOT NULL",
+  # ID of post that user boosted
+  "pid TEXT NOT NULL", 
+  # ID of user that boosted post
+  "uid TEXT NOT NULL", 
+  # The "boost level", ie. is it followers-only or whatever.
+  "level TEXT NOT NULL", 
+
+  # Some foreign keys for integrity
+  "foreign key (pid) references posts(id)", 
+  "foreign key (uid) references users(id)"
+]
 
 proc getBoosts*(db: DbConn, id: string): Table[string, seq[string]] =
   ## Retrieves a Table of boosts for a post. Result consists of a table where the keys are the specific levels and the value is a sequence of boosters associated with this level.
@@ -77,7 +90,7 @@ proc addBulkBoosts*(db: DbConn, id: string, table: Table[string, seq[string]]) =
 
 proc removeBoost*(db: DbConn, pid,uid: string) =
   ## Removes a boost from the database
-  db.exec("DELETE FROM boosts WHERE pid = ? AND uid = ?;",pid,uid)
+  db.exec(sql"DELETE FROM boosts WHERE pid = ? AND uid = ?;",pid,uid)
 
 proc hasBoost*(db: DbConn, pid,uid,level: string): bool =
   ## Checks if a post has a boost. Everything must match.

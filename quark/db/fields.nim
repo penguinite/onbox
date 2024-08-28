@@ -14,27 +14,41 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# db/fields.nim:
+# quark/db/fields.nim:
 ## This module contains all database logic for handling profile fields.
-## TODO: It might be possible to put this into the user table.
-## Eh whatever, more tables never hurt anyone.
+## 
+## This isn't in the user table because database arrays are hell,
+## and I would rather create a new table for this purpose than
+## deal with database array parsing again.
+## 
+## Besides, more tables never hurt anyone.
 
 import quark/private/database
 import quark/db/users
 import quark/post
 import quark/strextra
 
-# From somewhere in the standard library
-import std/[tables, times]
+import std/[times]
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const fieldsCols*: OrderedTable[string, string] = {"key": "TEXT NOT NULL", # The "key" part of the field
-"value": "TEXT NOT NULL", # The "value" part of the field.
-"uid": "TEXT NOT NULL", # Which user has created this profile field
-"verified": "BOOLEAN DEFAULT FALSE", # A boolean indicating if the profile field has been "verified", fx. domain verification and so on.
-"verified_at": "TIMESTAMP", # A timestamp for when the field was verified
-"__A": "foreign key (uid) references users(id)", # Some foreign key for integrity
-}.toOrderedTable
+const fieldsCols* = @[
+  # The "key" part of the field
+  "key TEXT NOT NULL",
+  # The "value" part of the field.
+  "value TEXT NOT NULL", 
+  # Which user has created this profile field
+  "uid TEXT NOT NULL", 
+
+  # A boolean indicating if the profile field has been "verified", fx. domain verification and so on.
+  # TODO: This is poorly implemented, we don't even store the domain we need to verify...
+  "verified BOOLEAN DEFAULT FALSE", 
+  
+  # A timestamp for when the field was verified
+  "verified_at TIMESTAMP", 
+
+  # A foreign key for integrity
+  "foreign key (uid) references users(id)"
+]
 
 proc getFields*(db: DbConn, user: string): seq[(string, string, bool, DateTime)] =
   ## Returns the profile fields of a specific user.

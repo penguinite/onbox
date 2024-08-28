@@ -14,19 +14,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# db/bookmarks.nim:
+# quark/db/bookmarks.nim:
 ## This module contains all database logic for handling user bookmarks.
+## Including creation, retrieval, checking, updating and deletion
 import quark/private/database
 
-# From somewhere in the standard library
-import std/[tables]
+const bookmarksCols* = @[
+  # The post being bookmarked
+  "pid TEXT NOT NULL", 
+  # The user who bookmarked the post
+  "uid TEXT NOT NULL", 
 
-# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const bookmarksCols*: OrderedTable[string, string] = {"pid": "TEXT NOT NULL", # The post being bookmarked
-"uid": "TEXT NOT NULL", # The user who bookmarked the post
-"__A": "foreign key (uid) references users(id)", # Some foreign key for integrity
-"__B": "foreign key (id) references posts(id)", # Some foreign key for integrity
-}.toOrderedTable
+  # Some foreign keys for integrity
+  "foreign key (uid) references users(id)", 
+  "foreign key (id) references posts(id)"
+]
 
 proc bookmarkExists*(db: DbConn, user, post: string): bool =
   return has(db.getRow(sql"SELECT uid FROM bookmarks WHERE uid = ? AND pid = ?;", user, post))
