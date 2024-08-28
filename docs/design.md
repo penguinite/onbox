@@ -468,17 +468,19 @@ So, if you're parsing a Poll, then you'll see questions, votes, and any other
 extra info. If you're parsing media attachments then you'll get an ID that you
 can pass onto your **own** storage layer for more info.
 
-Anyway, in the database itself, we will have a text field.
-It's a space-separated sequence of pairs. (In Nim-speak, `seq[(string, string)]`)
+Anyway, in the database itself, we will have a separate table named `post_contents` (or some other name)
+and it contains 2 columns
 
-The first part of the pair corresponds to the type, fx. `poll` for polls,
+The first part of the columns corresponds to the type, fx. `poll` for polls,
 `media` for media attachments.
 
 The second part is the ID of that specific object, so, for polls, we would have
 a separate database table specifically for polls. And the second part
 corresponds to the ID of the poll.
 
-And on the application side (or more specifically, `quark/db/posts.nim`) We run some extra logic to parse these activities and return (or insert) the data in an orderly manner.
+And on the application side (or more specifically, `quark/db/posts.nim`)
+We run some extra logic to parse these activities and return (or insert)
+the data in an orderly manner.
 
 What this means is that, from the database side, it's just a text field and a
 database table. But on the application side, it's a dynamic object. And I feel
@@ -503,3 +505,9 @@ theory, we could even replace the dull, text-only `content` field with a sparkly
 object for normal text messages. And I might do that in the future, but not
 now. I feel like that'd require a re-write of a LOT of code, and I don't feel
 like doing that today.
+
+
+## Arrays in db_connector are literally the devil.
+
+In the section about Post Activities, I wanted to use an array inside of the Post table to store the post activities.
+But I decided not to do that because I simply cannot get arrays to work inside of db_connector.
