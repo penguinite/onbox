@@ -25,26 +25,46 @@ import quark/[user, strextra, crypto]
 import quark/private/[database, macros]
 
 # From somewhere in the standard library
-import std/[tables]
+# Needed for CountTable, which is used only in one spot.
+# So, TODO: Get rid of this dependency if you want to...
+import std/tables
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
 # For this module to work, both database schemas and user object definitions must be similar
-const usersCols*: OrderedTable[string,string] = {"id":"TEXT PRIMARY KEY NOT NULL", # The user ID
-"kind":"TEXT NOT NULL", # The user type, see UserType object in user.nim
-"handle":"TEXT UNIQUE NOT NULL", # The user's actual username (Fx. alice@alice.wonderland)
-"name":"TEXT DEFAULT 'New User'", # The user's display name (Fx. Alice)
-"local":"BOOLEAN NOT NULL", # A boolean indicating whether the user originates from the local server or another one.
-"email":"TEXT", # The user's email (Empty for remote users)
-"bio":"TEXT", # The user's biography 
-"password":"TEXT", # The user's hashed & salted password (Empty for remote users obv)
-"salt":"TEXT", # The user's salt (Empty for remote users obv)
-"kdf":"INTEGER NOT NULL", # The version of the key derivation function. See DESIGN.md's "Key derivation function table" for more.
-"admin":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether or not this user is an Admin.
-"moderator":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether or not this user is a Moderator.
-"discoverable": "BOOLEAN NOT NULL DEFAULT TRUE", # A boolean indicating whether or not this user is discoverable in frontends
-"is_frozen":"BOOLEAN NOT NULL", # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
-"is_verified": "BOOLEAN NOT NULL", # A boolean indicating whether this user's email address has been verified (NOT the same as an approval)
-"is_approved":"BOOLEAN NOT NULL"}.toOrderedTable  # A boolean indicating if the user hs been approved by an administrator
+const usersCols* = @[
+   # The user ID
+  "id TEXT PRIMARY KEY NOT NULL",
+   # The user type, see UserType object in user.nim
+  "kind TEXT NOT NULL",
+  # The user's actual username (Fx. alice@alice.wonderland)
+  "handle TEXT UNIQUE NOT NULL", 
+  # The user's display name (Fx. Alice)
+  "name TEXT DEFAULT 'New User'", 
+  # A boolean indicating whether the user originates from the local server or another one.
+  "local BOOLEAN NOT NULL", 
+  # The user's email (Empty for remote users)
+  "email TEXT", 
+  # The user's biography 
+  "bio TEXT", 
+  # The user's hashed & salted password (Empty for remote users obv)
+  "password TEXT", 
+  # The user's salt (Empty for remote users obv)
+  "salt TEXT",
+  # The version of the key derivation function. See DESIGN.md's "Key derivation function table" for more.
+  "kdf INTEGER NOT NULL", 
+  # A boolean indicating whether or not this user is an Admin.
+  "admin BOOLEAN NOT NULL DEFAULT FALSE", 
+  # A boolean indicating whether or not this user is a Moderator.
+  "moderator BOOLEAN NOT NULL DEFAULT FALSE", 
+  # A boolean indicating whether or not this user is discoverable in frontends
+  "discoverable BOOLEAN NOT NULL DEFAULT TRUE", 
+  # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
+  "is_frozen BOOLEAN NOT NULL", 
+  # A boolean indicating whether this user's email address has been verified (NOT the same as an approval)
+  "is_verified BOOLEAN NOT NULL", 
+  # A boolean indicating if the user hs been approved by an administrator
+  "is_approved BOOLEAN NOT NULL"
+]
 
 
 proc addUser*(db: DbConn, user: User) = 
@@ -220,12 +240,9 @@ proc updateUserByHandle*(db: DbConn, handle: string, column, value: string) =
   ## Or else you will be liable to truly awful security attacks!
   ## For guidance, look at the sanitizeHandle() procedure in user.nim or the escape() procedure in the strutils module
   
-  # Check if user exists or if the column exists.
+  # Check if the user exists
   if not db.userHandleExists(handle):
     raise newException(DbError, "User with handle \"" & handle & "\" doesn't exist.")
-
-  if not usersCols.hasKey(column):
-    raise newException(DbError, "User table column \"" & column & "\" doesn't exist.")
   
   # Then update!
   db.exec(sql("UPDATE users SET " & column & " = ? WHERE handle = ?;"), value, sanitizeHandle(handle))
@@ -233,12 +250,9 @@ proc updateUserByHandle*(db: DbConn, handle: string, column, value: string) =
 proc updateUserById*(db: DbConn, id, column, value: string) = 
   ## A procedure to update any user (The user is identified by their ID)
   
-  # Check if the user or column exists
+  # Check if the user exists
   if not db.userIdExists(id):
     raise newException(DbError, "User with id \"" & id & "\" doesn't exist.")
-  
-  if not usersCols.hasKey(column):
-    raise newException(DbError, "User table column \"" & column & "\" doesn't exist.")
 
   # Then update!
   db.exec(sql("UPDATE users SET " & column & " = ? WHERE id = ?;"), value, id)
