@@ -25,23 +25,33 @@ import ../private/[database, macros]
 
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
-import std/[tables]
+import std/tables
 
-const postsCols*: OrderedTable[string, string] = {
-  "id": "TEXT PRIMARY KEY NOT NULL", #The Post id
-  "recipients":"TEXT", # A comma-separated list of recipients since sqlite3 does not support arrays by default
-  "sender":"TEXT NOT NULL", # A string containing the sender's id
-  "replyto": "TEXT DEFAULT ''", # A string containing the post that the sender is replying to, if at all.
-  "content": "TEXT NOT NULL DEFAULT ''", # A string containing the latest content of the post.
-  "written":"TIMESTAMP NOT NULL", # A timestamp containing the date that the post was written (and published)
-  "modified":"BOOLEAN NOT NULL DEFAULT FALSE", # A boolean indicating whether the post was modified or not.
-  "local": "BOOLEAN NOT NULL", # A boolean indicating whether the post originated from this server or other servers.
-  "client": "TEXT NOT NULL DEFAULT '0'",
-  "level": " smallint NOT NULL DEFAULT 0",
-  "extras": "TEXT[]", # See "Post activities" in DESIGN.md
-  # TODO: This __A/__B hack is really, well... hacky. Maybe replace it?
-  "__A": "foreign key (sender) references users(id)", # Some foreign key for database integrity
-}.toOrderedTable
+const postsCols* = @[
+  # The Post id
+  "id TEXT PRIMARY KEY NOT NULL", 
+  # A comma-separated list of recipients since sqlite3 does not support arrays by default
+  "recipients TEXT",
+  # A string containing the sender's id
+  "sender TEXT NOT NULL", 
+  # A string containing the post that the sender is replying to, if at all.
+  "replyto TEXT DEFAULT ''", 
+  # A string containing the latest content of the post.
+  "content TEXT NOT NULL DEFAULT ''", 
+  # A timestamp containing the date that the post was written (and published)
+  "written TIMESTAMP NOT NULL", 
+  # A boolean indicating whether the post was modified or not.
+  "modified BOOLEAN NOT NULL DEFAULT FALSE", 
+  # A boolean indicating whether the post originated from this server or other servers.
+  "local BOOLEAN NOT NULL", 
+  #
+  "client TEXT NOT NULL DEFAULT '0'",
+  # The "level" for the post, the level dictates
+  # who is allowed to see the post and whatnot.
+  # such as for example, if it is a direct message.
+  "level smallint NOT NULL DEFAULT 0",
+  "foreign key (client) references apps(id)"
+]
 
 proc constructPostFromRow*(db: DbConn, row: Row): Post =
   ## A procedure that takes a database Row (From the Posts table)
@@ -56,6 +66,8 @@ proc constructPostFromRow*(db: DbConn, row: Row): Post =
   var i: int = -1;
 
   for key,value in result.fieldPairs:
+    # Block reactions and boosts from being parsed by
+    # this rudimentary code.
     when result.get(key) isnot Table[string, seq[string]]:
       inc(i)
     # If its string, add it surrounding quotes
@@ -79,7 +91,6 @@ proc constructPostFromRow*(db: DbConn, row: Row): Post =
 
   result.reactions = db.getReactions(result.id)
   result.boosts = db.getBoosts(result.id)
-
   return result
 
 proc addPost*(db: DbConn, post: Post) =
