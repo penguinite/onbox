@@ -48,28 +48,27 @@ proc getNumOfReactions*(db: DbConn, id: string): int =
     inc(result)
   return result
 
+proc hasAnyReaction*(db: DbConn, pid, uid: string): bool =
+  return has(db.getRow(sql"SELECT reaction FROM reactions WHERE pid = ? AND uid = ?;", pid, uid))
+
 proc addReaction*(db: DbConn, pid,uid,reaction: string) =
   ## Adds an individual reaction
-  # Check for ID first.
-  var id = randstr(8)
-  while has(db.getRow(sql"SELECT id FROM reactions WHERE id = ?;", id)):
-    id = randstr(8)
+  # Check if a reaction already exists previous
+  if db.hasAnyReaction(pid, uid):
+    return
 
-  db.exec(sql"INSERT INTO reactions (id, pid, uid, reaction) VALUES (?,?,?,?);",id,pid,uid,reaction)
+  db.exec(sql"INSERT INTO reactions VALUES (?,?,?);",pid,uid,reaction)
 
-proc addBulkReactions*(db: DbConn, id: string, table: Table[string, seq[string]]) =
+proc addBulkReactions*(db: DbConn, pid: string, table: Table[string, seq[string]]) =
   ## Adds an entire table of reactions to the database
   for reaction,list in table.pairs:
     for user in list:
-      db.addReaction(id, user, reaction)
+      db.addReaction(pid, user, reaction)
 
 proc removeReaction*(db: DbConn, pid,uid: string) =
   ## Removes a reactions from the database
-  db.exec("DELETE FROM reactions WHERE pid = ? AND uid = ?;",pid,uid)
+  db.exec(sql"DELETE FROM reactions WHERE pid = ? AND uid = ?;",pid,uid)
 
 proc hasReaction*(db: DbConn, pid,uid,reaction: string): bool =
   ## Checks if a post has a reaction. Everything must match.
-  return has(db.getRow(sql"SELECT id FROM reactions WHERE pid = ? AND uid = ? AND reaction = ?;", pid, uid, reaction))
-
-proc hasAnyReaction*(db: DbConn, pid, uid: string): bool =
-  return has(db.getRow(sql"SELECT id FROM reactions WHERE pid = ? AND uid = ?;", pid, uid))
+  return has(db.getRow(sql"SELECT reaction FROM reactions WHERE pid = ? AND uid = ? AND reaction = ?;", pid, uid, reaction))
