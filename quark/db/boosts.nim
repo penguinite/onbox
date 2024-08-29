@@ -31,8 +31,6 @@ import users
 import std/tables
 
 const boostsCols* = @[
-  # The ID for the boost
-  "id TEXT PRIMARY KEY NOT NULL",
   # ID of post that user boosted
   "pid TEXT NOT NULL", 
   # ID of user that boosted post
@@ -67,17 +65,28 @@ proc getBoostsQuickWithHandle*(db: DbConn, id: string): seq[string] =
     result.add(db.getHandleFromId(id))
   return result
 
+proc hasAnyBoost*(db: DbConn, pid,uid: string): bool =
+  ## Checks if a post has a boost. It doesn't matter the specific level tho
+  return has(db.getRow(sql"SELECT level FROM boosts WHERE pid = ? AND uid = ?;", pid, uid))
+
+proc removeBoost*(db: DbConn, pid,uid: string) =
+  ## Removes a boost from the database
+  db.exec(sql"DELETE FROM boosts WHERE pid = ? AND uid = ?;",pid,uid)
+
+proc hasBoost*(db: DbConn, pid,uid,level: string): bool =
+  ## Checks if a post has a boost. Everything must match.
+  return has(db.getRow(sql"SELECT level FROM boosts WHERE pid = ? AND uid = ? AND level = ?;", pid, uid, level))
+
 proc addBoost*(db: DbConn, pid,uid,level: string) =
   ## Adds an individual boost
-  # Check for ID first.
-  var id = randstr(8)
-  while has(db.getRow(sql"SELECT id FROM boosts WHERE id = ?;", id)):
-    id = randstr(8)
-
-  db.exec(sql"INSERT INTO boosts (id, pid, uid, level) VALUES (?,?,?,?);",id,pid,uid,level)
+  # Check if a boost already exists before
+  if db.hasAnyBoost(pid, uid):
+    return
+  
+  db.exec(sql"INSERT INTO boosts (pid, uid, level) VALUES (?,?,?,?);",pid,uid,level)
 
 proc getNumOfBoosts*(db: DbConn, pid: string): int =
-  for i in db.getAllRows(sql"SELECT id FROM boosts WHERE pid = ?;", pid):
+  for i in db.getAllRows(sql"SELECT level FROM boosts WHERE pid = ?;", pid):
     inc(result)
   return result
 
@@ -86,15 +95,3 @@ proc addBulkBoosts*(db: DbConn, id: string, table: Table[string, seq[string]]) =
   for boost,list in table.pairs:
     for user in list:
       db.addBoost(id, user, boost)
-
-proc removeBoost*(db: DbConn, pid,uid: string) =
-  ## Removes a boost from the database
-  db.exec(sql"DELETE FROM boosts WHERE pid = ? AND uid = ?;",pid,uid)
-
-proc hasBoost*(db: DbConn, pid,uid,level: string): bool =
-  ## Checks if a post has a boost. Everything must match.
-  return has(db.getRow(sql"SELECT id FROM boosts WHERE pid = ? AND uid = ? AND level = ?;", pid, uid, level))
-
-proc hasAnyBoost*(db: DbConn, pid,uid: string): bool =
-  ## Checks if a post has a boost. Everything must match.
-  return has(db.getRow(sql"SELECT id FROM boosts WHERE pid = ? AND uid = ?;", pid, uid))
