@@ -27,7 +27,7 @@ const bookmarksCols* = @[
 
   # Some foreign keys for integrity
   "foreign key (uid) references users(id)", 
-  "foreign key (id) references posts(id)"
+  "foreign key (pid) references posts(id)"
 ]
 
 proc bookmarkExists*(db: DbConn, user, post: string): bool =
