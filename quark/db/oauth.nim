@@ -1,4 +1,3 @@
-# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 # Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole. Specifically, the Quark repository.
@@ -17,6 +16,7 @@
 #
 # quark/db/oauth.nim:
 ## This module contains all database logic for handling oauth tokens and code generation.
+## Such as generating them, deleting them, verifying them and whatnot.
 
 import quark/private/database
 import quark/db/[auth_codes, apps]

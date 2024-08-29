@@ -1,4 +1,5 @@
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
 # 
@@ -14,7 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# db/sqlite/posts.nim:
+# quark/db/posts.nim:
 ## This module contains all database logic for handling posts.
 
 # From somewhere in Quark

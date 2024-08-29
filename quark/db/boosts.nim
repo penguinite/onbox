@@ -24,7 +24,6 @@
 ## Someone might want to show a post to only their followers and no where else.
 ## Quote-boosts are not considered true boosts. They're just posts with a link.
 
-import ../crypto
 import ../private/database
 import users
 

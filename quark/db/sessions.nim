@@ -1,4 +1,3 @@
-# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 # Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole. Specifically, the Quark repository.
@@ -17,6 +16,8 @@
 #
 # quark/db/sessions.nim:
 ## This module contains all database logic for handling user sessions.
+## Such as verifying them, creating them and also deleting them
+## if the user demands it or if they have gone out-of-date.
 
 import ../private/database
 import quark/db/users
