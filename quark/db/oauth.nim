@@ -24,17 +24,25 @@ import quark/[post, strextra]
 import rng
 
 # From somewhere in the standard library
-import std/[tables, times]
+import std/[times]
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const oauthCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL UNIQUE", # The oauth token
-"uses_code": "BOOLEAN DEFAULT 'false'", # The type of token.
-"code": "TEXT UNIQUE", # The oauth code that was generated for this tokem
-"cid": "TEXT NOT NULL", # The client id of the app that this token belongs to
-"last_use": "TIMESTAMP NOT NULL", # Anything older than a week will be cleared out
-"__A": "foreign key (code) references auth_codes(id)", # Some foreign key for integrity
-"__B": "foreign key (cid) references apps(id)", # Some foreign key for integrity
-}.toOrderedTable
+const oauthCols* = @[
+  # The oauth token
+  "id TEXT PRIMARY KEY NOT NULL UNIQUE",
+  # The type of token.
+  "uses_code BOOLEAN DEFAULT 'false'",
+  # The oauth code that was generated for this tokem
+  "code TEXT UNIQUE", 
+  # The client id of the app that this token belongs to
+  "cid TEXT NOT NULL",
+  # Anything older than a week will be cleared out
+  "last_use TIMESTAMP NOT NULL", 
+
+  # Some foreign keys for integrity
+  "foreign key (code) references auth_codes(id)",
+  "foreign key (cid) references apps(id)"
+]
 
 proc updateTimestampForOAuth*(db: DbConn, id: string) = 
   if not has(db.getRow(sql"SELECT id FROM oauth WHERE id = ?;", id)):
