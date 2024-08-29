@@ -25,17 +25,17 @@ import ../private/database
 # From somewhere in the standard library
 import std/tables
 
-# From somewhere else
-import rng
-
-# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const reactionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY NOT NULL",
-"pid": "TEXT NOT NULL", # ID of post that user reacted to
-"uid": "TEXT NOT NULL", # ID of user who reacted to post
-"reaction": "TEXT NOT NULL", # Specific reaction
-"__A": "foreign key (pid) references posts(id)", # Some foreign key for integrity
-"__B": "foreign key (uid) references users(id)", # Same as above
-}.toOrderedTable
+const reactionsCols* = @[
+  # ID of post that the user reacted to
+  "pid TEXT NOT NULL", 
+  # ID of user who reacted to that post
+  "uid TEXT NOT NULL", 
+  # Specific reaction, could be "favorite" or the shortcode of an emoji.
+  "reaction TEXT NOT NULL", 
+  # Some foreigns key for integrity
+  "foreign key (pid) references posts(id)", 
+  "foreign key (uid) references users(id)"
+]
 
 proc getReactions*(db: DbConn, id: string): Table[string, seq[string]] =
   ## Retrieves a Table of reactions for a post. Result consists of a table where the keys are the specific reaction and the value is a sequence of reactors.
