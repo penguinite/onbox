@@ -25,14 +25,20 @@ import quark/post
 import rng
 
 # From somewhere in the standard library
-import std/[tables, times]
+import std/[times]
 
 # Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-const sessionsCols*: OrderedTable[string, string] = {"id": "TEXT PRIMARY KEY UNIQUE NOT NULL", # The id for the session
-"uid": "TEXT NOT NULL", # User ID for the session
-"last_used": "TIMESTAMP NOT NULL", # When the session was last used.
-"__A": "foreign key (uid) references users(id)", # Some foreign key for integrity
-}.toOrderedTable
+const sessionsCols* = @[
+   # The id for the session, aka. the session token itself
+  "id TEXT PRIMARY KEY UNIQUE NOT NULL",
+  # User ID for the session
+  "uid TEXT NOT NULL", 
+  # When the session was last used.
+  "last_used TIMESTAMP NOT NULL", 
+
+   # A foreign key for some database integrity
+  "foreign key (uid) references users(id)"
+]
 
 proc updateTimestampForSession*(db: DbConn, id: string) = 
   if not has(db.getRow(sql"SELECT id FROM sessions WHERE id = ?;", id)):
