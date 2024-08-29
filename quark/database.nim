@@ -66,6 +66,12 @@ proc setup*(
   
   # Let's first set some standard settings
   result.exec(sql"SET client_encoding = 'UTF8';")
+
+  # See: https://github.com/nim-lang/db_connector/issues/19
+  # Without this, Pothole is potentially susceptible to a 
+  # security vulnerability
+  # TODO: Fix the issue linked here in nim_lang/db_connector
+  # so everyone can enjoy safe database quoting
   result.exec(sql"SET standard_conforming_strings = on;")
 
   # Here we create the structures.
