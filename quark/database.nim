@@ -35,13 +35,12 @@ export DbConn, users, posts, reactions, boosts, apps, follows, fields, sessions,
 const databaseTables = @[
   ## Add an extra field to this whenever you need to insert a new table.
   ## + cleanDb() depends on this! So no need to add a new table there!
+  ("apps", appsCols),
   ("users", usersCols),
   ("posts", postsCols),
-  ("post_revisions", postsRevisionsCols),
   ("reactions", reactionsCols),
-  ("boosts", boostsCols),
-  ("apps", appsCols),
   ("follows", followsCols),
+  ("boosts", boostsCols),
   ("fields", fieldsCols),
   ("sessions", sessionsCols),
   ("auth_codes", authCodesCols),
@@ -65,14 +64,14 @@ proc setup*(
   result = open(host, user, password, name)
   
   # Let's first set some standard settings
-  result.exec(sql"SET client_encoding = 'UTF8';")
+  result.exec(sql"SET client_encoding = 'UTF8';") 
 
   # See: https://github.com/nim-lang/db_connector/issues/19
   # Without this, Pothole is potentially susceptible to a 
   # security vulnerability
   # TODO: Fix the issue linked here in nim_lang/db_connector
   # so everyone can enjoy safe database quoting
-  result.exec(sql"SET standard_conforming_strings = on;")
+  result.exec(sql"SET standard_conforming_strings = on;") 
 
   # Here we create the structures.
   for i in databaseTables:
