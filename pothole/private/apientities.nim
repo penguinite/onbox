@@ -335,6 +335,16 @@ proc status*(id: string, user_id = ""): JsonNode =
   configPool.withConnection config:
     realurl = "http://" & config.getString("instance","uri") & config.getString("instance", "endpoint")
 
+  case post.level:
+  of Public:
+    result["visibility"] = newJString("public")
+  of Unlisted:
+    result["visibility"] = newJString("unlisted")
+  of FollowersOnly:
+    # Confusingly, what MastoAPI calls "private" is called followersonly here.
+    result["visibility"] = newJString("private")
+  of Private:
+    result["visibility"] = newJString("direct")
 
   result = %*{
     "id": post.id,
@@ -344,7 +354,6 @@ proc status*(id: string, user_id = ""): JsonNode =
     "replies_count": replynum,
     "reblogs_count": boostsnum,
     "favourites_count": reactionnums,
-    "visibility": toAPIString(post.level),
     # TODO: Implement the following:
     "sensitive": false,
     "spoiler_text": "",

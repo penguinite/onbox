@@ -1,6 +1,8 @@
 # Note: MRF Policies are considered to be under the AGPL since they do rely on pothole's source code.
 # So make sure to release your MRF policies under the same license.
 
+## TODO: This won't compile with the new Post object model
+## It should be easy to fix though, I just have more important things to do.
 
 {.push cdecl, dynlib, exportc.}
 

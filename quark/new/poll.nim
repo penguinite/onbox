@@ -1,0 +1,7 @@
+const pollAnswersCols* = @[
+  ""
+]
+
+const pollCols* = @[
+  ""
+]

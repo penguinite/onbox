@@ -16,10 +16,16 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # quark/strextra.nim:
-## This module provides complementary string handling functions
-## and it also provides faster alternatives to the ones in std/strutils
+## This module provides complementary string handling functions,
+## such as functions for converting various datatypes to and from
+## strings (for, say, database-compatability) or it might provide
+## some new functionality not in std/strutils but too useless by itself
+## to justify a new module.
+## 
+## Also, it has some slightly faster alternatives to the proc's in std/strutils
 
 from std/strutils import Whitespace, `%`, toLowerAscii, startsWith
+import quark/new/shared
 
 func isEmptyOrWhitespace*(str: string, charset: set[char] = Whitespace): bool =
   ## A faster implementation of strutils.isEmptyOrWhitespace
@@ -38,7 +44,7 @@ func isEmptyOrWhitespace*(ch: char, charset: set[char] = Whitespace): bool =
 
 func parseBool*(str: string): bool = 
   ## I'll have to add this because strutils.parseBool() does not have "t" and "f"
-  ## And I think the reason for this inclusion was that db_postgres or something db-related was return "t" and "f" for booleans.
+  ## And I think the reason for this inclusion was that db_postgres or something db-related was returning "t" and "f" for booleans.
   ## And since parseBool() did not support this, it was messing up the entire database logic of pothole.
   ## TODO: Submit a PR to nim upstream to add "t" and "f" in parseBool()
   case str.toLowerAscii():
@@ -169,3 +175,73 @@ proc htmlEscape*(pre_s: string): string =
       result.add("&gt;")
     else:
       result.add(ch)
+
+## This next section provides the database compatability procedures
+## That were briefly mentioned in the documentation for this module
+## 
+## The only reason they weren't higher up is because I think they're
+## boring and repetitive for the most part.
+
+proc toDbString*(pt: PostContentType): string =
+  ## Converts a post content type into a database-compatible string
+  return $(pt)
+
+proc toDbString*(sequence: seq[string]): string =
+  ## Converts a string sequence into a database-compatible string
+  for item in sequence:
+    result.add(escapeCommas(item) & ",")
+  if len(result) != 0:
+    result = result[0..^2]
+  return result
+
+proc toDbString*(pl: PostPrivacyLevel): string =
+  ## Converts a post privacy level into a database-compatible string
+  case pl:
+  of Public: return "0"
+  of Unlisted: return "1"
+  of FollowersOnly: return "2"
+  of Private: return "3"
+
+proc toDbString*(date: DateTime): string = 
+  ## Converts a date into a database-compatible string
+  try:
+    return format(date, "yyyy-MM-dd HH:mm:ss")
+  except:
+    return now().format("yyyy-MM-dd HH:mm:ss")
+
+proc toDateFromDb*(row: string): DateTime =
+  ## Creates a date out of a database row
+  try:
+    return parse(str, "yyyy-MM-dd HH:mm:ss", utc())
+  except:
+    return now()
+
+proc toPrivacyLevelFromDb*(row: string): PostPrivacyLevel =
+  ## Creats a post privacy level object out of a database row
+  case row:
+  of "0": return Public
+  of "1": return Unlisted
+  of "2": return FollowersOnly
+  of "3": return Private
+  else:
+    return Public
+
+proc toSeqFromDb*(row: string): seq[string] =
+  ## Creates a sequence containing strings from a database row
+  result = split(row[i], ",")
+
+  # the split() proc sometimes creates items in the sequence
+  # even when there isn't. So this bit of code manually
+  # clears the list if two specific conditions are met.
+  if len(result) == 1 and result[0] == "":
+    result = @[]
+
+proc toContentTypeFromDb*(row: string): PostContentType =
+  ## A procedure to convert a string (fetched from the Db)
+  ## to a PostContentType
+  case row:
+  of "0": return Text
+  of "1": return Poll
+  of "2": return Media
+  of "3": return Card
+  else: return Unknown
