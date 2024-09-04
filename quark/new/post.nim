@@ -22,6 +22,9 @@
 ## and so forth.
 
 import quark/new/[strextra, shared]
+import quark/private/macros
+import std/[tables, times]
+from std/strutils import split
 import db_connector/db_postgres
 
 const postsContentCols* = @[
@@ -90,4 +93,42 @@ const postsCols* = @[
 # Create new one
 #
 
-proc constructPost*(row: )
+proc constructPost*(db: DbConn, row: Row): Post =
+  ## Converts a post minimally.
+  ## This means no reactions list, no boost list
+  ## and no post content.
+  ## 
+  ## If you need those bits of data then use constructPostFull()
+  
+  var i: int = -1;
+
+  for key,value in result.fieldPairs:
+    # Block reactions and boosts from being parsed by
+    # this rudimentary code.
+    when result.get(key) isnot Table[string, seq[string]]:
+      inc(i)
+    # If its string, add it surrounding quotes
+    # Otherwise add it whole
+    when result.get(key) is bool:
+      result.get(key) = parseBool(row[i])
+    when result.get(key) is string:
+      result.get(key) = row[i]
+    when result.get(key) is seq[string]:
+      result.get(key) = split(row[i], ",")
+
+      # the split() proc sometimes creates items in the sequence
+      # even when there isn't. So this bit of code manually
+      # clears the list if two specific conditions are met.
+      if len(result.get(key)) == 1 and result.get(key)[0] == "":
+        result.get(key) = @[]
+    when result.get(key) is DateTime:
+      result.get(key) = toDateFromDb(row[i])
+    when result.get(key) is PostPrivacyLevel:
+      result.get(key) = toPrivacyLevelFromDb(row[i])
+  return result
+
+proc constructPostFull*(db: DbConn, row: Row): Post =
+  result = db.constructPost(row)
+  #result.reactions = db.getReactions(result.id)
+  #result.boosts = db.getBoosts(result.id)
+

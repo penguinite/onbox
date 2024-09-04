@@ -23,8 +23,8 @@
 ## to justify a new module.
 ## 
 ## Also, it has some slightly faster alternatives to the proc's in std/strutils
-
-from std/strutils import Whitespace, `%`, toLowerAscii, startsWith
+import std/times
+from std/strutils import Whitespace, `%`, toLowerAscii, startsWith, split
 import quark/new/shared
 
 func isEmptyOrWhitespace*(str: string, charset: set[char] = Whitespace): bool =
@@ -212,7 +212,7 @@ proc toDbString*(date: DateTime): string =
 proc toDateFromDb*(row: string): DateTime =
   ## Creates a date out of a database row
   try:
-    return parse(str, "yyyy-MM-dd HH:mm:ss", utc())
+    return parse(row, "yyyy-MM-dd HH:mm:ss", utc())
   except:
     return now()
 
@@ -228,7 +228,7 @@ proc toPrivacyLevelFromDb*(row: string): PostPrivacyLevel =
 
 proc toSeqFromDb*(row: string): seq[string] =
   ## Creates a sequence containing strings from a database row
-  result = split(row[i], ",")
+  result = split(row, ",")
 
   # the split() proc sometimes creates items in the sequence
   # even when there isn't. So this bit of code manually
