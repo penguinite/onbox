@@ -245,3 +245,21 @@ proc toContentTypeFromDb*(row: string): PostContentType =
   of "2": return Media
   of "3": return Card
   else: return Unknown
+
+proc toKdfFromDb*(num: string): KDF =
+  ## Converts a string to a KDF object.
+  ## You can use this instead of IntToKDF for when you are dealing with database rows.
+  ## (Which, in db_postgres, consist of seq[string])
+  case num:
+  of "1": return PBKDF_HMAC_SHA512
+
+proc toDbString*(kdf: KDF): string = 
+  ## Converts a KDF object into a string.
+  ## You could use to save nanoseconds when dealing with database logic.
+  ## Honestly though, it might be too much. Even for me.
+  return $(kdf)
+
+proc toHumanString*(kdf: KDF): string =
+  ## Converts a KDF into a human-readable string.
+  case kdf:
+  of PBKDF_HMAC_SHA512: return "PBKDF_HMAC_SHA512 (210000 iterations, 32 outlength)"
