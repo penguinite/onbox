@@ -86,7 +86,6 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   ## We will fill out some basic details, like if you supply a password, name
   
   # First off let's do the things that are least likely to create an error in any way possible.
-  result = User()
   result.id = randstr()
   
   result.salt = ""
@@ -106,7 +105,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   # Sanitize handle before using it
   let newhandle = sanitizeHandle(handle)
   if newhandle.isEmptyOrWhitespace():
-    return # We can't use the error template for some reason.
+    return User() # We can't use the error template for some reason.
   result.handle = newhandle
     
   # Use handle as name
@@ -140,12 +139,6 @@ func fromUserType*(t: UserType): string =
 
 func `$`*(t: UserType): string =
   return fromUserType(t)
-
-proc isBot*(k: UserType): bool = 
-  return k == Application
-
-proc isGroup*(k: UserType): bool = 
-  return k == Group
 
 func `$`*(obj: User): string =
   ## Turns a User object into a human-readable string

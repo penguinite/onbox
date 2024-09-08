@@ -88,27 +88,28 @@ const postsCols* = @[
 # Create a new "post content" row in the db and set it accordingly.
 # Update any other attributes accordingly (For example, the client, the modified bool, the recipients, the level)
 # 
-# Game plan when post is edited (For non-historical types, such as polls):
+# Game plan when post is edited (For non-archived types of content, such as polls):
 # Remove existing content row
 # Create new one
-#
+# 
+# 
 
 proc constructPost*(db: DbConn, row: Row): Post =
   ## Converts a post minimally.
   ## This means no reactions list, no boost list
   ## and no post content.
   ## 
-  ## If you need those bits of data then use constructPostFull()
+  ## If you need all those bits of data then use constructPostFull() instead.
+  ## 
+  ## If you need *just* the post and its content then use constructPostSemi() instead.
   
   var i: int = -1;
 
   for key,value in result.fieldPairs:
-    # Block reactions and boosts from being parsed by
-    # this rudimentary code.
-    when result.get(key) isnot Table[string, seq[string]]:
+    # Skip the fields that are processed by *other* bits of code.
+    when result.get(key) isnot Table[string, seq[string]] and result.get(key) isnot seq[PostContent]:
       inc(i)
-    # If its string, add it surrounding quotes
-    # Otherwise add it whole
+
     when result.get(key) is bool:
       result.get(key) = parseBool(row[i])
     when result.get(key) is string:
@@ -127,8 +128,14 @@ proc constructPost*(db: DbConn, row: Row): Post =
       result.get(key) = toPrivacyLevelFromDb(row[i])
   return result
 
-proc constructPostFull*(db: DbConn, row: Row): Post =
+proc constructPostSemi*(db:DbConn, row: Row): Post =
   result = db.constructPost(row)
+  return result
+
+
+proc constructPostFull*(db: DbConn, row: Row): Post =
+  result = db.constructPostSemi(row)
   #result.reactions = db.getReactions(result.id)
   #result.boosts = db.getBoosts(result.id)
+  return result
 

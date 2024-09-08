@@ -20,9 +20,7 @@
 ## Database-related procedures are in db.nim
 
 # From somewhere in Quark
-import quark/new/[shared, strextra]
-import quark/crypto
-export KDF, KDFToInt, IntToKDF, StringToKDF
+import quark/new/[shared, strextra, crypto]
 
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
@@ -49,9 +47,7 @@ func sanitizeHandle*(handle: string, charset: set[char] = safeHandleChars): stri
   if handle.isEmptyOrWhitespace():
     return "" 
 
-  var oldhandle = toLowerAscii(handle)
-  result = ""
-  for ch in oldhandle:
+  for ch in toLowerAscii(handle):
     if ch in charset:
       result.add(ch)
 
@@ -62,7 +58,6 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   ## We will fill out some basic details, like if you supply a password, name
   
   # First off let's do the things that are least likely to create an error in any way possible.
-  result = User()
   result.id = randstr()
   
   result.salt = ""
@@ -82,7 +77,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   # Sanitize handle before using it
   let newhandle = sanitizeHandle(handle)
   if newhandle.isEmptyOrWhitespace():
-    return # We can't use the error template for some reason.
+    return User() # We can't use the error template for some reason.
   result.handle = newhandle
     
   # Use handle as name
@@ -93,39 +88,4 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
     result.password = hash(password, result.salt)  
 
   # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)
-  return result
-  
-func toUserType*(s: string): UserType =
-  ## Converts a plain string into a UserType
-  case s:
-  of "Person": return Person
-  of "Application": return Application
-  of "Organization": return Organization
-  of "Group": return Group
-  of "Service": return Service
-  else: return Person
-
-func fromUserType*(t: UserType): string =
-  ## Converts a UserType to string.
-  result = case t:
-    of Person: "Person"
-    of Application: "Application"
-    of Organization: "Organization"
-    of Group: "Group"
-    of Service: "Service"
-
-func `$`*(t: UserType): string =
-  return fromUserType(t)
-
-proc isBot*(k: UserType): bool = 
-  return k == Application
-
-proc isGroup*(k: UserType): bool = 
-  return k == Group
-
-func `$`*(obj: User): string =
-  ## Turns a User object into a human-readable string
-  for key,val in obj.fieldPairs:
-    result.add(key & ": \"" & $val & "\" \n")
-  result = result[0 .. len(result) - 2]
   return result

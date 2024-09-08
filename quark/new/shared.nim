@@ -10,6 +10,7 @@ type
   PostContent* = object of RootObj
     case kind*: PostContentType
     of Text:
+      published*: DateTime # The timestamp of when then Post was last edited
       text*: string # The text
     of Poll:
       id*: string # The poll ID
@@ -21,8 +22,7 @@ type
     else:
       discard
 
-  PostRevision* = object of PostContent
-    published*: DateTime # The timestamp of when then Post was last edited
+     
 
   Post* = object
     id*: string # A unique id.

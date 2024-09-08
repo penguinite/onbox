@@ -75,8 +75,8 @@ proc account*(user_id: string): JsonNode =
     "acct": user.handle,
     "display_name": user.name,
     "locked": user.is_frozen,
-    "bot": isBot(user.kind),
-    "group": isGroup(user.kind),
+    "bot": user.kind == Application,
+    "group": user.kind == Group,
     "discoverable": user.discoverable,
     "created_at": "", # TODO: Implement
     "note": user.bio,

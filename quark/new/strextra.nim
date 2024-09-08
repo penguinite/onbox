@@ -263,3 +263,24 @@ proc toHumanString*(kdf: KDF): string =
   ## Converts a KDF into a human-readable string.
   case kdf:
   of PBKDF_HMAC_SHA512: return "PBKDF_HMAC_SHA512 (210000 iterations, 32 outlength)"
+
+func toUserType*(s: string): UserType =
+  ## Converts a plain string into a UserType
+  case s:
+  of "Person": return Person
+  of "Application": return Application
+  of "Organization": return Organization
+  of "Group": return Group
+  of "Service": return Service
+  else: return Person
+
+func toString*(t: UserType): string =
+  result = case t:
+    of Person: "Person"
+    of Application: "Application"
+    of Organization: "Organization"
+    of Group: "Group"
+    of Service: "Service"
+
+func `$`*(t: UserType): string =
+  return toString(t)
