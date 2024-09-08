@@ -26,7 +26,6 @@ import quark/[post, strextra]
 import pothole/[database,lib,conf]
 
 # From standard libraries
-from std/tables import Table
 import std/strutils except isEmptyOrWhitespace, parseBool
 
 proc post_new*(data: seq[string], mentioned = "", replyto = "", date = "", config = "pothole.conf"): int =

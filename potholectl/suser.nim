@@ -19,9 +19,6 @@
 ## This simply parses the subsystem & command (and maybe arguments)
 ## and it calls the appropriate function from potholepkg/database.nim and potholepkg/user.nim
 
-# From somewhere in Potholectl
-import shared
-
 # From somewhere in Quark
 import quark/[database, user, strextra, crypto]
 
@@ -29,7 +26,6 @@ import quark/[database, user, strextra, crypto]
 import pothole/[database,lib,conf]
 
 # From standard libraries
-from std/tables import Table
 import std/strutils except isEmptyOrWhitespace, parseBool
 
 proc user_new*(args: seq[string], admin = false, moderator = false, require_approval = false, display = "Default Name", bio = "", config = "pothole.conf"): int =
