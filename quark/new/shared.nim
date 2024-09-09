@@ -14,15 +14,14 @@ type
       text*: string # The text
     of Poll:
       id*: string # The poll ID
-      question*: string # The question that was asked for the poll
       options*: Table[string, seq[string]] # Key: Option, Val: List of users who voted for that option
       total_votes*: int # Total number of votes
+      multi_choice*: bool # If the poll is a multi-choice poll or not.
+      expiration*: DateTime # How long until the poll is dead and no one can post in it.
     of Media:
       media_id*: string
     else:
       discard
-
-     
 
   Post* = object
     id*: string # A unique id.
