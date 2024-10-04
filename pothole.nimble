@@ -6,7 +6,6 @@ description   = "A lightweight and efficient microblogging server."
 license       = "AGPL-3.0-or-later"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
-installDirs   = @["quark"]
 backend       = "c"
 
 ## The following options are required
