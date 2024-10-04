@@ -4,28 +4,30 @@ TODO: Migrate information from the site over here
 
 ## Subprojects
 
-Despite what it looks like, pothole isn't *just* one project. It's more like three different projects stored in a single repository.
+Despite what it looks like, pothole doesn't just consist of *one* component. It's more like three different components in a single repository.
 Why store it all in one? Well for one, it makes it easy to contribute, instead of having to coordinate a change in 3 different repositories, we only have to coordinate it in a single one.
 
-In the future though, it might be worth it to split this into three different repositories.
+The primary reason though is for testing purposes. Splitting Pothole into three components makes it easier to test each one, fx. testing the database logic is different from testing the API.
 
-Here is a list of the different "projects" going on in this repository
+So, to help you out, here is a list of the different "projects" going on in this repository
 
 ### Pothole
 
 This is what you would run on a server to turn it into a social media site. The source for it is stored in `pothole.nim` and any extra modules are stored in the `pothole/` folder.
 
+In terms of code, it mostly contains the code for the web routes and API entities, there's not much else.
+
 ### Potholectl
 
 Potholectl is a program designed to make maintaining Pothole servers easy and efficient. The source for it is stored in `potholectl.nim` and any extra modules (for extra functionalities, subsystems and help prompts) are stored in the `potholectl/` folder.
 
+In the past, it used an archaic and cursed system for parsing commands. Now it uses cligen, so, contributing should be as simple as making a procedure and dispatching it.
+
 ### Quark
 
-Quark is, at its most basic level, a framework for storing, retrieving and processing Users, Posts and Activities. Unlike the other two projects, it's not a binary, it's a library and so the source code for it is stored in the `quark/` folder.
+Quark is, at its most basic level, a framework for storing, retrieving and processing data. Unlike the other two projects, it's not a binary, it's a library and so the source code for it is stored in the `quark/` folder. Quark contains functions for lots of Pothole-specific functionality (such as for dealing with session tokens, oauth) as well as general-purpose users, posts and activities.
 
-In general, we try to make Quark as independent as possible. Since the split, nearly all Pothole-specific functionality has been moved into pothole or potholectl. This does mean you can use Quark to build your own social media server if you'd like, but the documentation for Quark is practically non-existent. This is something I hope to address in the future.
-
-In its current state, Quark incorporates **a lot** of Pothole-specific features such as apps, oauth tokens, session and so on. In the future, Quark will be re-written to *only* contain processing code for Users, Activities and Posts. I just need to figure out a way to extend the database layer on another project without a lot of complexity. (And I also need to read through Quark's code as it has accumulated a lot of strange and confusing stuff.
+If you wanted to make your own Pothole-based server, you could use Quark as a base but the issue is that the documentation is crappy, I hope to fix this issue in the future but I don't have time for it.
 
 ## Style guide
 
