@@ -4,6 +4,7 @@ version       = "0.0.2"
 author        = "penguinite"
 description   = "A lightweight and efficient microblogging server."
 license       = "AGPL-3.0-or-later"
+srcDir        = "src"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
 backend       = "c"
@@ -15,13 +16,14 @@ switch("mm", "orc") # Required by mummy
 switch("d", "useMalloc") # Required for fixing memory leak, git blame and see commit msg.
 switch("threads","on") # Required by mummy
 
-task clean, "Removes build folders if it exists":
-  if dirExists(binDir):
-    rmdir(binDir)
+after clean:
   if dirExists("static/"):
     rmdir("static/")
   if dirExists("uploads/"):
     rmdir("uploads/")
+  if dirExists(binDir):
+    rmdir(binDir)
+
 
 from std/os import commandLineParams
 task ctl, "Shorthand for nimble run potholectl":
