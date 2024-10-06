@@ -18,12 +18,12 @@
 # quark/db/posts.nim:
 ## This module contains all database logic for handling posts.
 
-# From somewhere in Quark
-import ../[post, strextra]
-import reactions, boosts, users
-import ../private/[database, macros]
+# From Quark
+import quark/[post, strextra]
+import quark/db/[reactions, boosts, users]
+import quark/private/[database, macros]
 
-# From somewhere in the standard library
+# From the standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
 import std/tables
 

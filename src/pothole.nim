@@ -16,7 +16,7 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Quark
-import quark/[database]
+import quark/[all]
 
 # From somewhere in Pothole
 import pothole/[routes, lib, conf, database, assets, api, routeutils]
@@ -34,7 +34,7 @@ echo "Copyright © penguinite <penguinite@tuta.io> 2024."
 echo "Licensed under the GNU Affero General Public License version 3 or later" 
 
 when not defined(useMalloc):
-  {.warning: "Pothole is suspectible to a memory leak, which, for now, can only be fixed by supplying the -d:useMalloc".}
+  {.warning: "Pothole is suspectible to a memory leak, which, for now, can only be fixed by supplying the -d:useMalloc compile-time option".}
   {.warning: "Your build does not supply -d:useMalloc, therefore it is susceptible to a memory leak".}
 
 proc exit() {.noconv.} =

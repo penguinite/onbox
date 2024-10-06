@@ -1,4 +1,5 @@
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
 # 
@@ -14,10 +15,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# crypto.nim: 
+# quark/crypto.nim: 
 ## This module provides password hashing functions, and most importantly, the `KDF` object that is used when processing passwords for users.
 ## 
-## This module also previously provided functions for fetching cryptographically-secure random data such as string, chars and ints but that job has been offloaded to [rng](https://github.com/penguinite/rng.git) in the main Pothole codebase.
+## This module also previously provided functions for fetching cryptographically-secure random data such as string, chars and ints but that job has been outsourced to [rng](https://github.com/penguinite/rng.git) in the main Pothole codebase.
 ## 
 ## To use KDF and the password hashing functions, you simply use the `hash()` function.
 ## If a user requires a specific algorithm then you can provide it in the `algo` parameter
@@ -30,84 +31,21 @@ runnableExamples:
   # This is the default algorithm since May 22 2024.
   let hash1 =  hash(password, salt, PBKDF_HMAC_SHA512)
 
-  # You can also use IntToKDF if the algorithm is too hard to remember.
-  let hash2 = hash(password, salt, IntToKDF(1))
+# From Quark
+import quark/shared
 
+# From the standard library
+import  std/base64
 
-# TODO: Remove this when all references to the deprecated functions are removed in the main Pothole codebase.
-import rng
-export rng
+# From elsewhere
+import nimcrypto, nimcrypto/pbkdf2
 
-# For password hashing
-import nimcrypto
-import nimcrypto/pbkdf2
-from std/base64 import encode
+const latestKdf* = PBKDF_HMAC_SHA512 ## The latest Key Derivation Function supported by this build of pothole, check out the KDF section in the DESIGN.md document for more information.
 
-# Deprecated API:
-proc randomInt*(limit: int = 18): int
-  {.deprecated: "Use rng.randint() directly or a different random number generator".} =
-  return rng.randint(limit)
-
-proc rand*(dig: int = 5): int
-  {.deprecated: "Use rng.rand() directly or a different random number generator".} =
-  return rng.rand(dig)
-
-proc randchar*(): char
-  {.deprecated: "Use rng.randch() directly or a different random number generator".} =
-  return rng.randch()
-
-proc randomString*(limit: int = 16): string 
-  {.deprecated: "Use rng.randstr() directly or a different random number generator".} =
-  return rng.randstr(limit)
-
-
-type
-  KDF* = enum
-    PBKDF_HMAC_SHA512
-
-const kdf* = PBKDF_HMAC_SHA512 ## The latest Key Derivation Function supported by this build of pothole, check out the KDF section in the DESIGN.md document for more information.
-
-proc KDFToInt*(algo: KDF): int =
-  ## Converts a KDF object into a number
-  ## TODO: Maybe merge this with the user.kdf field in the user.nim module???
-  ## It doesn't make sense to keep this here, except to maybe avoid a circular dependency.
-  case algo:
-  of PBKDF_HMAC_SHA512: return 1
-
-proc IntToKDF*(num: int): KDF =
-  case num:
-  of 1: return PBKDF_HMAC_SHA512
-  else: return kdf
-
-proc StringToKDF*(num: string): KDF =
-  ## Converts a string to a KDF object.
-  ## You can use this instead of IntToKDF for when you are dealing with database rows.
-  ## (Which, in db_postgres, consist of seq[string])
-  case num:
-  of "1": return PBKDF_HMAC_SHA512
-  else: return kdf
-
-
-proc KDFToString*(kdf: KDF): string = 
-  ## Converts a KDF object into a string.
-  ## You could use to save nanoseconds when dealing with database logic.
-  ## Honestly though, it might be too much. Even for me.
-  case kdf:
-  of PBKDF_HMAC_SHA512: return "1"
-
-proc KDFToHumanString*(kdf: KDF): string =
-  case kdf:
-  of PBKDF_HMAC_SHA512: return "PBKDF_HMAC_SHA512 (210000 iterations, 32 outlength)"
-
-
-proc `$`*(k: KDF): string = 
-  return KDFToString(k)
-
-proc pbkdf2_hmac_sha512_hash(password, salt:string, iter: int = 210000): string =
+proc pbkdf2_hmac_sha512_hash*(password, salt:string, iter: int = 210000): string =
   ## We use PBKDF2-HMAC-SHA512 by default with 210000 iterations unless specified.
   ## This procedure is a wrapper over nimcrypto's PBKDF2 implementation
-  ## This procedure returns a base64-encoded string. You can specify the safe parameter of 
-  ## encode() with the genSafe parameter
+  ## This procedure returns a base64-encoded string.
   ## kdf ID: 1
   runnableExamples:
     var password = "cannabis abyss"
@@ -123,14 +61,18 @@ proc pbkdf2_hmac_sha512_hash(password, salt:string, iter: int = 210000): string 
     result.add(encode($x, safe = true))
   return result
 
-proc hash*(password, salt: string, algo: KDF = kdf): string =
+proc hash*(password, salt: string, algo: KDF = latestKdf): string =
   ## Hashes a string with a salt with a specific algorithm or the default one.
   runnableExamples:
     var password = "cannabis abyss"
     var salt = "__eat_flaming_death"
-    # Hash the user's password
-    var hashed_password = hash(password, salt, PBKDF_HMAC_SHA512)
-    echo "Magicum"
-    echo hash(password, salt, PBKDF_HMAC_SHA512)
+
+    # Hash the user's password with the default algo.
+    var hashed_password = hash(password, salt)
+    echo hash(hashed_password)
+
+    # Hash the user's password with a specific algo.
+    hashed_password = hash(password, salt, PBKDF_HMAC_SHA512)
+    echo hash(hashed_password)
   case algo:
   of PBKDF_HMAC_SHA512: return pbkdf2_hmac_sha512_hash(password, salt, 210000)

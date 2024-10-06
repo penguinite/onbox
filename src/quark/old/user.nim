@@ -20,7 +20,8 @@
 ## Database-related procedures are in db.nim
 
 # From somewhere in Quark
-import quark/new/[shared, strextra, crypto]
+import crypto, strextra
+export KDF, KDFToInt, IntToKDF, StringToKDF
 
 # From Nim's standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
@@ -41,13 +42,40 @@ const safeHandleChars*: set[char] = {
 # when registering a local user.
 const localInvalidHandle*: set[char] = {'@',':','.'}
 
+# User data type.
+type 
+  # What type of user, this is directly from ActivityStreams.
+  UserType* = enum
+    Person, Application, Organization, Group, Service
+
+  User* = object
+    id*: string # An unique that represents the actual user
+    kind*: UserType # What type of User this is. (Used for outgoing Activities)
+    handle*: string # A string containing the user's actual username 
+    name*: string # A string containing the user's display name
+    local*: bool # A boolean indicating if this user is from this instance 
+    email*: string # A string containing the user's email
+    bio*: string # A string containing the user's biography
+    password*: string # A string to store a hashed + salted password 
+    salt*: string # The actual salt with which to hash the password.
+    kdf*: KDF # Key derivation function version
+    admin*: bool # A boolean indicating if the user is an admin.
+    moderator*: bool # A boolean indicating if the user is a moderator.
+    is_frozen*: bool # A boolean indicating if the user is frozen/banned.
+    is_verified*: bool # A boolean indicating if the user's email has been verified. 
+    is_approved*: bool # A boolean indicating if the user hs been approved by an administrator
+    discoverable*: bool # A boolean indicating if the user is discoverable
+
+
 func sanitizeHandle*(handle: string, charset: set[char] = safeHandleChars): string =
   ## Checks a string against user.unsafeHandleChars
   ## This is mostly used for checking for valid emails and handles.
   if handle.isEmptyOrWhitespace():
     return "" 
 
-  for ch in toLowerAscii(handle):
+  var oldhandle = toLowerAscii(handle)
+  result = ""
+  for ch in oldhandle:
     if ch in charset:
       result.add(ch)
 
@@ -88,4 +116,33 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
     result.password = hash(password, result.salt)  
 
   # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)
+  return result
+  
+func toUserType*(s: string): UserType =
+  ## Converts a plain string into a UserType
+  case s:
+  of "Person": return Person
+  of "Application": return Application
+  of "Organization": return Organization
+  of "Group": return Group
+  of "Service": return Service
+  else: return Person
+
+func fromUserType*(t: UserType): string =
+  ## Converts a UserType to string.
+  result = case t:
+    of Person: "Person"
+    of Application: "Application"
+    of Organization: "Organization"
+    of Group: "Group"
+    of Service: "Service"
+
+func `$`*(t: UserType): string =
+  return fromUserType(t)
+
+func `$`*(obj: User): string =
+  ## Turns a User object into a human-readable string
+  for key,val in obj.fieldPairs:
+    result.add(key & ": \"" & $val & "\" \n")
+  result = result[0 .. len(result) - 2]
   return result

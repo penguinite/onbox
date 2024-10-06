@@ -1,4 +1,4 @@
-# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
 # 
@@ -14,224 +14,300 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# post.nim:
-## This module contains various functions and procedures for handling Post objects.
-## The Post object type has been moved here after commit 9f3077d
-## Database-related procedures are in db.nim
+# quark/new/post.nim:
+## This module contains all the logic for handling posts.
+## 
+## Including basic processing, database storage,
+## database retrieval, modification, deletion and so on
+## and so forth.
 
-# From somewhere in Quark
-import crypto, strextra
+# From Quark
+import quark/[strextra, shared]
+import quark/private/macros
 
-# From Nim's standard library
-import std/strutils except isEmptyOrWhitespace, parseBool
+# From the standard library
 import std/[tables, times]
+from std/strutils import split
 
-# From somewhere else
-from db_connector/db_postgres import dbQuote
-import rng
+# From elsewhere
+import db_connector/db_postgres
 
-export DateTime, parse, format, utc
+export Post, PostPrivacyLevel, PostContent, PostContentType
 
-## TODO: This needs a massive refactoring.
+const postsContentCols* = @[
+  # The post ID
+  "pid TEXT PRIMARY KEY NOT NULL",
+  # The specific kind of content it is
+  "kind smallint NOT NULL DEFAULT 0",
+  # The "id" for the content, if applicable.
+  "cid TEXT",
+  # Some foreign keys for integrity
+  "foreign key (pid) references posts(id)"
+]
 
-# ActivityPub Object/Post
-type
-  PostRevision* = object
-    published*: DateTime # The timestamp of when then Post was last edited
-    content*: string # The content that this specific revision had.
+const postsTextCols* = @[
+  # The post id that the best belongs to
+  "pid TEXT PRIMARY KEY NOT NULL",
+  # The content itself
+  "content TEXT NOT NULL",
+  # The date that content was published
+  "published TIMESTAMP NOT NULL",
+  # Whether or not this is the latest post
+  "latest BOOLEAN NOT NULL DEFAULT TRUE",
+  # Some foreign keys for integrity
+  "foreign key (pid) references posts(id)"
+]
+
+const postsCols* = @[
+  # The Post id
+  "id TEXT PRIMARY KEY NOT NULL", 
+  # A comma-separated list of recipients since postgres arrays are a nightmare.
+  "recipients TEXT",
+  # A string containing the sender's id
+  "sender TEXT NOT NULL", 
+  # A string containing the post that the sender is replying to, if at all.
+  "replyto TEXT DEFAULT ''", 
+  # A timestamp containing the date that the post was originally written (and published)
+  "written TIMESTAMP NOT NULL", 
+  # A boolean indicating whether the post was modified or not.
+  "modified BOOLEAN NOT NULL DEFAULT FALSE", 
+  # A boolean indicating whether the post originated from this server or other servers.
+  "local BOOLEAN NOT NULL", 
+  # The client that sent the post
+  "client TEXT NOT NULL DEFAULT '0'",
+  # The "level" for the post, the level dictates
+  # who is allowed to see the post and whatnot.
+  # such as for example, if it is a direct message.
+  "level smallint NOT NULL DEFAULT 0",
+
+  # Foreign keys for database integrity
+  "foreign key (sender) references users(id)",
+  "foreign key (client) references apps(id)"
+]
+
+# Game plan when inserting a post:
+# Insert the post
+# Insert the post content
+#
+# Game plan when post is edited (text only):
+# Create a new "text content" row in the db
+# Update any other columns accordingly (Setting latest to false)
+# Create a new "post content" row in the db and set it accordingly.
+# Update any other attributes accordingly (For example, the client, the modified bool, the recipients, the level)
+# 
+# Game plan when post is edited (For non-archived types of content, such as polls):
+# Remove existing content row
+# Create new one
+# 
+# 
+
+proc constructPost*(db: DbConn, row: Row): Post =
+  ## Converts a post minimally.
+  ## This means no reactions list, no boost list
+  ## and no post content.
+  ## 
+  ## If you need all those bits of data then use constructPostFull() instead.
+  ## 
+  ## If you need *just* the post and its content then use constructPostSemi() instead.
   
-  PostPrivacyLevel* = enum
-    Public, Unlisted, FollowersOnly, Private
+  var i: int = -1;
 
-  PostActivityType* = enum
-    Poll, Media, Card
+  for key,value in result.fieldPairs:
+    # Skip the fields that are processed by *other* bits of code.
+    when result.get(key) isnot Table[string, seq[string]] and result.get(key) isnot seq[PostContent]:
+      inc(i)
 
-  ## See the "Post activities" section in DESIGN.md
-  ## The explanation is too long to put it here, in code.
-  PostActivity* = object
-    case kind*: PostActivityType
-    of Poll:
-      id: string # The poll ID
-      question: string # The question that was asked for the poll
-      options: Table[string, seq[string]] # Key: Option, Val: List of users who voted for that option
-      total_votes: int # Total number of votes
-    of Media:
-      media_id: string
-    else:
-      discard
+    when result.get(key) is bool:
+      result.get(key) = parseBool(row[i])
+    when result.get(key) is string:
+      result.get(key) = row[i]
+    when result.get(key) is seq[string]:
+      result.get(key) = split(row[i], ",")
 
-  Post* = object
-    id*: string # A unique id.
-    recipients*: seq[string] # A sequence of recipient's handles.
-    sender*: string # Basically, the person sending the message (Or more specifically, their ID.)
-    replyto*: string # Resource/Post person was replying to,  
-    content*: string # The actual content of the post
-    written*: DateTime # A timestamp of when the Post was created
-    modified*: bool # A boolean indicating whether the Post was edited or not.
-    local*:bool # A boolean indicating whether or not the post came from the local server or external servers
-    client*: string # A string containing the client id used for writing this post.
-    level*: PostPrivacyLevel # The privacy level of the post
-    reactions*: Table[string, seq[string]] # A sequence of reactions this post has.
-    boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post. (Along with what level)
-    revisions*: seq[PostRevision] # A sequence of past revisions, this is basically copies of post.content
-    extras*: seq[PostActivity] # A sequence of activities (polls, media, cards and whatnot) that this post has. (Not to be confused with likes, reactions or boosts)
+      # the split() proc sometimes creates items in the sequence
+      # even when there isn't. So this bit of code manually
+      # clears the list if two specific conditions are met.
+      if len(result.get(key)) == 1 and result.get(key)[0] == "":
+        result.get(key) = @[]
+    when result.get(key) is DateTime:
+      result.get(key) = toDateFromDb(row[i])
+    when result.get(key) is PostPrivacyLevel:
+      result.get(key) = toPrivacyLevelFromDb(row[i])
+  return result
 
-proc newPost*(
-    sender, content: string,
-    replyto: string = "",
-    recipients: seq[string] = @[],
-    local: bool = false,
-    written: DateTime = now().utc
-  ): Post =
+proc constructPostSemi*(db:DbConn, row: Row): Post =
+  result = db.constructPost(row)
+  return result
 
-  if isEmptyOrWhitespace(sender):
-    raise newException(ValueError, "Post is missing sender field.")
 
-  if isEmptyOrWhitespace(content):
-    raise newException(ValueError, "Post is missing content field.")
+proc constructPostFull*(db: DbConn, row: Row): Post =
+  result = db.constructPostSemi(row)
+  #result.reactions = db.getReactions(result.id)
+  #result.boosts = db.getBoosts(result.id)
+  return result
 
-  # Generate post id
-  result.id = randstr(32)
+
+proc addPost*(db: DbConn, post: Post) =
+  ## A function add a post into the database
+  ## This function uses parameterized substitution
+  ## So escaping objects before sending them here is not a requirement.
   
-  # Just do this stuff...
-  result.sender = sender
-  result.recipients = recipients
-  result.local = local
-  result.modified = false
-  result.content = content
-  result.replyto = replyto
-  result.written = written
-  result.revisions = @[]
-  result.level = Public
-  result.client = "0"
+  let testStatement = sql"SELECT local FROM posts WHERE id = ?;"
 
-  return result
+  if db.getRow(testStatement, post.id).has():
+    return # Someone has tried to add a post twice. We just won't add it.
 
-func `$`*(obj: Post): string =
-  ## Turns a Post object into a human-readable string
-  result.add("[")
-  for key,val in obj.fieldPairs:
-    result.add("\"" & key & "\": \"" & $val & "\",")
-  result = result[0 .. len(result) - 2]
-  result.add("]")
+  # TODO: Add support for post revisions
+  # TODO: Add support for post "activities"
+    
+  # TODO: Automate this some day.
+  # I believe we can use a template or a macro to automate inserting this stuff in.
+  let statement = sql"INSERT INTO posts (id,recipients,sender,replyto,content,written,modified,local,client,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+  db.exec(
+    statement,
+    post.id,
+    toString(post.recipients),
+    post.sender,
+    post.replyto,
+    post.content,
+    toDbString(post.written),
+    post.modified,
+    post.local,
+    post.client,
+    toString(post.level)
+  )
 
-proc escapeCommas*(str: string): string = 
-  ## A proc that escapes away commas only.
-  ## Use toString, toSeq or whatever else you need.
-  ## This is a bit low-level
-  if isEmptyOrWhitespace(str): return str
-  for ch in str:
-    # Comma handling
-    case ch:
-    of ',': result.add("\\,")
-    else: result.add(ch)
-  return result
+proc postIdExists*(db: DbConn, id: string): bool =
+  ## A function to see if a post id exists in the database
+  ## The id supplied can be plain and un-escaped. It will be escaped and sanitized here.
+  return has(db.getRow(sql"SELECT local FROM posts WHERE id = ?;", id))
 
-proc toDbString*(items: seq[string]): string =
-  result = "ARRAY["
-  for item in items:
-    result.add(item.dbQuote())
-    result.add(",")
-  result = result[0..^2]
-  result.add("]")
-  return result
+proc updatePost*(db: DbConn, id, column, value: string) =
+  ## A procedure to update a post using it's ID.
+  ## Like with the updateUserByHandle and updateUserById procedures,
+  ## the value parameter should be heavily sanitized and escaped to prevent a class of awful security holes.
+  ## The id can be passed plain, it will be escaped.
+  db.exec(sql("UPDATE posts SET " & column & " = ? WHERE id = ?;"), value, id)
 
-proc fromDbToSeq*(str: string): seq[string] =
-  return
-  
-proc unescapeCommas*(str: string): seq[string] =
-  ## A proc that unescapes commas only.
-  var
-    tmp = ""
-    backslash = false
-  for ch in str:
-    case ch:
-    of '\\':
-      if backslash:
-        tmp.add(ch)
-      else:
-        backslash = true
-    of ',':
-      if backslash:
-        tmp.add(",")
-        backslash = false
-      else:
-        result.add(tmp)
-        tmp = ""
-    else:
-      if backslash:
-        tmp.add("\\")
-        backslash = false
-      tmp.add(ch)
+proc getPost*(db: DbConn, id: string): Post =
+  ## A procedure to get a post object using it's ID.
+  ## The id can be passed plain, it will be escaped.
+  ## The output will be an unescaped
+  let post = db.getRow(sql"SELECT * FROM posts WHERE id = ?;", id)
+  if not post.has():
+    raise newException(DbError, "Couldn't find post with id \"" & id & "\"")
+  return db.constructPostFromRow(post)
 
-  if len(tmp) > 0:
-    result.add(tmp)
-    tmp = ""
-  
-  return result
-
-proc toString*(sequence: seq[string]): string =
-  for item in sequence:
-    result.add(escapeCommas(item) & ",")
-  if len(result) != 0:
-    result = result[0..^2]
-  return result
-
-proc toSeq*(str: string): seq[string] =
-  return unescapeCommas(str)
-
-proc toDbString*(date: DateTime): string = 
-  try:
-    return format(date, "yyyy-MM-dd HH:mm:ss")
-  except:
-    return now().format("yyyy-MM-dd HH:mm:ss")
-
-proc toDateFromDb*(str: string): DateTime =
-  try:
-    return parse(str, "yyyy-MM-dd HH:mm:ss", utc())
-  except:
-    return now()
-
-proc formatDate*(dt: DateTime): string =
-  try:
-    dt.format("MMM d, YYYY HH:mm")
-  except:
-    return now().format("MMM d, YYYY HH:mm")
-
-proc toString*(revisions: seq[PostRevision]): string =
-  discard # TODO
-
-proc toPostRevisionsSeq*(str: string): seq[PostRevision] =
-  discard # TODO
-
-proc toString*(lvl: PostPrivacyLevel): string =
-  case lvl:
-  of Public: return "0"
-  of Unlisted: return "1"
-  of FollowersOnly: return "2"
-  of Private: return "3"
-
-proc toAPIString*(lvl: PostPrivacyLevel): string =
-  case lvl:
-  of Public: return "public"
-  of Unlisted: return "unlisted"
-  of FollowersOnly: return "private" # Confusingly, what MastoAPI calls "private" is called followersonly here.
-  of Private: return "direct"
-
-proc toPostPrivacyLevel*(lvl: string): PostPrivacyLevel =
-  case lvl:
-  of "0": return Public
-  of "1": return Unlisted
-  of "2": return FollowersOnly
-  of "3": return Private
+proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[string] = 
+  ## A procedure that only fetches the IDs of posts made by a specific user.
+  ## This is used to quickly get a list over every post made by a user, for, say,
+  ## potholectl or a pothole admin frontend.
+  let sqlStatement = sql"SELECT id FROM posts WHERE sender = ?;"
+  if limit != 0:
+    var i = 0;
+    for post in db.getAllRows(sqlStatement, id):
+      inc(i)
+      result.add(post[0])
+      if i > limit:
+        break
   else:
-    return Public
+    for post in db.getAllRows(sqlStatement, id):
+      result.add(post[0])
+  return result
 
-proc toPostPrivacyLevel*(lvl: int): PostPrivacyLevel =
-  case lvl:
-  of 0: return Public
-  of 1: return Unlisted
-  of 2: return FollowersOnly
-  of 3: return Private
+proc getEveryPostByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
+  ## A procedure to get any user's posts using the user's id.
+  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
+  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  ## *Note:* This procedure returns every post, even private ones. For public posts, use getPostByUserId()
+  var sqlStatement = ""
+  if limit != 0:
+    sqlStatement = "SELECT * FROM posts WHERE id = ? LIMIT " & $limit & ";"
   else:
-    return Public
+    sqlStatement = "SELECT * FROM posts WHERE id = ?;"
+  
+  for post in db.getAllRows(sql(sqlStatement), id):
+      result.add(db.constructPostFromRow(post))
+  return result
+
+proc getPostsByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
+  ## A procedure to get any user's posts using the user's id.
+  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
+  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  ## *Note:* This procedure only returns posts that are public. For private posts, use getEveryPostByUserId()
+  var sqlStatement = ""
+  if limit != 0:
+    sqlStatement = "SELECT * FROM posts WHERE sender = ? LIMIT " & $limit & ";"
+  else:
+    sqlStatement = "SELECT * FROM posts WHERE sender = ?;"
+  
+  for post in db.getAllRows(sql(sqlStatement), id):
+    # Check for if post is unlisted or public, only then can we add it into the list.
+    let postObj = db.constructPostFromRow(post)
+    if postObj.level == Public or postObj.level == Unlisted:
+      result.add(postObj)
+
+  return result
+
+proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post] =
+  ## A procedure to get any user's posts using the user's handle
+  ## The handle can be passed plainly, it will be escaped later.
+  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
+  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  return db.getPostsByUserId(db.getIdFromHandle(handle), limit)
+
+proc getPostsByUserIDPaginated*(db: DbConn, id:string, offset: int, limit: int = 15): seq[Post] =
+  ## A procedure to get posts made by a specific user, this procedure is specifically optimized for pagination.
+  ## In that, it supports with offsets, limits and whatnot.
+  ## Since our 
+  return # TODO: Implement
+
+proc getTotalPostsByUserId*(db: DbConn, id: string): int =
+  result = 0
+  for row in db.getAllRows(sql"SELECT local FROM posts WHERE sender = ?;", id):
+    inc(result)
+  return result
+
+
+proc getTotalPosts*(db: DbConn): int =
+  ## A procedure to get the total number of local posts.
+  result = 0
+  for x in db.getAllRows(sql"SELECT local FROM posts WHERE local = true;"):
+    inc(result)
+  return result
+
+proc deletePost*(db: DbConn, id: string) = 
+  db.exec(sql"DELETE FROM posts WHERE id = ?;", id)
+
+proc deletePosts*(db: DbConn, sequence: seq[string]) =
+  for id in sequence:    
+    db.deletePost(id)
+
+proc reassignSenderPost*(db: DbConn, post_id, sender: string) =
+  db.exec(sql"UPDATE posts SET sender = ? WHERE id = ?;", sender, post_id)
+
+proc getNumOfReplies*(db: DbConn, post_id: string): int =
+  for i in db.getAllRows(sql"SELECT id FROM posts WHERE replyto = ?;", post_id):
+    inc(result)
+  return result
+
+proc getPostSender*(db: DbConn, post_id: string): string =
+  return db.getRow(sql"SELECT sender FROM posts WHERE id = ?;", post_id)[0]
+
+proc reassignSenderPosts*(db: DbConn, post_ids: seq[string], sender: string) =
+  for post_id in post_ids:
+    db.reassignSenderPost(post_id, sender)
+
+proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Post] =
+  ## A procedure to get posts from local users only.
+  ## Set limit to 0 to disable the limit and get all posts from local users.
+  let statement = sql"SELECT * FROM posts WHERE local = true;"
+  if limit != 0:
+    for row in db.getAllRows(statement):
+      if len(result) > limit:
+        break
+      result.add(db.constructPostFromRow(row))
+  else:
+    for row in db.getAllRows(statement):
+      result.add(db.constructPostFromRow(row))
+  return result

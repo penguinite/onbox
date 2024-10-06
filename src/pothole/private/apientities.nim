@@ -18,7 +18,7 @@
 
 
 # From somewhere in Quark
-import quark/[user, post, strextra]
+import quark/[user, post, all, strextra]
 
 # From somewhere in Pothole
 import pothole/[conf, database, routeutils, lib, assets]

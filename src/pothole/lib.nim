@@ -25,32 +25,28 @@
 
 # TODO: Remove this module once everything has been properly migrated.
  
-from std/strutils import Whitespace, `%`, toLowerAscii, join
-from std/times import now, utc, format
-import ../quark/[crypto]
-
-const kdf* {.deprecated: "Use quark/crypto.nim:kdf and not lib.kdf".} = crypto.kdf
-
-# A folder to save debugging data to.
+ # A folder to save debugging data to.
 const globalCrashDir* {.strdefine.}: string = "CAR_CRASHED_INTO_POTHOLE!"
 
-# App version
+# App version and other useful data.
 const
-  phVersion* {.strdefine.}: string = "0.0.2" ## This constant allows you to customize the potholepkg version that is reported by default using compile-time-directives. Or else just default to the built-in embedded version. To customize the version, just add the following compile-time build option: `-d:phVersion=whatever`
-  phMastoCompat* {.strdefine.}: string = "latest"
-  phSourceUrl* {.strdefine.}: string = "https://github.com/penguinite/pothole" ## This constant allows you to customize where the source 
+  phVersion* {.strdefine.}: string = "0.0.2" ## To customize the version, compile with the option: `-d:phVersion=whatever`
+  phMastoCompat* {.strdefine.}: string = "wip" ## The level of API compatability, this option doesn't do anything. It's just reported in the API.
+  phSourceUrl* {.strdefine.}: string = "https://github.com/penguinite/pothole" ## To customize the source URL, compile with the option: `-d:phSourceUrl="Link"`
 
-const version*{.deprecated: "Use lib.phVersion instead.".}: string = phVersion ## This is basically just phVersion, but it's copied twice for well, code readability purposes.
-
-when not defined(phNoLog):
+when defined(phNoLog):
+  template log*(msg: varargs[string, `$`]) = return
+  template error*(msg: varargs[string, `$`]) = quit(1)
+else:
+  from std/strutils import Whitespace, `%`, toLowerAscii, join
+  from std/times import now, utc, format
+  
   template log*(str: varargs[string, `$`]) =
     stdout.write("[$#] ($#:$#): $#\n" % [now().utc.format("yyyy-mm-dd hh:mm:ss"), instantiationInfo().filename, $instantiationInfo().line, str.join])
-else:
-  template log*(msg: varargs[string, `$`]) = return
 
-template error*(str: varargs[string, `$`]) =
-  ## Exits the program, writes a stacktrace and thats it.
-  stderr.write("\nPrinting stacktrace...\n")
-  writeStackTrace()  
-  stderr.write("\n!ERROR! [$#] ($#:$#): $#\n" % [now().utc.format("yyyy-mm-dd hh:mm:ss"), instantiationInfo().filename, $instantiationInfo().line, str.join])
-  quit(1)
+  template error*(str: varargs[string, `$`]) =
+    ## Exits the program with an error messages and a stacktrace.
+    stderr.write("\n!ERROR! [$#] ($#:$#): $#\n" % [now().utc.format("yyyy-mm-dd hh:mm:ss"), instantiationInfo().filename, $instantiationInfo().line, str.join])
+    stderr.write("\nPrinting stacktrace...\n")
+    writeStackTrace()  
+    quit(1)
