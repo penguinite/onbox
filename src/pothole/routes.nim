@@ -388,7 +388,8 @@ proc logoutSession*(req: Request) =
       if db.sessionExists(id):
         db.deleteSession(id)
 
-  # Just render homepage. We dont have a dedicated page for this.
+  # Just render homepage with a successful-esque message,
+  # Since we dont have a dedicated page for this kinda thing.
   templatePool.withConnection obj:
     req.respond(
       200, headers,

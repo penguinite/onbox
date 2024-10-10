@@ -93,44 +93,6 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)
   return result
 
-# Store each column like this: {"COLUMN_NAME":"COLUMN_TYPE"}
-# For this module to work, both database schemas and user object definitions must be similar
-const usersCols* = @[
-   # The user ID
-  "id TEXT PRIMARY KEY NOT NULL",
-   # The user type, see UserType object in user.nim
-  "kind TEXT NOT NULL",
-  # The user's actual username (Fx. alice@alice.wonderland)
-  "handle TEXT UNIQUE NOT NULL", 
-  # The user's display name (Fx. Alice)
-  "name TEXT DEFAULT 'New User'", 
-  # A boolean indicating whether the user originates from the local server or another one.
-  "local BOOLEAN NOT NULL", 
-  # The user's email (Empty for remote users)
-  "email TEXT", 
-  # The user's biography 
-  "bio TEXT", 
-  # The user's hashed & salted password (Empty for remote users obv)
-  "password TEXT", 
-  # The user's salt (Empty for remote users obv)
-  "salt TEXT",
-  # The version of the key derivation function. See DESIGN.md's "Key derivation function table" for more.
-  "kdf INTEGER NOT NULL", 
-  # A boolean indicating whether or not this user is an Admin.
-  "admin BOOLEAN NOT NULL DEFAULT FALSE", 
-  # A boolean indicating whether or not this user is a Moderator.
-  "moderator BOOLEAN NOT NULL DEFAULT FALSE", 
-  # A boolean indicating whether or not this user is discoverable in frontends
-  "discoverable BOOLEAN NOT NULL DEFAULT TRUE", 
-  # A boolean indicating whether this user is frozen (Posts from this user will not be stored)
-  "is_frozen BOOLEAN NOT NULL", 
-  # A boolean indicating whether this user's email address has been verified (NOT the same as an approval)
-  "is_verified BOOLEAN NOT NULL", 
-  # A boolean indicating if the user hs been approved by an administrator
-  "is_approved BOOLEAN NOT NULL"
-]
-
-
 proc addUser*(db: DbConn, user: User) = 
   ## Add a user to the database
   ## This procedure expects an escaped user to be handed to it.

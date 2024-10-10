@@ -34,57 +34,6 @@ import db_connector/db_postgres
 
 export Post, PostPrivacyLevel, PostContent, PostContentType
 
-const postsContentCols* = @[
-  # The post ID
-  "pid TEXT PRIMARY KEY NOT NULL",
-  # The specific kind of content it is
-  "kind smallint NOT NULL DEFAULT 0",
-  # The "id" for the content, if applicable.
-  "cid TEXT",
-  # Some foreign keys for integrity
-  "foreign key (pid) references posts(id)"
-]
-
-const postsTextCols* = @[
-  # The post id that the best belongs to
-  "pid TEXT PRIMARY KEY NOT NULL",
-  # The content itself
-  "content TEXT NOT NULL",
-  # The date that content was published
-  "published TIMESTAMP NOT NULL",
-  # Whether or not this is the latest post
-  "latest BOOLEAN NOT NULL DEFAULT TRUE",
-  # Some foreign keys for integrity
-  "foreign key (pid) references posts(id)"
-]
-
-const postsCols* = @[
-  # The Post id
-  "id TEXT PRIMARY KEY NOT NULL", 
-  # A comma-separated list of recipients since postgres arrays are a nightmare.
-  "recipients TEXT",
-  # A string containing the sender's id
-  "sender TEXT NOT NULL", 
-  # A string containing the post that the sender is replying to, if at all.
-  "replyto TEXT DEFAULT ''", 
-  # A timestamp containing the date that the post was originally written (and published)
-  "written TIMESTAMP NOT NULL", 
-  # A boolean indicating whether the post was modified or not.
-  "modified BOOLEAN NOT NULL DEFAULT FALSE", 
-  # A boolean indicating whether the post originated from this server or other servers.
-  "local BOOLEAN NOT NULL", 
-  # The client that sent the post
-  "client TEXT NOT NULL DEFAULT '0'",
-  # The "level" for the post, the level dictates
-  # who is allowed to see the post and whatnot.
-  # such as for example, if it is a direct message.
-  "level smallint NOT NULL DEFAULT 0",
-
-  # Foreign keys for database integrity
-  "foreign key (sender) references users(id)",
-  "foreign key (client) references apps(id)"
-]
-
 # Game plan when inserting a post:
 # Insert the post
 # Insert the post content
