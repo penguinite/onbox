@@ -17,6 +17,9 @@
 # ctl/template.nim:
 ## Operations related to templating.
 
+# From somewhere in Quark
+import quark/db
+
 # From somewhere in Pothole
 import pothole/[conf, database]
 from pothole/routeutils import prepareTable

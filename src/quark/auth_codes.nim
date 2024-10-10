@@ -22,7 +22,7 @@
 
 # From Quark
 import quark/private/database
-import quark/db/[apps, users]
+import quark/[apps, users]
 
 # From somewhere in the standard library
 import std/[strutils]

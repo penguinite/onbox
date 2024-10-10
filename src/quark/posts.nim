@@ -15,54 +15,24 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# quark/db/posts.nim:
-## This module contains all database logic for handling posts.
+# quark/new/post.nim:
+## This module contains all the logic for handling posts.
+## 
+## Including basic processing, database storage,
+## database retrieval, modification, deletion and so on
+## and so forth.
 
 # From Quark
-import quark/[post, strextra]
-import quark/db/[reactions, boosts, users]
-import quark/private/[database, macros]
+import quark/private/[macros, database]
+import quark/[strextra, shared, users]
+export shared
 
 # From the standard library
-import std/strutils except isEmptyOrWhitespace, parseBool
-import std/tables
+import std/[tables, times]
+from std/strutils import split
 
-const postsCols* = @[
-  # The Post id
-  "id TEXT PRIMARY KEY NOT NULL", 
-  # A comma-separated list of recipients since sqlite3 does not support arrays by default
-  "recipients TEXT",
-  # A string containing the sender's id
-  "sender TEXT NOT NULL", 
-  # A string containing the post that the sender is replying to, if at all.
-  "replyto TEXT DEFAULT ''", 
-  # A string containing the latest content of the post.
-  "content TEXT NOT NULL DEFAULT ''", 
-  # A timestamp containing the date that the post was written (and published)
-  "written TIMESTAMP NOT NULL", 
-  # A boolean indicating whether the post was modified or not.
-  "modified BOOLEAN NOT NULL DEFAULT FALSE", 
-  # A boolean indicating whether the post originated from this server or other servers.
-  "local BOOLEAN NOT NULL", 
-  #
-  "client TEXT NOT NULL DEFAULT '0'",
-  # The "level" for the post, the level dictates
-  # who is allowed to see the post and whatnot.
-  # such as for example, if it is a direct message.
-  "level smallint NOT NULL DEFAULT 0",
-  "foreign key (client) references apps(id)"
-]
-
-proc constructPostFromRow*(db: DbConn, row: Row): Post =
-  ## A procedure that takes a database Row (From the Posts table)
-  ## And turns it into a Post object ready for display, parsing and so on. (That is to say, the final Post is unescaped and does not need further action.)
-  ## Note: This does not include reactions or boosts. Fill those fields with getReactions() or getBoosts()
-  result = Post()
-  
-  # This looks ugly, I know, I had to wrap it with
-  # two specific functions but we don't have to re-write this
-  # even if we add new things to the User object. EXCEPT!
-  # if we introduce new data types to the User object
+# From elsewhere
+import db_connector/db_postgres, rng
   var i: int = -1;
 
   for key,value in result.fieldPairs:

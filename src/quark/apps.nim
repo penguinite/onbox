@@ -23,7 +23,7 @@
 
 # From Quark
 import quark/private/database
-import quark/post
+import quark/[strextra]
 
 # From somewhere in the standard library
 import std/[strutils, times]

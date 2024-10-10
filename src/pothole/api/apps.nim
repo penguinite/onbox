@@ -16,6 +16,9 @@
 # api/apps.nim:
 ## This module contains all the routes for the apps method in the mastodon api
 
+# From somewhere in Quark
+import quark/[apps, oauth]
+
 # From somewhere in Pothole
 import pothole/[database, routeutils]
 

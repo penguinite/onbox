@@ -21,8 +21,7 @@
 
 # From Quark
 import quark/private/database
-import quark/db/users
-import quark/post
+import quark/[users, strextra]
 
 # From somewhere in the standard library
 import std/[times]

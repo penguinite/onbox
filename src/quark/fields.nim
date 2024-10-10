@@ -24,9 +24,7 @@
 ## Besides, more tables never hurt anyone.
 
 import quark/private/database
-import quark/db/users
-import quark/post
-import quark/strextra
+import quark/[users, strextra]
 
 import std/[times]
 

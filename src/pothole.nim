@@ -16,7 +16,7 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Quark
-import quark/[all]
+import quark/[db]
 
 # From somewhere in Pothole
 import pothole/[routes, lib, conf, database, assets, api, routeutils]

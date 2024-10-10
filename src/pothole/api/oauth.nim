@@ -18,7 +18,7 @@
 
 
 # From somewhere in Quark
-import quark/[strextra]
+import quark/[strextra, apps, oauth, sessions, auth_codes]
 
 # From somewhere in Pothole
 import pothole/[database, routeutils, conf]

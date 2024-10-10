@@ -23,7 +23,7 @@
 import shared
 
 # From somewhere in Quark
-import quark/[crypto, database, strextra]
+import quark/[db, strextra, auth_codes, sessions, oauth, apps, users]
 
 # From somewhere in Pothole
 import pothole/[database, lib, conf]

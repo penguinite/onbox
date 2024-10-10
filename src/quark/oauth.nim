@@ -19,8 +19,7 @@
 ## Such as generating them, deleting them, verifying them and whatnot.
 
 import quark/private/database
-import quark/db/[auth_codes, apps]
-import quark/[post, strextra]
+import quark/[auth_codes, apps, strextra]
 import rng
 
 # From somewhere in the standard library

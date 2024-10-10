@@ -20,7 +20,7 @@
 ## Including creation, retrieval, fetching and whatnot.
 
 # From somewhere in Quark
-import ../private/database
+import quark/private/database
 
 # From somewhere in the standard library
 import std/tables

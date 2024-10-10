@@ -16,7 +16,7 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Quark
-import quark/[user, post, crypto]
+import quark/[users, posts, sessions, crypto]
 
 # From somewhere in Pothole
 import pothole/[conf, assets, database, routeutils, lib]

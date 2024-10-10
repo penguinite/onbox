@@ -18,8 +18,7 @@
 ## This module contains all database logic for handling followers, following and so on.
 
 import quark/private/database
-import quark/db/users
-import quark/user
+import quark/users
 
 proc getFollowersQuick*(db: DbConn, user: string): seq[string] =
   ## Returns a set of handles that follow a specific user

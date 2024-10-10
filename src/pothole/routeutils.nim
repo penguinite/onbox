@@ -14,6 +14,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
+# From Quark
+import quark/users
+
 # From somewhere in Pothole
 import pothole/private/[jsonhelpers, reqhelpers, resphelpers]
 import pothole/[database, conf, lib, assets]

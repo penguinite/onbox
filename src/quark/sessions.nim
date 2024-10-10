@@ -19,9 +19,8 @@
 ## Such as verifying them, creating them and also deleting them
 ## if the user demands it or if they have gone out-of-date.
 
-import ../private/database
-import quark/db/users
-import quark/post
+import quark/[users, strextra]
+import quark/private/database
 import rng
 
 # From somewhere in the standard library

@@ -17,7 +17,7 @@
 ## This module contains all the routes for the accounts method in the mastodon api.
 
 # From somewhere in Quark
-import quark/strextra
+import quark/[strextra, oauth, apps, users, auth_codes]
 
 # From somewhere in Pothole
 import pothole/[routeutils, database, conf]

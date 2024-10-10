@@ -16,6 +16,9 @@
 # api/nodeinfo.nim:
 ## This module contains all the routes that handle stuff related to the nodeinfo standard.
 
+# From somewhere in Quark
+import quark/[users, sessions, posts]
+
 # From somewhere in Pothole
 import pothole/[lib, conf, routeutils, database]
 
@@ -41,7 +44,6 @@ proc resolveNodeinfo*(req: Request) =
 
   
 proc nodeInfo2x0*(req: Request) =
-  
   var totalSessions, totalValidSessions, totalUsers, totalPosts: int
   dbPool.withConnection db:
     totalSessions = db.getTotalSessions()

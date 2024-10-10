@@ -20,7 +20,7 @@
 ## and it calls the appropriate function from potholepkg/database.nim and potholepkg/user.nim
 
 # From somewhere in Quark
-import quark/[post, strextra]
+import quark/[posts, strextra, db, users, shared]
 
 # From somewhere in Pothole
 import pothole/[database,lib,conf]

@@ -22,9 +22,6 @@
 # From somewhere in Quark
 import private/database
 
-# From somewhere in Pothole
-import user
-
 # From somewhere in the standard library
 import std/strutils
 

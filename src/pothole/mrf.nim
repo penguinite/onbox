@@ -1,8 +1,8 @@
 ## A helper module for when you need to create custom MRF policies.
 import std/[tables, dynlib]
 import lib, conf
-import quark/[user, post, activity]
-export lib, conf, user, post, activity, tables
+import quark/[users, posts]
+export lib, conf, users, posts, tables
 
 type
   PostFilterProc* = proc (post: Post, config: ConfigTable): Post {.cdecl, nimcall.}

@@ -21,7 +21,7 @@
 ## Note: *Polls are not a separate object, they're a part of the PostContent object.*
 
 # From Quark
-import quark/[strextra, shared], quark/private/database
+import quark/[strextra], quark/private/database
 
 # From the standard library
 import std/[tables, times]

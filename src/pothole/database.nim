@@ -15,13 +15,9 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # database.nim:
-## Database backend for pothole, this engine is powered via postgres
-## (more specifically, the standard db_connector/db_postgres module)
-## This backend is still not working yet.
-
-# From somewhere in Quark
-import quark/database
-export database
+## Some small functions for working with the database. (Fetch env vars, or data from the config in one go.)
+## 
+## Keep in mind, you will still need to import quark/[WHATEVER FEATURES YOU WANT HERE]
 
 # From somewhere in Pothole
 import conf
