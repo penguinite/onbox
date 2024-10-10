@@ -324,7 +324,7 @@ proc status*(id: string, user_id = ""): JsonNode =
     replyto_sender = ""
 
   dbPool.withConnection db:
-    post = db.getPost(id)
+    post = db.constructPostSemi(db.getPost(id))
     replynum = db.getNumOfReplies(post.id)
     boostsnum = db.getNumOfBoosts(post.id)
     reactionnums = db.getNumOfReactions(post.id)

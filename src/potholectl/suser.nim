@@ -298,7 +298,7 @@ proc hash*(args: seq[string], algo = "", quiet = false): int =
     kdf = crypto.latestKdf
   
   if algo != "":
-    kdf = StringToKDF(algo)
+    kdf = toKdfFromDb(algo)
 
   if len(args) == 2:
     salt = args[1]
@@ -314,7 +314,7 @@ proc hash*(args: seq[string], algo = "", quiet = false): int =
   echo "Hash: \"", hash, "\""
   echo "Salt: \"", salt, "\""
   echo "KDF Id: ", kdf
-  echo "KDF Algorithm: ", KDFToHumanString(kdf)
+  echo "KDF Algorithm: ", toHumanString(kdf)
 
 # TODO: Missing commands:
 #   user_mod: Changes a user's moderator status

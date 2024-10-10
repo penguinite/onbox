@@ -1,4 +1,3 @@
-# Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 # Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
@@ -81,15 +80,22 @@ proc postText*(content: string, date: DateTime = now().utc): PostContent =
   result.published = date
   return result
 
+proc constructPost*(db: DbConn, row: Row): Post =
+  ## Converts a post minimally.
+  ## This means no reactions list, no boost list
+  ## and no post content.
+  ## 
+  ## If you need all those bits of data then use constructPostFull() instead.
+  ## 
+  ## If you need *just* the post and its content then use constructPostSemi() instead.
+  
   var i: int = -1;
 
   for key,value in result.fieldPairs:
-    # Block reactions and boosts from being parsed by
-    # this rudimentary code.
-    when result.get(key) isnot Table[string, seq[string]]:
+    # Skip the fields that are processed by *other* bits of code.
+    when result.get(key) isnot Table[string, seq[string]] and result.get(key) isnot seq[PostContent]:
       inc(i)
-    # If its string, add it surrounding quotes
-    # Otherwise add it whole
+
     when result.get(key) is bool:
       result.get(key) = parseBool(row[i])
     when result.get(key) is string:
@@ -105,11 +111,20 @@ proc postText*(content: string, date: DateTime = now().utc): PostContent =
     when result.get(key) is DateTime:
       result.get(key) = toDateFromDb(row[i])
     when result.get(key) is PostPrivacyLevel:
-      result.get(key) = toPostPrivacyLevel(row[i])
-
-  result.reactions = db.getReactions(result.id)
-  result.boosts = db.getBoosts(result.id)
+      result.get(key) = toPrivacyLevelFromDb(row[i])
   return result
+
+proc constructPostSemi*(db:DbConn, row: Row): Post =
+  result = db.constructPost(row)
+  return result
+
+
+proc constructPostFull*(db: DbConn, row: Row): Post =
+  result = db.constructPostSemi(row)
+  #result.reactions = db.getReactions(result.id)
+  #result.boosts = db.getBoosts(result.id)
+  return result
+
 
 proc addPost*(db: DbConn, post: Post) =
   ## A function add a post into the database
@@ -130,7 +145,7 @@ proc addPost*(db: DbConn, post: Post) =
   db.exec(
     statement,
     post.id,
-    toString(post.recipients),
+    toDbString(post.recipients),
     post.sender,
     post.replyto,
     post.content,
@@ -138,7 +153,7 @@ proc addPost*(db: DbConn, post: Post) =
     post.modified,
     post.local,
     post.client,
-    toString(post.level)
+    toDbString(post.level)
   )
 
 proc postIdExists*(db: DbConn, id: string): bool =
@@ -153,14 +168,15 @@ proc updatePost*(db: DbConn, id, column, value: string) =
   ## The id can be passed plain, it will be escaped.
   db.exec(sql("UPDATE posts SET " & column & " = ? WHERE id = ?;"), value, id)
 
-proc getPost*(db: DbConn, id: string): Post =
-  ## A procedure to get a post object using it's ID.
-  ## The id can be passed plain, it will be escaped.
-  ## The output will be an unescaped
+proc getPost*(db: DbConn, id: string): Row =
+  ## Retrieve a post using an ID.
+  ## 
+  ## You will need to pass this on further to constructPost()
+  ## or it's semi and full variants. As this just returns a database row.
   let post = db.getRow(sql"SELECT * FROM posts WHERE id = ?;", id)
   if not post.has():
     raise newException(DbError, "Couldn't find post with id \"" & id & "\"")
-  return db.constructPostFromRow(post)
+  return post
 
 proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[string] = 
   ## A procedure that only fetches the IDs of posts made by a specific user.
@@ -182,7 +198,7 @@ proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[strin
 proc getEveryPostByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
   ## A procedure to get any user's posts using the user's id.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
-  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  ## All of the posts returned are fully ready for displaying and parsing
   ## *Note:* This procedure returns every post, even private ones. For public posts, use getPostByUserId()
   var sqlStatement = ""
   if limit != 0:
@@ -191,13 +207,13 @@ proc getEveryPostByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
     sqlStatement = "SELECT * FROM posts WHERE id = ?;"
   
   for post in db.getAllRows(sql(sqlStatement), id):
-      result.add(db.constructPostFromRow(post))
+      result.add(db.constructPostFull(post))
   return result
 
 proc getPostsByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
   ## A procedure to get any user's posts using the user's id.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
-  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  ## All of the posts returned are fully ready for displaying and parsing
   ## *Note:* This procedure only returns posts that are public. For private posts, use getEveryPostByUserId()
   var sqlStatement = ""
   if limit != 0:
@@ -207,7 +223,7 @@ proc getPostsByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
   
   for post in db.getAllRows(sql(sqlStatement), id):
     # Check for if post is unlisted or public, only then can we add it into the list.
-    let postObj = db.constructPostFromRow(post)
+    let postObj = db.constructPostFull(post)
     if postObj.level == Public or postObj.level == Unlisted:
       result.add(postObj)
 
@@ -217,7 +233,7 @@ proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post
   ## A procedure to get any user's posts using the user's handle
   ## The handle can be passed plainly, it will be escaped later.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
-  ## All of the posts returned are fully ready for displaying and parsing (They are unescaped.)
+  ## All of the posts returned are fully ready for displaying and parsing
   return db.getPostsByUserId(db.getIdFromHandle(handle), limit)
 
 proc getPostsByUserIDPaginated*(db: DbConn, id:string, offset: int, limit: int = 15): seq[Post] =
@@ -262,16 +278,18 @@ proc reassignSenderPosts*(db: DbConn, post_ids: seq[string], sender: string) =
   for post_id in post_ids:
     db.reassignSenderPost(post_id, sender)
 
-proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Post] =
+proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Row] =
   ## A procedure to get posts from local users only.
   ## Set limit to 0 to disable the limit and get all posts from local users.
-  let statement = sql"SELECT * FROM posts WHERE local = true;"
+  ## 
+  ## This returns seq[Row], so you might want to pass it on to a constructPost() like proc.
+  
+  var sqlStatement: SqlQuery
   if limit != 0:
-    for row in db.getAllRows(statement):
-      if len(result) > limit:
-        break
-      result.add(db.constructPostFromRow(row))
+    sqlStatement = sql("SELECT * FROM posts WHERE local = TRUE LIMIT " & $limit & ";")
   else:
-    for row in db.getAllRows(statement):
-      result.add(db.constructPostFromRow(row))
+    sqlStatement = sql"SELECT * FROM posts WHERE local = TRUE;"
+  
+  for post in db.getAllRows(sqlStatement):
+    result.add(post)
   return result
