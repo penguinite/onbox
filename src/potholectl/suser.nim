@@ -295,7 +295,7 @@ proc hash*(args: seq[string], algo = "", quiet = false): int =
   var
     password = args[0]
     salt = ""
-    kdf = crypto.kdf
+    kdf = crypto.latestKdf
   
   if algo != "":
     kdf = StringToKDF(algo)

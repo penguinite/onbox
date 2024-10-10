@@ -299,11 +299,11 @@ proc signIn*(req: Request) =
 
   # And then, see if we need to update the hash
   # Since we have the password in memory
-  if kdf != crypto.kdf:
-    log "Updating password hash from KDF:", $kdf, " to KDF:", crypto.kdf, " for user \"", id, "\""
+  if kdf != crypto.latestKdf:
+    log "Updating password hash from KDF:", $kdf, " to KDF:", crypto.latestKdf, " for user \"", id, "\""
     var newhash = crypto.hash(
       fm.getFormParam("pass"),
-      salt, crypto.kdf
+      salt, crypto.latestKdf
     )
 
     dbPool.withConnection db:
