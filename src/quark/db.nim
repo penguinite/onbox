@@ -48,7 +48,23 @@ proc setup*(name, user, host, password: string,schemaCheck: bool = true): DbConn
 
   # Open database and execute the initSql commands.
   result = open(host, user, password, name)
-  result.exec(sql(initSql))
+
+  ## TODO: So, I get an error when executing multi-line statements and I don't know why.
+  ## What I decided to do was put every single instruction all on their own separate lines.
+  ## and then make a sort-of mini-parsers.
+  ## 
+  ## The upside is that this works! The downside is that it makes modifying and reading the setup SQL *EXTREMELY* difficult.
+  ## So y'know, figure out a way to do multi-line statements or we will all go insane.
+  var i = 0
+  for line in initSql.splitLines:
+    inc i
+    if line.startsWith("--") or line.isEmptyOrWhitespace():
+      continue # If this is a comment, or if its mostly empty then skip.
+    # Otherwise, execute the line as SQL code.
+    try:
+      result.exec(sql(line))
+    except CatchableError as err:
+      raise newException(DbError, "Line " & $i & " in setup.sql; Couldn't run the init script: " & err.msg)
   return result
 
 proc init*(name, user, host, password: string): DbConn = 
@@ -62,4 +78,13 @@ proc uninit*(db: DbConn): bool =
   db.close()
 
 proc cleanDb*(db: DbConn) =
-  result.exec(sql(purgeSql))
+  var i = 0
+  for line in purgeSql.splitLines:
+    inc i
+    if line.startsWith("--") or line.isEmptyOrWhitespace():
+      continue # If this is a comment, or if its mostly empty then skip.
+    # Otherwise, execute the line as SQL code.
+    try:
+      db.exec(sql(line))
+    except CatchableError as err:
+      raise newException(DbError, "Line " & $i & " in setup.sql; Couldn't run the purge script: " & err.msg)

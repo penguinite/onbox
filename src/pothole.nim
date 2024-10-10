@@ -65,12 +65,15 @@ if not hasDbPass(config):
 log "Opening database at ", config.getDbHost()
 
 # Initialize database
-discard setup(
-  config.getDbName(),
-  config.getDbUser(),
-  config.getDbHost(),
-  config.getDbPass()
-)
+try:
+  discard setup(
+    config.getDbName(),
+    config.getDbUser(),
+    config.getDbHost(),
+    config.getDbPass()
+  )
+except CatchableError as err:
+  error "Couldn't initalize the database: ", err.msg
 
 # Create directory for pure static files
 discard initStatic(config)
