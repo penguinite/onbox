@@ -287,7 +287,7 @@ proc getHandleFromId*(db: DbConn, id: string): string =
   if not db.userIdExists(id):
     raise newException(DbError, "Couldn't find user with id \"" & id &  "\"")
   
-  return db.getRow(sql"SELECT handle FROm users WHERE id = ?;", id)[0]
+  return db.getRow(sql"SELECT handle FROM users WHERE id = ?;", id)[0]
 
 proc deleteUser*(db: DbConn, id: string) = 
   if not db.userIdExists(id):
