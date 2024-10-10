@@ -71,10 +71,12 @@ proc mrf_view*(filenames: seq[string]): int =
     if lib.getFilterOutgoingUser() != nil:
       echo "This MRF policy filters outgoing users"
 
+    #[
     if lib.getFilterIncomingActivity() != nil:
       echo "This MRF policy filters incoming activities"
     if lib.getFilterOutgoingActivity() != nil:
       echo "This MRF policy filters outgoing activities"
+    ]#
   return 0
 
 proc mrf_compile*(filenames: seq[string]): int =

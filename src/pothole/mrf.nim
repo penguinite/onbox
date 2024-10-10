@@ -7,7 +7,7 @@ export lib, conf, users, posts, tables
 type
   PostFilterProc* = proc (post: Post, config: ConfigTable): Post {.cdecl, nimcall.}
   UserFilterProc* = proc (user: User, config: ConfigTable): User {.cdecl, nimcall.}
-  ActivityFilterProc* = proc (user: Activity, config: ConfigTable): Activity {.cdecl, nimcall.}
+  #ActivityFilterProc* = proc (user: Activity, config: ConfigTable): Activity {.cdecl, nimcall.}
 
 proc getFilterIncomingPost*(lib: LibHandle): PostFilterProc =
   return cast[PostFilterProc](lib.symAddr("filterIncomingPost"))
@@ -21,8 +21,10 @@ proc getFilterIncomingUser*(lib: LibHandle): UserFilterProc =
 proc getFilterOutgoingUser*(lib: LibHandle): UserFilterProc =
   return cast[UserFilterProc](lib.symAddr("filterOutgoingUser"))
 
+#[
 proc getFilterIncomingActivity*(lib: LibHandle): ActivityFilterProc =
   return cast[ActivityFilterProc](lib.symAddr("filterIncomingActivity"))
 
 proc getFilterOutgoingActivity*(lib: LibHandle): ActivityFilterProc =
   return cast[ActivityFilterProc](lib.symAddr("filterOutgoingActivity"))
+]#
