@@ -33,6 +33,54 @@ from std/strutils import split
 
 # From elsewhere
 import db_connector/db_postgres, rng
+
+export Post, PostPrivacyLevel, PostContent, PostContentType
+
+# Game plan when inserting a post:
+# Insert the post
+# Insert the post content
+#
+# Game plan when post is edited (text only):
+# Create a new "text content" row in the db
+# Update any other columns accordingly (Setting latest to false)
+# Create a new "post content" row in the db and set it accordingly.
+# Update any other attributes accordingly (For example, the client, the modified bool, the recipients, the level)
+# 
+# Game plan when post is edited (For non-archived types of content, such as polls):
+# Remove existing content row
+# Create new one
+# 
+#
+
+proc newPost*(sender: string, content: seq[PostContent], replyto: string, recipients: seq[string] = @[], local = true, written: DateTime = now().utc): Post =
+  if isEmptyOrWhitespace(sender):
+    raise newException(ValueError, "Post is missing sender field.")
+
+  if len(content) == 0:
+    raise newException(ValueError, "Post is missing content field.")
+
+  # Generate post id
+  result.id = randstr(32)
+  
+  # Just do this stuff...
+  result.sender = sender
+  result.recipients = recipients
+  result.local = local
+  result.modified = false
+  result.content = content
+  result.replyto = replyto
+  result.written = written
+  result.level = Public
+  result.client = "0"
+
+  return result
+
+proc postText*(content: string, date: DateTime = now().utc): PostContent =
+  result = PostContent(kind: Text)
+  result.text = content
+  result.published = date
+  return result
+
   var i: int = -1;
 
   for key,value in result.fieldPairs:

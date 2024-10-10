@@ -79,10 +79,10 @@ proc post_new*(data: seq[string], mentioned = "", replyto = "", date = "", confi
       continue
     if db.userIdExists(user):
       recipients.add(user)
-
+  
   var post = newPost(
     sender = sender,
-    content = content,
+    content = @[postText(content, written)],
     replyto = replyto,
     recipients = recipients,
     local = true,
