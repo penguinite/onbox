@@ -29,31 +29,6 @@ import std/[tables, times]
 # From elsewhere
 import db_connector/db_postgres
 
-
-const pollAnswersCols* = @[
-  # The user who voted
-  "uid TEXT NOT NULL",
-  # The poll they voted on
-  "poll_id TEXT NOT NULL",
-  # The option they chose
-  "option TEXT NOT NULL",
-
-  # Some foreign keys for database integrity
-  "foreign key (uid) references users(id)",
-  "foreign key (poll_id) references polls(id)",
-]
-
-const pollCols* = @[
-  # The ID for the poll
-  "id TEXT NOT NULL PRIMARY KEY",
-  # A comma-separated list of optioins/answers one can answer
-  "options TEXT NOT NULL",
-  # When the poll will no longer be open to votes
-  "expiration_date TIMESTAMP",
-  # Whether or not the poll is a multi-choice poll...
-  "multi_choice BOOLEAN NOT NULL DEFAULT FALSE"
-]
-
 proc pollExists*(db: DbConn, poll_id: string): bool =
   ## Checks if a poll exists in the database.
   return has(db.getRow(sql"SELECT multi_choice FROM polls WHERE id = ?;", poll_id))
