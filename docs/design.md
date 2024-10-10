@@ -62,16 +62,14 @@ WHAT MORE COULD ANYONE POSSIBLY WANT! But that's in the future.
 First, I have to work to achieve the first stage which is a stable, reliable ActivityPub backend that consumes little resources.
 
 
-## Using a custom config language
+## Iniplus for config
 
-Pothole uses a custom config language with a custom parser written by yours truly.
-It's basically just `std/parsecfg`'s language but with support for multi-line arrays.
+Pothole uses `iniplus` (Package link [here](https://github.com/penguinite/iniplus.git)) for parsing configuration data, `iniplus` is basically just INI with support for arrays and tables. 
 
-### Parse keys/options as lowercase by default.
+### All config options will be lowercase by default
 
-I don't think it makes sense to distinguish "PORT", "Port" and "port" in the configuration file,
-the configuration parser should ideally lowercase all values when adding them to `configTable`
-so that programs don't worry about if they are spelling it right.
+`iniplus` does distinguish from "PORT", "Port" and "port", so, so to make configuration easier.
+We will make all configuration options fully lowercase.
 
 ## Startup routine
 
@@ -99,9 +97,6 @@ This section is all about the database, ie. what tables exist, their purpose and
 
 I am not trying to add ActivityPub support *yet* but I am trying to experiment with a small-scale social networking app.
 
-For now, I will be experimenting with sqlite databases,
-it's important to note that sqlite is quite different.
-
 ### Postgres only.
 
 Before November 2023, Pothole supported two databases (sqlite and postgres) but now I think this might be a bad idea.
@@ -113,10 +108,13 @@ I would no longer have to test two different engines, only one and everything wo
 to the structure of the codebase.
 
 Users no longer have to worry about which database engine their binary is compiled for. And the whole setup process becomes way simpler
-I plan eventually on making friendly setup instructions for Pothole, if we kept on with this flawed idea then we would have to write 2 pages per distro.
-Package maintainers working with binary-only or hybrid software such as `apt`, `guix`, `dnf`, `pacman` and so on would have to provide 2 packages
+I plan eventually on making friendly setup instructions for Pothole, and if we kept on with this flawed idea then we would have to write 2 pages per distro, for each database engine.
+
+Package maintainers working with binary-only or hybrid package managers such as `apt`, `guix`, `dnf`, `pacman` and so on would have to provide 2 packages
 
 So, from now on, pothole only supports postgres irregardless of the `dbEngine` compile-time option.
+
+And also, `potholectl` has gotten quite stable, and it also has a couple of tools that make it easier to spin up a database container for pothole. So, development in Pothole with postgress is as simple as having docker installed and running a `potholectl` command.
 
 ### Database migrations
 
@@ -177,6 +175,8 @@ we simply parse it into an action on a new or existing `Post` object
 
 For example, `Create` activities create new Post object and `Delete` activities delete existing ones.
 
+This is kind of close to [litepub](https://litepub.social/) (but not really)
+
 ### How Pothole handles ActivityPub
 
 For now, and for the forseeable future, Pothole will only support ActivityPub.
@@ -186,6 +186,8 @@ When Pothole receives a Activity it does the following:
 1.  Checks for validity (HTTP Signatures, Server check and so on)
 2.  Turns it into a Post/User and adds it into the db
 3.  Simply exposes it either via the API or ActivityPub
+
+PS: MRF is an intermediate step inbetween 1 and 2.
 
 ### Will Pothole add support for other protocols?
 
@@ -200,6 +202,8 @@ Or we could create a `matrix.nim` module specifically for this purpose
 and we could simply add extra routes in the web server that correspond to Matrix paths.
 
 ## Known evils in the codebase.
+
+TODO: This *needs* to be updated but I do not have the time lol.
 
 This section contains a list of all the hacky, bloated or inefficient parts of the codebase in the pothole server repository and the libpothole repository.
 
@@ -248,7 +252,7 @@ web.serve(port)
 ```
 
 In the above code we declare a variable that really does not need to be declared.
-In most cases, minor inefficiencies often get overwritten by better code.
+In most cases, minor inefficiencies often get overwritten by better code or optimized away.
 
 Minor inefficiencies are all over the codebase if one looks for them.
 But it does not matter a whole lot so let's move on to the more important parts. 
@@ -271,6 +275,7 @@ Common *past* examples of Major inefficiency include:
 
 1. `potholepkg/database.nim` and `potholepkg/db/*`: This was before I found out about import and export statements. Which now make the codebase 10x cleaner.
 2. `src/potcode.nim`: The easy solution to this was to simply nuke the Potcode feature.
+3. `potholectl/*.nim`: In the past, Potholectl used an archaic and messy system for parsing CLI arguments. Now, potholectl is powered by [cligen](https://github.com/c-blake/cligen)
 
 ## Caching webpages.
 
@@ -511,3 +516,5 @@ like doing that today.
 
 In the section about Post Activities, I wanted to use an array inside of the Post table to store the post activities.
 But I decided not to do that because I simply cannot get arrays to work inside of db_connector.
+
+Arrays are the devil, and I hate them.
