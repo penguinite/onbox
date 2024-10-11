@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS email_codes (id TEXT PRIMARY KEY NOT NULL UNIQUE,uid 
 CREATE TABLE IF NOT EXISTS bookmarks (pid TEXT NOT NULL,uid TEXT NOT NULL,foreign key (uid) references users(id), foreign key (pid) references posts(id));
 
 -- id TEXT NOT NULL PRIMARY KEY: The ID for the poll 
--- options TEXT NOT NULL: A comma-separated list of optioins/answers one can answer
+-- options TEXT NOT NULL: A comma-separated list of options/answers one can answer
 -- expiration_date TIMESTAMP: When the poll will no longer be open to votes
 -- multi_choice BOOLEAN NOT NULL DEFAULT FALSE: Whether or not the poll is a multi-choice poll...
 CREATE TABLE IF NOT EXISTS polls (id TEXT NOT NULL PRIMARY KEY, options TEXT NOT NULL, expiration_date TIMESTAMP, multi_choice BOOLEAN NOT NULL DEFAULT FALSE );

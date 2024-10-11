@@ -74,7 +74,7 @@ proc newPost*(sender: string, content: seq[PostContent], replyto: string, recipi
 
   return result
 
-proc postText*(content: string, date: DateTime = now().utc): PostContent =
+proc text*(content: string, date: DateTime = now().utc): PostContent =
   result = PostContent(kind: Text)
   result.text = content
   result.published = date

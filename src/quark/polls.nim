@@ -21,7 +21,7 @@
 ## Note: *Polls are not a separate object, they're a part of the PostContent object.*
 
 # From Quark
-import quark/[strextra], quark/private/database
+import quark/[strextra, users], quark/private/database
 
 # From the standard library
 import std/[tables, times]
@@ -58,10 +58,34 @@ proc getPoll*(db: DbConn, poll_id: string): (CountTable[string], int, bool, Date
     votes: CountTable[string]
     votecount = 0
 
-  for vote in db.getAllRows(sql"SELECT option FROM poll_answers WHERE poll_id = ?;", poll_id):
+  for vote in db.getAllRows(sql"SELECT option FROM polls_answer WHERE poll_id = ?;", poll_id):
     inc votecount
     votes.inc(vote[1])
 
   return (
     votes, votecount, parseBool(row[1]), toDateFromDb(row[0])
   )
+
+proc voteForPoll*(db: DbConn, poll_id, user_id, option: string) =
+  ## Adds a vote for a poll.
+  # Check if poll exists
+  if not db.pollExists(poll_id):
+    return
+  
+  # Check if the user voting exists.
+  if not db.userIdExists(user_id):
+    return
+  
+  # Parse the poll options to make sure the vote is valid.
+  if option notin toSeqFromDb(db.getRow(sql"SELECT options FROM polls WHERE id = ?;", poll_id)):
+    return
+
+  db.exec(sql"INSERT INTO polls_answer VALUES (?, ?, ?);", user_id, poll_id, option)
+
+proc addPoll*(db: DbConn, post_id: string, poll: PostContent) =
+  ## Inserts a poll into the database, and connects it to the post.
+  
+
+#proc poll(votes: CountTable[string], multi_choice: bool = false, expiration: DateTime = now().utc): PostContent =
+#  result.id = randstr(6) # 64^6 = 68719476736, I think this is enough polls for now.
+#  result.

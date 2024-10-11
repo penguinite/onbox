@@ -17,6 +17,9 @@
 #
 # quark/private/database.nim:
 ## This module contains all the common procedures used across the entire database.
+# From Quark
+from quark/shared import PostContent
+
 # From somewhere in the standard library
 import std/strutils except isEmptyOrWhitespace, parseBool
 
@@ -24,15 +27,7 @@ import std/strutils except isEmptyOrWhitespace, parseBool
 import db_connector/db_postgres
 export db_postgres
 
-proc createDbTable*(db: DbConn, tablename: string, cols: seq[string]) =
-  ## We use this procedure to create a SQL statement that creates a table using the hard-coded rules
-  # We build the sql statement slowly.
-  var sqlStatement = "CREATE TABLE IF NOT EXISTS " & tablename & " ("
-  sqlStatement.add(cols.join(", "))
-  sqlStatement.add(");") # Add final two characters
-
-  # Now we run and hope for the best!
-  db.exec(sql(sqlStatement))
+proc addLitPostContent*(p: PostContent)
 
 proc update*(db: DbConn, table, condition, column, value: string): bool =
   ## A procedure to update any value, in any column in any table.
@@ -44,13 +39,6 @@ proc update*(db: DbConn, table, condition, column, value: string): bool =
     return true
   except:
     return false
-
-proc matchTableSchema*(db: DbConn, tablename: string, table: seq[string]) =
-  ## We use this procedure to compare two tables against each other and see if there are any mismatches.
-  ## A mismatch could signify someone forgetting to complete the migration instructions.
-  #var cols: seq[string] = @[] # To store the columns that are currently in the database
-  #var missing: seq[string] = @[] # To store the columns missing from the database.
-  # TODO: Implement this
 
 proc has*(row: Row): bool =
   ## A quick helper function to check if a Row is valid.
