@@ -511,10 +511,68 @@ object for normal text messages. And I might do that in the future, but not
 now. I feel like that'd require a re-write of a LOT of code, and I don't feel
 like doing that today.
 
-
 ## Arrays in db_connector are literally the devil.
 
 In the section about Post Activities, I wanted to use an array inside of the Post table to store the post activities.
 But I decided not to do that because I simply cannot get arrays to work inside of db_connector.
 
 Arrays are the devil, and I hate them.
+
+## Pothole as a base for social media platforms.
+
+I have a lot of interesting ideas for Pothole, here is a small list of them:
+
+* I wanna transform it into a forum-like application (Maybe to serve as a replacement for [nimforum](https://github.com/nim-lang/nimforum.git))
+* I wanna transform it into a Hacker News-like platform
+* Someone suggested transforming into a Discord-like platform, I don't know how well that would play with federation but it is an idea nontheless.
+
+With all of these ideas flowing around in my mind, I decided that Pothole will just be a "base server"
+You run it alongside the actual application (frontend) you want, and it handles all the backend stuff.
+The frontend will just be able to send API calls and everything should hopefully work.
+
+Now this means, we won't need templating, so we can get rid of one dependency and hopefully just use strutils's `%` macro for the templating that we *do* need.
+
+We can get rid of a whole lot of user-facing code, except for sessions/oauth, since I have no idea how to integrate that with the frontends.
+MastoAPI does have a feature to create new accounts, but we probably will need to keep the login and oauth page for some time.
+
+I really want the frontend integration stuff to work with only MastoAPI support, but if I *have* to then I will also add Pleroma's API extensions.
+And if I really, really have to then I guess I will make my own API. This is worst case scenario tho, and hopefully MastoAPI has what we need.
+
+Pros:
+
+* The backend will be way simpler. We could get rid of unneeded dependencies, we could trim a lot of LoC.
+* Pothole will be way more netural, you'll be able to actually customize it however you wish.
+* We could be done with the project faster, as we won't need to make a frontend, we could just borrow an already-existing one.
+
+Cons:
+
+* The setup procedure will be more complex, but I believe this can be mediated with good documentation.
+* There is a risk that the implementation will not be as compatible as it turns out, and you will need to make a Pothole-specific frontend. Which would suck.
+
+### How will a setup look like?
+
+With this plan, a typical Pothole setup would look like this:
+1. Postgres running in the background.
+2. Pothole running in the background, connected to Postgres.
+3. A MastoAPI (or Pleroma API) compatible frontend running in the background.
+4. Nginx or another web server reverse-proxying both the frontend and Pothole
+
+The reverse proxy could be made in such a way that, `/api/*`, `/oauth/*` and any other related paths go to Pothole only.
+while the rest goes to the frontend.
+
+The way that the frontend integration works is by making an admin account on the backend that the frontend controls
+and uses to do all the things it needs to do.
+
+## Splitting up Pothole into multiple repos before 1.0
+
+I do not think `potholectl` and `pothole` belong in the same repo. It would be nice to split these up, for cleanliness sake.
+
+The monorepo approach has been nice to work with, I can push a lot of changes very quickly to the entire project without having to deal with PRs or multiple repos.
+
+But this approach is not sustainable in the long-term, it could drive away contributors and i'll admit, it isn't intuitive what goes where.
+
+### Potholectl as a remote MastoAPI tool
+
+A solution to the monorepo problem could be to re-write `potholectl` so that it uses MastoAPI, and thus isn't relient on Pothole's internal Db logic.
+
+Bonus point: You would be able to run `potholectl` from the comforts of your own home
