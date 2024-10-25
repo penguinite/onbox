@@ -82,7 +82,7 @@ proc post_new*(data: seq[string], mentioned = "", replyto = "", date = "", confi
   
   var post = newPost(
     sender = sender,
-    content = @[postText(content, written)],
+    content = @[text(content, written)],
     replyto = replyto,
     recipients = recipients,
     local = true,
@@ -107,6 +107,59 @@ proc post_new*(data: seq[string], mentioned = "", replyto = "", date = "", confi
     log "Successfully inserted post"
   except CatchableError as err:
     error "Failed to insert post: ", err.msg
+
+proc post_get*(args: seq[string], limit = 10, id = true, handle = false, config = "pothole.conf"): int =
+  ## This command displays a user's most recent posts, it only supports displaying text-based posts as of now.
+  ## 
+  ## You can adjust how many posts will be shown with the `limit` parameter
+  if len(args) != 1:
+    error "Invalid number of arguments"
+  
+  var
+    thing = args[0]
+    isId = id
+
+  # If the user tells us its a handle
+  # or if "thing" has an @ symbol
+  # then its a handle.
+  if not id:
+    if handle or "@" in thing:
+      isId = false
+  
+  # If the user supplies both -i and -n then error out and ask them which it is.
+  if id and handle:
+    error "This can't both be a name and id, which is it?"
+  
+
+  if thing.isEmptyOrWhitespace():
+    error "Argument is empty"
+
+  let
+    cnf = setup(config)
+    db = setup(
+      cnf.getDbUser(),
+      cnf.getDbName(),
+      cnf.getDbHost(),
+      cnf.getDbPass(),
+    )
+    
+  if db.userIdExists(thing) and db.userHandleExists(thing) and "@" notin thing:
+    error "Potholectl can't infer whether this is an ID or a handle, please re-run with the -i or -n flag depending on if this is an id or name"
+
+  # Try to convert the thing we received into an ID.
+  # So it's easier to handle
+  var id = ""
+  case isId:
+  of false:
+    # It's a handle
+    if not db.userHandleExists(thing):
+      error "User handle doesn't exist"
+    id = db.getIdFromHandle(thing)
+  of true:
+    # It's an id
+    if not db.userIdExists(thing):
+      error "User id doesn't exist"
+    id = thing
 
 # TODO: Missing commands:
 #   post_del: Deletes a post

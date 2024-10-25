@@ -134,27 +134,41 @@ proc addPost*(db: DbConn, post: Post) =
   let testStatement = sql"SELECT local FROM posts WHERE id = ?;"
 
   if db.getRow(testStatement, post.id).has():
-    return # Someone has tried to add a post twice. We just won't add it.
+    raise newException(DbError, "Post with id \"" & post.id & "\" already exists.")
 
-  # TODO: Add support for post revisions
-  # TODO: Add support for post "activities"
-    
-  # TODO: Automate this some day.
-  # I believe we can use a template or a macro to automate inserting this stuff in.
-  let statement = sql"INSERT INTO posts (id,recipients,sender,replyto,content,written,modified,local,client,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+  # TODO: Prettify this.
   db.exec(
-    statement,
+    sql"INSERT INTO posts (id,recipients,sender,replyto,written,modified,local,client,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);",
     post.id,
     toDbString(post.recipients),
     post.sender,
     post.replyto,
-    post.content,
     toDbString(post.written),
     post.modified,
     post.local,
     post.client,
     toDbString(post.level)
   )
+
+  # Handle post "contents"
+  for content in post.content:
+    case content.kind:
+    of Text:
+      # Insert post text
+      db.exec(
+        sql"INSERT INTO posts_text (pid,content,published,latest) VALUES (?,?,?,?);",
+        post.id, content.text, toDbString(content.published), true
+      )
+
+      # And then insert the post content
+      db.exec(
+        sql"INSERT INTO posts_content (pid,kind,cid) VALUES (?,?,?);",
+        post.id, "0", ""
+      )
+    else:
+      # If you encounter this error then flag it immediately to the devs.
+      raise newException(DbError, "Unknown post content type: " & $(content.kind))
+    
 
 proc postIdExists*(db: DbConn, id: string): bool =
   ## A function to see if a post id exists in the database

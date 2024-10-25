@@ -27,8 +27,6 @@ import std/strutils except isEmptyOrWhitespace, parseBool
 import db_connector/db_postgres
 export db_postgres
 
-proc addLitPostContent*(p: PostContent)
-
 proc update*(db: DbConn, table, condition, column, value: string): bool =
   ## A procedure to update any value, in any column in any table.
   ## This procedure should be wrapped, you can use updateUserByHandle() or
