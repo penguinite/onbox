@@ -276,6 +276,7 @@ Common *past* examples of Major inefficiency include:
 1. `potholepkg/database.nim` and `potholepkg/db/*`: This was before I found out about import and export statements. Which now make the codebase 10x cleaner.
 2. `src/potcode.nim`: The easy solution to this was to simply nuke the Potcode feature.
 3. `potholectl/*.nim`: In the past, Potholectl used an archaic and messy system for parsing CLI arguments. Now, potholectl is powered by [cligen](https://github.com/c-blake/cligen)
+4. `TemplateObj`: Removing these lines of code felt like heaven and bliss.
 
 ## Caching webpages.
 
@@ -563,6 +564,15 @@ while the rest goes to the frontend.
 The way that the frontend integration works is by making an admin account on the backend that the frontend controls
 and uses to do all the things it needs to do.
 
+### Status
+
+Here I log all the progress that's been done in order to implement the previous proposal.
+
+1. Removed routes
+
+I have removed a **lot** of route code, the most significant change is the complete removal of the homepage, about pages, signup page and TemplateObj.
+The login page might still be needed for oAuth so I have kept it in, but the sign up stuff can be easily done using the APIs or `potholectl`.
+
 ## Splitting up Pothole into multiple repos before 1.0
 
 I do not think `potholectl` and `pothole` belong in the same repo. It would be nice to split these up, for cleanliness sake.
@@ -576,3 +586,5 @@ But this approach is not sustainable in the long-term, it could drive away contr
 A solution to the monorepo problem could be to re-write `potholectl` so that it uses MastoAPI, and thus isn't relient on Pothole's internal Db logic.
 
 Bonus point: You would be able to run `potholectl` from the comforts of your own home
+
+Sadly this means that we wouldn't be able to access the cleanup procs, unless we expose them through an API. (And honestly, the last thing I want is to implement more APIs)

@@ -25,14 +25,7 @@ import pothole/[conf, assets, database, routeutils, lib]
 import std/[tables, mimetypes, os, strutils]
 
 # From nimble/other sources
-import mummy, waterpark/postgres, rng
-
-const renderURLs*: Table[string,string] = {
-  "/": "index.html", 
-  "/about": "about.html", "/about/more": "about.html", # About pages, they run off of the same template.
-  "/auth/sign_in": "signin.html",
-  "/auth/sign_up": "signup.html"
-}.toTable
+import mummy
 
 proc serveAndRender*(req: Request) =
   var headers: HttpHeaders
@@ -82,139 +75,10 @@ proc serveStatic*(req: Request) =
         return
       req.respond(200, headers, readFile(obj.staticFolder & file & ext))
 
-proc signUp*(req: Request) =
-  var
-    fm: FormEntries
-    headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
+proc signInGet*(req: Request) =
 
-  # Check if the user is already logged in.
-  if req.hasSessionCookie():
-    templatePool.withConnection obj:
-      req.respond(
-        400, headers, 
-        obj.renderError("You are already logged in.","signin.html"))
-    return
 
-  # Then check, if sign ups are enabled.
-  configPool.withConnection config:
-    if not config.getBoolOrDefault("user", "registrations_open", true):
-      templatePool.withConnection obj:
-        req.respond(
-          400, headers, 
-          obj.renderError("Signups are disabled on this instance!", "signup.html"))
-        return
-  
-  # Unroll form submission data.
-  try:
-    fm = req.unrollForm()
-  except CatchableError as err:
-    log "Couldn't process request: ", err.msg
-    templatePool.withConnection obj:
-      req.respond(
-        400, headers,
-        obj.renderError("Couldn't process requests!","signup.html"))
-      return
-  
-  # Check first if user, email and password exist.
-  # Thats the minimum we need for a user.
-  if not fm.isValidFormParam("user") or not fm.isValidFormParam("email") or not fm.isValidFormParam("pass"):
-    templatePool.withConnection obj:
-      req.respond(
-        400, headers, 
-        obj.renderError("Missing required fields. Make sure the Username, Password and Email fields are filled out properly.","signup.html"))
-    return
-
-  # Then, just retrieve all the data we need.
-  var
-    username = fm.getFormParam("user")
-    email = fm.getFormParam("email") # There isn't really any point to sanitizing emails...
-    password = fm.getFormParam("pass")
-  
-  # We'll cap the email length to 254 characters just to be safe.
-  if email.len() > 254:
-    templatePool.withConnection obj:
-      req.respond(
-        400, headers,
-        obj.renderError("Email is way too long (over 254 characters)", "signup.html")
-      )
-    return
-  
-  # And also strip out any newlines,
-  # Since nim's smtp library will crash if there are any.
-  if "\n" in email:
-    email = ""
-    for ch in fm.getFormParam("email"):
-      case ch:
-      of '\n': continue
-      else:
-        email.add(ch)
-  
-  # If a display name hasn't been submitted then
-  # just use the username as fallback
-  var display_name = username
-  if fm.isValidFormParam("name"):
-    display_name = fm.getFormParam("name")
-  
-  # If bio hasn't been submitted then just keep it empty.
-  # Its not that important...
-  var bio = ""
-  if fm.isValidFormParam("bio"):
-    bio = fm.getFormParam("bio")
-  
-  # Create the user and add in all the stuff
-  # we have.
-  var user = newUser(username, true, password)
-  user.name = display_name
-  user.email = email
-  user.bio = bio
-
-  # If the instance requires approval
-  # then set is_approved to false
-  # otherwise set it to true
-  configPool.withConnection config:
-    if config.getBoolOrDefault("user", "require_approval", false):
-      user.is_approved = false
-
-  # Check if a user like this already exists.
-  dbPool.withConnection db:
-    if db.userHandleExists(user.handle):
-      templatePool.withConnection obj:
-        req.respond(
-          400, headers, 
-          obj.renderError("User with the same username already exists!", "signup.html"))
-        return
-    
-
-  # Finally, insert the user
-  try:
-    dbPool.withConnection db:
-      db.addUser(user)
-  except CatchableError as err:
-    # if we fail, for whatever reason, then log it with an id.
-    # and give the id back to the user so that they can
-    # ask the admin what went wrong.
-    var id = randstr(10)
-    log "(ID: \"", id, "\") Couldn't insert user: ", err.msg
-    templatePool.withConnection obj:
-      req.respond(
-        500, headers, 
-        obj.renderError("Couldn't register account! Contact the instance administrator, error id: " & id, "signup.html"))
-    return
-  
-  var msg = "Success! Your account has been registered!"
-  configPool.withConnection config:
-    if config.getBoolOrDefault("user", "require_approval", false):
-      msg = msg[0..^2]
-      msg.add " but you will have to wait for an administrator to approve it before you can log in."
-  
-  # All went well... We now have a user on the instance!
-  templatePool.withConnection obj:
-    req.respond(
-      500, headers, 
-      obj.renderSuccess(msg, "signup.html"))
-
-proc signIn*(req: Request) =
+proc signInPost*(req: Request) =
   var
     fm: FormEntries
     headers: HttpHeaders
@@ -351,29 +215,6 @@ proc signIn*(req: Request) =
       obj.renderSuccess("Successful login, redirecting...", "signin.html")
     )
 
-proc checkSession*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
-
-  var msg = "Not logged in at all"
-
-  if req.hasSessionCookie():
-    msg = "Logged in as "
-    dbPool.withConnection db:
-      msg.add(db.getSessionUserHandle(req.fetchSessionCookie()))
-
-  templatePool.withConnection obj:
-    req.respond(
-      200, headers,
-      obj.render(
-        "check.html",
-        {
-          "title": "Login check",
-          "message": msg
-        }
-      )  
-    )
-
 proc logoutSession*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "text/html"
@@ -398,8 +239,7 @@ proc logoutSession*(req: Request) =
 
 
 const urlRoutes* = {
-  "/auth/sign_up": ("POST", signUp),
-  "/auth/sign_in": ("POST", signIn),
-  "/auth/check": ("GET", checkSession),
+  "/auth/sign_in": ("GET", signInGet),
+  "/auth/sign_in": ("POST", signInPost),
   "/auth/logout": ("GET", logoutSession),
 }.toTable

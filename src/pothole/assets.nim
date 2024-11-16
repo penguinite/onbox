@@ -19,48 +19,14 @@
 ## When compilling, we expect all of the built-in assets to be stored in the assets/ folder.
 ## On startup, we will load all of these and do some special operation to some modules.
 ## (Ie. index.html, the pothole main webpage, will need to be compiled with the built-in quick template library.)
-import std/[tables, os]
-import conf,lib
+import std/os, pothole/[conf, lib]
 import std/strutils except isEmptyOrWhitespace, parseBool
-
-when not defined(phNoEmbeddedAssets):
-  const phLang{.strdefine.} = "en"
-  const assets: Table[string, string] = {
-    "index.html": staticRead("../assets/" & phLang & "/index.html"),
-    "about.html": staticRead("../assets/" & phLang & "/about.html"),
-    "signup.html": staticRead("../assets/" & phLang & "/signup.html"),
-    "signin.html": staticRead("../assets/" & phLang & "/signin.html"),
-    "oauth.html": staticRead("../assets/" & phLang & "/oauth.html"),
-    "generic.html": staticRead("../assets/" & phLang & "/generic.html"),
-    "style.css": staticRead("../assets/style.css") # CSS doesn't need language.
-  }.toTable
-
-  func getEmbeddedAsset*(fn: string): string =     
-    return assets[fn]
-else:
-  {.warning: "Not embedding assets is a really bad idea.".}
-  proc getEmbeddedAsset*(fn: string): string = 
-    log "This build does not embed assets, thus getEmbeddedAsset does not work."
-    log "The only reasonable way out is to throw an error and force the admin to setup the files properly"
-    error "Couldn't retrieve asset with filename: ", fn
 
 proc initUploads*(config: ConfigTable): string =
   ## Initializes the upload folder by checking if the user has already defined where it should be
   ## and creating the folder if it doesn't exist.
   result = config.getStringOrDefault("folders", "uploads", "uploads/")
   
-  if not result.endsWith("/"):
-    result.add("/")
-
-  if not dirExists(result):
-    createDir(result)
-
-  return result
-
-proc initTemplates*(config: ConfigTable): string =
-  ## Initializes the templates folder by checking if the user has already defined where it should be
-  ## and creating the folder if it doesn't exist.
-  result = config.getStringOrDefault("folders", "templates", "templates/")
   if not result.endsWith("/"):
     result.add("/")
 
@@ -81,12 +47,14 @@ proc initStatic*(config: ConfigTable): string =
 
   return result
 
-proc getAsset*(folder, fn: string): string =
+proc getAsset*(fn: string): string =
   # Get static asset
-  if fileExists(folder & fn):
-    return readAll(open(folder & fn))
+  case fn: 
+  of "oauth.html": return staticRead("../assets/oauth.html")
+  of "signin.html": return staticRead("../assets/signin.html")
+  of "style.css": return staticRead("../assets/style.css")
   else:
-    return getEmbeddedAsset(fn)
+    raise newException(OSError, "Couldn't find asset: " & fn)
 
 proc getUpload*(cnf: ConfigTable, id, name: string): string =
   ## Get media asset.
@@ -186,6 +154,3 @@ proc setAsset*(folder, id, name: string, data: openArray[byte]): bool =
       log "Write to failsafe directory failed: ", err.msg
     
     return false # Let client come up with some reason as to why it failed.
-
-#! Templating object pool
-# Yes, this is bad and we should do something else but I have no idea what.

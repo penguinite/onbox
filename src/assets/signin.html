@@ -8,21 +8,9 @@
     </head>
     <body>
         <div id="burrito">
-            <header>
-                <nav>
-                    <a href="/">Home</a>
-                    <a href="/about/">About</a>
-                    <a href="/auth/sign_up/">Register</a>
-                    <a href="/auth/sign_in/">Login</a>
-                    $if(login)$
-                    <a href="/auth/logout/">Logout</a>
-                    <p>Logged in as $login$</p>
-                    $end$
-                </nav>
-            </header>
             <main>
-                <h1>$name[span_separated]$</h1>
-                $if(login)$
+                <h1>Sign in</h1>
+    $if(login)$
       <div class="box result error">
         You are already logged in
       </div>
@@ -36,6 +24,7 @@
       $end$
       <p>Fill out the following information to sign into your account</p>
       <form method="post" class="auth">
+        
         <label>Username or Email: <input type="text" name="user"></label>
         <label>Password: <input type="password" name="pass"></label>
         <label>Remember me: <input type="checkbox" name="rememberme" checked="true"></label>
