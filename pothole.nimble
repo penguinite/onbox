@@ -24,6 +24,15 @@ after clean:
   if dirExists(binDir):
     rmdir(binDir)
 
+var
+  commit = ""
+  commitCmd = gorgeEx("git rev-parse HEAD^")
+
+if commitCmd[1] == 0:
+  commit = commitCmd[0]
+
+task pothole, "Builds pothole, with versioning embedded.":
+  exec "nimble -d:phVersion=\"" & version & " - " & commit & "\" -d:release build pothole"
 
 from std/os import commandLineParams
 task ctl, "Shorthand for nimble run potholectl":
@@ -53,7 +62,7 @@ requires "nim >= 2.0.0"
 requires "nimcrypto >= 0.5.4"
 requires "rng >= 0.1.0"
 requires "iniplus >= 0.3.2"
-requires "https://github.com/penguinite/temple >= 0.2.3" # TODO: Add this as a nimble package
+requires "https://github.com/penguinite/temple.git >= 0.2.3"
 requires "db_connector >= 0.1.0"
 requires "mummy >= 0.4.2"
 requires "waterpark >= 0.1.7"

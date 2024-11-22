@@ -1,41 +1,25 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Sign in - $name$</title>
-        <link rel="stylesheet" href="/static/style.css">
-    </head>
-    <body>
-        <div id="burrito">
-            <main>
-                <h1>Sign in</h1>
-    $if(login)$
-      <div class="box result error">
-        You are already logged in
-      </div>
-      $end$
-      $if(message)$
-        $if(!login)$
-         <div class="$message_type$">
-             $message$
-         </div>
-        $end$
-      $end$
-      <p>Fill out the following information to sign into your account</p>
-      <form method="post" class="auth">
-        
-        <label>Username or Email: <input type="text" name="user"></label>
-        <label>Password: <input type="password" name="pass"></label>
-        <label>Remember me: <input type="checkbox" name="rememberme" checked="true"></label>
-        <button class="green" type="submit">Login</button>
-      </form>
-      $if(version)$
-      <footer>
-          <p>This server is powered by <a href="$source$">Pothole</a> $version$</p>
-      </footer>
-      $end$
-            </main>
-        </div>
-    </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main>
+    <h1>Sign in</h1>$if(login)$
+    <div class="box result error">
+      You are already logged in
+    </div>$end$ $if(message)$ $if(!login)$
+    <div class="$message_type$">
+      $message$
+    </div>$end$ $end$
+    <p>Fill out the following information to sign into your account</p>
+    <form method="post" class="auth">
+      <label>Username or Email: <input type="text" name="user"></label> <label>Password: <input type="password" name="pass"></label> <label>Remember me:
+      <input type="checkbox" name="rememberme" checked="true"></label> <button class="green" type="submit">Login</button>
+    </form>
+  </main>
+</body>
 </html>

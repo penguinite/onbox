@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# ctl/user.nim:
+# potholectl/suser.nim:
 ## User-related operations for potholectl
 ## This simply parses the subsystem & command (and maybe arguments)
 ## and it calls the appropriate function from potholepkg/database.nim and potholepkg/user.nim

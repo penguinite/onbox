@@ -22,19 +22,15 @@ import quark/[users, posts, sessions, crypto]
 import pothole/[conf, assets, database, routeutils, lib]
 
 # From somewhere in the standard library
-import std/[tables, mimetypes, os, strutils]
+import std/[tables, strutils]
 
 # From nimble/other sources
-import mummy
+import mummy, temple
 
-proc serveAndRender*(req: Request) =
+proc signInGet*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "text/html"
-  
-  var path = req.path
-  if path[high(path)] == '/' and path != "/":
-    path = path[0..^2] # Remove last slash at the end of the path
-  
+
   # Remove session cookie from user's browser.
   if req.hasSessionCookie():
     headers["Set-Cookie"] = deleteSessionCookie()
@@ -47,35 +43,17 @@ proc serveAndRender*(req: Request) =
         headers["Set-Cookie"] = ""
         user = db.getSessionUserHandle(id)
 
-    templatePool.withConnection obj:
-      req.respond(
-        200, headers,
-        obj.render(renderURLs[path], {"login": user})
+    req.respond(
+      200, headers,
+      templateify(
+        getAsset("signin.html"), {"login": user}.toTable
       )
+    )
   else:
-    templatePool.withConnection obj:
-      req.respond(
-        200, headers,
-        obj.render(renderURLs[path])
-      )
-
-proc serveStatic*(req: Request) =
-  var headers: HttpHeaders
-  let (dir, file, ext) = splitFile(req.path)
-  discard dir # Fucking nim.
-  templatePool.withConnection obj:
-    headers["Content-Type"] = mimedb.getMimetype(ext)
-    if ext == ".css":
-      # Special case for CSS files.
-      req.respond(200, headers, getAsset(obj.staticFolder, "style.css"))
-    else:
-      if not fileExists(obj.staticFolder & file & ext):
-        headers["Content-Type"] = "text/html"
-        req.respond(404, headers, renderError(obj, "File couldn't be found."))
-        return
-      req.respond(200, headers, readFile(obj.staticFolder & file & ext))
-
-proc signInGet*(req: Request) =
+    req.respond(
+      200, headers,
+      templateify(getAsset("signin.html"), {"login": ""}.toTable)
+    )
 
 
 proc signInPost*(req: Request) =
@@ -84,33 +62,40 @@ proc signInPost*(req: Request) =
     headers: HttpHeaders
   headers["Content-Type"] = "text/html"
   
+  template renderError(err: string, code = 400) =
+    req.respond(
+      code, headers,
+      templateify(
+        getAsset("signin.html"),
+        {"message_type": "error", "message": err}.toTable
+      )
+    )
+    return
+
+  template renderSuccess(msg: string, code = 200) =
+    req.respond(
+      code, headers,
+      templateify(
+        getAsset("signin.html"),
+        {"message_type": "success", "message": msg}.toTable
+      )
+    )
+    return
+
   # Check if the user is already logged in.
   if req.hasSessionCookie():
-    templatePool.withConnection obj:
-      req.respond(
-        400, headers, 
-        obj.renderError("You are already logged in.","signin.html"))
-    return
+    renderError("You are already logged in.")
 
   # Unroll form submission data.
   try:
     fm = req.unrollForm()
   except CatchableError as err:
     log "Couldn't process request: ", err.msg
-    templatePool.withConnection obj:
-      req.respond(
-        400, headers,
-        obj.renderError("Couldn't process requests!","signin.html"))
-      return
+    renderError("Couldn't process requests!")
 
   # Check first if user and password exist.
   if not fm.isValidFormParam("user") or not fm.isValidFormParam("pass"):
-    templatePool.withConnection obj:
-      req.respond(
-        400, headers, 
-        obj.renderError("Missing required fields. Make sure the Username and Password fields are filled out properly.","signin.html"))
-    return
-
+    renderError("Missing required fields. Make sure the Username and Password fields are filled out properly.")
 
   # Then, see if the user exists at all via handle or email.
   var id = ""
@@ -123,43 +108,32 @@ proc signInPost*(req: Request) =
       id = db.getIdFromHandle(sanitizeHandle(user))
   
   if id == "":
-    templatePool.withConnection obj:
-      req.respond(
-        404, headers, 
-        obj.renderError("User doesn't exist!","signin.html"))
-    return
+    renderError("User doesn't exist!")
 
   # Then retrieve various stuff from the database.
   var
     hash, salt: string
     kdf: KDF
-  dbPool.withConnection db:
-    templatePool.withConnection obj:
-      if db.userFrozen(id):
-        req.respond(403, headers, obj.renderError("Your account has been frozen. Contact an administrator.", "signin.html"))
-        return
 
-      if not db.userApproved(id):
-        req.respond(403, headers, obj.renderError("Your account hasn't been approved yet, please wait or contact an administrator.", "signin.html"))
-        return
+  dbPool.withConnection db:
+    if db.userFrozen(id):
+      renderError("Your account has been frozen. Contact an administrator.", 403)
+
+    if not db.userApproved(id):
+      renderError("Your account hasn't been approved yet, please wait or contact an administrator.", 403)
       
-      configPool.withConnection config:
-        if not db.userVerified(id) and config.getBoolOrDefault("user", "require_verification", true):
-          ## TODO: Send a code if there hasn't been one yet
-          ## TODO: Allow for re-sending codes, say, if a user logins 10 mins after their previous code and still isn't verified.
-          req.respond(403, headers, obj.renderError("Your account hasn't been verified yet. Check your email for a verification link.", "signin.html"))
-          return
+    configPool.withConnection config:
+      if not db.userVerified(id) and config.getBoolOrDefault("user", "require_verification", true):
+        ## TODO: Send a code if there hasn't been one yet
+        ## TODO: Allow for re-sending codes, say, if a user logins 10 mins after their previous code and still isn't verified.
+        renderError("Your account hasn't been verified yet. Check your email for a verification link.", 403)
     salt = db.getUserSalt(id)
     kdf = db.getUserKDF(id)
     hash = db.getUserPass(id)
   
   # Finally, compare the hashes.
   if hash != crypto.hash(fm.getFormParam("pass"), salt, kdf):
-    templatePool.withConnection obj:
-      req.respond(
-        400, headers, 
-        obj.renderError("Invalid password!","signin.html"))
-    return
+    renderError("Invalid password!")
 
   # And then, see if we need to update the hash
   # Since we have the password in memory
@@ -186,12 +160,7 @@ proc signInPost*(req: Request) =
   # If there is no need for redirection
   # then just proceed, and render the "You have logged in!" page
   if not req.isValidQueryParam("return_to"):
-    templatePool.withConnection obj:
-      req.respond(
-        200, headers,
-        obj.renderSuccess("Successful login!", "signin.html")
-      )
-    return
+    renderSuccess("Successful login!")
 
   # User has requested to return to some place.
   let loc = req.getQueryParam("return_to")
@@ -200,20 +169,10 @@ proc signInPost*(req: Request) =
   # then it might be some form of XSS attack and its best to not
   # continue redirecting.
   if loc.startsWith("javascript:") or loc.startsWith("data:"):
-    templatePool.withConnection obj:
-      req.respond(
-        400,
-        headers,
-        obj.renderError("There might be some form of XSS attack going on, we'll end the request just to be safe. But your login was successful!", "signin.html")
-      )
-    return
+    renderError("There might be some form of XSS attack going on, we'll end the request just to be safe. But your login was successful!")
 
   headers["Location"] = loc
-  templatePool.withConnection obj:
-    req.respond(
-      303, headers,
-      obj.renderSuccess("Successful login, redirecting...", "signin.html")
-    )
+  renderSuccess("Successful login, redirecting...", code = 303)
 
 proc logoutSession*(req: Request) =
   var headers: HttpHeaders
@@ -231,14 +190,18 @@ proc logoutSession*(req: Request) =
 
   # Just render homepage with a successful-esque message,
   # Since we dont have a dedicated page for this kinda thing.
-  templatePool.withConnection obj:
-    req.respond(
-      200, headers,
-      obj.renderSuccess("Successfully logged out!", "index.html")
-    )
+  req.respond(
+    200, headers,
+    templateify(getAsset("signin.html"), {"message_type": "success", "message": "Successfully logged out!"}.toTable)
+  )
 
+proc serveCSS*(req: Request) = 
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/css"
+  req.respond(200, headers, getAsset("style.css"))
 
 const urlRoutes* = {
+  "/static/style.css": ("GET", serveCSS),
   "/auth/sign_in": ("GET", signInGet),
   "/auth/sign_in": ("POST", signInPost),
   "/auth/logout": ("GET", logoutSession),

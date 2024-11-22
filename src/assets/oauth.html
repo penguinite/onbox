@@ -1,62 +1,44 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Authorize - $name$</title>
-        <link rel="stylesheet" href="/static/style.css">
-    </head>
-    <body>
-        <div id="burrito">
-            <main>
-                <h1>Authorize client</h1>
-                <div class="box">
-                    <p>A third-party app app $if(app_name)$ (named $app_name$) $end$ has requested access to your account, please review the requested permissions and click on the Authorize button if you wish.</p>
-                    <h2>Permissions requested</h2>
-                    $if(human_scope)$
-                    <ul>
-                        $human_scope$
-                    </ul>
-                    $end$
-                    $if(!human_scope)$
-                        $if(scope)$
-                            <p>Raw scopes: $scope$</p>
-                        $end$
-                        $if(!scope)$
-                            <p>No permissions requested.</p>
-                        $end$
-                    $end$
-                    <p><b>If you do not remember logging into any new apps, or you do not wish to authorize this then click on the deny button or leave the page.</b></p>
-                    <p><b>You are currently signed in as $login$</b></p>
-                    $if(redirect_uri)$
-                    <p><b>After the login, you will be redirected to $redirect_uri$</b></p>
-                    <p>If the link looks suspicious then click on "Deny" otherwise click on "Authorize"</p>
-                    $end$
-                    <form action="/oauth/authorize" method="post">
-                        <input autocomplete="off" type="hidden" value="authorized" name="action" id="action">
-                        <input autocomplete="off" type="hidden" value="$session$" name="session_token" id="session_token">
-                        <input autocomplete="off" type="hidden" value="code" name="response_type" id="response_type">
-                        <input autocomplete="off" type="hidden" value="$client_id$" name="client_id" id="client_id">
-                        <input autocomplete="off" type="hidden" value="$redirect_uri$" name="redirect_uri" id="redirect_uri">
-                        <input autocomplete="off" type="hidden" value="$scope$" name="scope" id="scope">
-                        <button class="oauth green" name="button" type="submit">Authorize</button>
-                    </form>
-                    <form action="/oauth/authorize" method="post">
-                        <input autocomplete="off" type="hidden" value="denied" name="action" id="action">
-                        <input autocomplete="off" type="hidden" value="$session$" name="session_token" id="session_token">
-                        <input autocomplete="off" type="hidden" value="code" name="response_type" id="response_type">
-                        <input autocomplete="off" type="hidden" value="$client_id$" name="client_id" id="client_id">
-                        <input autocomplete="off" type="hidden" value="$redirect_uri$" name="redirect_uri" id="redirect_uri">
-                        <input autocomplete="off" type="hidden" value="$scope$" name="scope" id="scope">
-                        <button class="oauth red" name="button" type="submit">Deny</button>
-                    </form>  
-                </div>
-                $if(version)$
-                <footer>
-                    <p>This server is powered by <a href="$source$">Pothole</a> $version$</p>
-                </footer>
-                $end$
-            </main>
-        </div>
-    </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Authorize</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="burrito">
+    <main>
+      <h1>Authorize client</h1>
+      <div class="box">
+        <p>A third-party app app $if(app_name)$ (named $app_name$) $end$ has requested access to your account, please review the requested permissions and
+        click on the Authorize button if you wish.</p>
+        <h2>Permissions requested</h2>$if(human_scope)$
+        <ul>
+          $human_scope$
+        </ul>$end$ $if(!human_scope)$ $if(scope)$
+        <p>Raw scopes: $scope$</p>$end$ $if(!scope)$
+        <p>No permissions requested.</p>$end$ $end$
+        <p><b>If you do not remember logging into any new apps, or you do not wish to authorize this then click on the deny button or leave the page.</b></p>
+        <p><b>You are currently signed in as $login$</b></p>$if(redirect_uri)$
+        <p><b>After the login, you will be redirected to $redirect_uri$</b></p>
+        <p>If the link looks suspicious then click on "Deny" otherwise click on "Authorize"</p>$end$
+        <form action="/oauth/authorize" method="post">
+          <input autocomplete="off" type="hidden" value="authorized" name="action" id="action"> <input autocomplete="off" type="hidden" value="$session$" name=
+          "session_token" id="session_token"> <input autocomplete="off" type="hidden" value="code" name="response_type" id="response_type">
+          <input autocomplete="off" type="hidden" value="$client_id$" name="client_id" id="client_id"> <input autocomplete="off" type="hidden" value=
+          "$redirect_uri$" name="redirect_uri" id="redirect_uri"> <input autocomplete="off" type="hidden" value="$scope$" name="scope" id="scope">
+          <button class="oauth green" name="button" type="submit">Authorize</button>
+        </form>
+        <form action="/oauth/authorize" method="post">
+          <input autocomplete="off" type="hidden" value="denied" name="action" id="action"> <input autocomplete="off" type="hidden" value="$session$" name=
+          "session_token" id="session_token"> <input autocomplete="off" type="hidden" value="code" name="response_type" id="response_type">
+          <input autocomplete="off" type="hidden" value="$client_id$" name="client_id" id="client_id"> <input autocomplete="off" type="hidden" value=
+          "$redirect_uri$" name="redirect_uri" id="redirect_uri"> <input autocomplete="off" type="hidden" value="$scope$" name="scope" id="scope">
+          <button class="oauth red" name="button" type="submit">Deny</button>
+        </form>
+      </div>
+    </main>
+  </div>
+</body>
 </html>

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# ctl/shared.nim:
+# potholectl/shared.nim:
 ## Shared procedures for potholectl.
 
 # From somewhere in Pothole

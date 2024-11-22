@@ -30,12 +30,12 @@ import mummy
 
 proc resolveNodeinfo*(req: Request) =
   
-  templatePool.withConnection obj:  
+  configPool.withConnection cnf:
     respJson(
       $(%*{
         "links": [
           {
-            "href": obj.realURL & "2.0",
+            "href": realURL(cnf) & "2.0",
             "rel":"http://nodeinfo.diaspora.software/ns/schema/2.0"
           }
         ]

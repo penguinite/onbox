@@ -99,6 +99,5 @@ dispatchMulti(
       "quiet": "Print only the hash and nothing else.",
       "algo": "Allows you to specify the KDF algorithm to use."
     }],
-  [render, help={"filename": "Location to template file", "config": "Location to config file"}],
   [ids], [handles], [dates]
 )

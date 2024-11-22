@@ -19,7 +19,7 @@
 import quark/[db]
 
 # From somewhere in Pothole
-import pothole/[routes, lib, conf, database, assets, api, routeutils]
+import pothole/[routes, lib, conf, database, api, routeutils]
 
 # From standard library
 import std/[tables]
@@ -75,35 +75,11 @@ try:
 except CatchableError as err:
   error "Couldn't initalize the database: ", err.msg
 
-# Create directory for pure static files
-discard initStatic(config)
-discard initTemplates(config)
-
-
 var router: Router
-for url in renderURLs.keys:
-  router.get(url, serveAndRender)
-  # A hacky way to make sure that /about/ and /about both get
-  # handled. 
-  if url != "/":
-    router.get(url & "/", serveAndRender)
-
-router.get("/static/*", serveStatic)
-# Common file extensions that we want to serve in the root
-# This means we can add favicon.ico, robots.txt and so on.
-for url in @[
-  "/*.txt", "/*.svg", "/*.ico", "/*.png", "/*.webmanifest", "/*.jpg", "/*.webp", "/*.css", "/*.html"
-]:
-  router.get(url, serveStatic)
-
 # Add API routes
 for route in apiRoutes:
-  when defined(phLogAPI):
-    router.addRoute(route[1], route[0], logAPI)
-    router.addRoute(route[1], route[0] & "/", logAPI) # Trailing slash fix.
-  else:
-    router.addRoute(route[1], route[0], route[2])
-    router.addRoute(route[1], route[0] & "/", route[2]) # Trailing slash fix.
+  router.addRoute(route[1], route[0], route[2])
+  router.addRoute(route[1], route[0] & "/", route[2]) # Trailing slash fix.
 
 # Add magical routes
 for url, route in urlRoutes.pairs:

@@ -34,9 +34,12 @@ var
   configPool*: ConfigPool
   dbPool*: PostgresPool
 
-proc initEverythingForRoutes*() =
+proc realURL*(config: ConfigTable): string =
+  return "http://" & config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/")
+
+proc initEverythingForRoutes*() = 
   configPool = newConfigPool(parseInt(getEnvOrDefault("POTHOLE_CONFIG_SIZE", "75")))
-  
+
   configPool.withConnection config:
     dbPool = newPostgresPool(
       config.getIntOrDefault("db", "pool_size", 10),

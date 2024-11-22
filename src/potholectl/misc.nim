@@ -14,51 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# ctl/template.nim:
-## Operations related to templating.
-
-# From somewhere in Quark
-import quark/db
-
-# From somewhere in Pothole
-import pothole/[conf, database]
-from pothole/routeutils import prepareTable
-import std/strutils
-
-# From third-party programs
-import temple
-
-proc render*(filename: seq[string], config = "pothole.conf"): int =
-  ## This command allows you to render a template file the same way that Pothole does.
-  ## 
-  ## When you give this command a filename, Pothole will open it, render it and print out the output 
-  ## 
-  if len(filename) == 0 or filename.join(" ").isEmptyOrWhitespace():
-    echo "Invalid usage, try running with -h for help."
-    quit(1)
-
-  # Initialize config
-  var cnf = conf.setup(config)
-
-  # Initialize database
-  var db = setup(
-    cnf.getDbName(),
-    cnf.getDbUser(),
-    cnf.getDbHost(),
-    cnf.getDbPass()
-  )
-
-  var input = ""
-  try:
-    input = readFile(filename.join(" "))
-  except CatchableError as err:
-    echo err.msg
-    return 1
-
-  echo templateify(input, prepareTable(cnf, db))
-  return 0
-
-# Some extra educational content for system administrator
+# potholectl/misc.nim:
+## Miscellaneous operations
 
 proc ids*(): int =
   ## Educational material about IDs

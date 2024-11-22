@@ -333,7 +333,7 @@ proc status*(id: string, user_id = ""): JsonNode =
   
   var realurl = ""
   configPool.withConnection config:
-    realurl = "http://" & config.getString("instance","uri") & config.getString("instance", "endpoint")
+    realurl = realURL(config)
 
   case post.level:
   of Public:
@@ -379,6 +379,5 @@ proc status*(id: string, user_id = ""): JsonNode =
       ## TODO: If we have implemented pinned posts, then add the pinned attribute.
       ## TODO: If we have implemented filters, then add the filtered attribute.
       ## or actually, keep it optional, its alright.
-
 
   return result

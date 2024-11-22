@@ -573,6 +573,10 @@ Here I log all the progress that's been done in order to implement the previous 
 I have removed a **lot** of route code, the most significant change is the complete removal of the homepage, about pages, signup page and TemplateObj.
 The login page might still be needed for oAuth so I have kept it in, but the sign up stuff can be easily done using the APIs or `potholectl`.
 
+## Quark+Pothole
+
+I still want a social media library, so, fine. Quark is gonna be an all-purpose microblogging backend library, and Pothole is gonna be a MastoAPI layer (with federation) built on top of Quark.
+
 ## Splitting up Pothole into multiple repos before 1.0
 
 I do not think `potholectl` and `pothole` belong in the same repo. It would be nice to split these up, for cleanliness sake.

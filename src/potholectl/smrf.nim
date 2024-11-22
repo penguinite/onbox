@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# ctl/mrf.nim:
+# potholectl/mrf.nim:
 ## Operations related to extensions.
 ## It does stuff like reveal the embedded metadata and uh... stuff...
 

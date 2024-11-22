@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# ctl/db.nim:
+# potholectl/sdb.nim:
 ## Database operations for Potholectl
 ## This simply parses the subsystem & command (and maybe arguments)
 ## and it calls the appropriate function from src/db.nim

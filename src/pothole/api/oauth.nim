@@ -21,14 +21,28 @@
 import quark/[strextra, apps, oauth, sessions, auth_codes]
 
 # From somewhere in Pothole
-import pothole/[database, routeutils, conf]
+import pothole/[database, routeutils, conf, assets]
 
 # From somewhere in the standard library
 import std/[json]
 import std/strutils except isEmptyOrWhitespace, parseBool
 
 # From nimble/other sources
-import mummy
+import mummy, temple
+
+proc success(msg: string): Table[string, string] =
+  return {
+    "title": "Success!",
+    "message_type": "success",
+    "message": msg
+  }.toTable
+
+proc error(msg: string): Table[string, string] =
+  return {
+    "title": "Error!",
+    "message_type": "error",
+    "message": msg
+  }.toTable
 
 proc getSeparator(s: string): char =
   for ch in s:
@@ -58,32 +72,30 @@ proc renderAuthForm(req: Request, scopes: seq[string], client_id, redirect_uri: 
     appname = db.getClientName(client_id)
     login = db.getSessionUserHandle(session)
 
-  templatePool.withConnection obj:
-    req.respond(
-      200, headers, 
-      obj.render(
-        "oauth.html",
-        {
-          "human_scope": human_scopes,
-          "scope": scopes.join(" "),
-          "login": login,
-          "session": session,
-          "client_id": client_id,
-          "redirect_uri": redirect_uri
-        }
-      )
+  req.respond(
+    200, headers,
+    templateify(
+      getAsset("oauth.html"),
+      {
+        "human_scope": human_scopes,
+        "scope": scopes.join(" "),
+        "login": login,
+        "session": session,
+        "client_id": client_id,
+        "redirect_uri": redirect_uri
+      }.toTable
     )
+  )
 
 proc redirectToLogin*(req: Request, client, redirect_uri: string, scopes: seq[string], force_login: bool) =
   var headers: HttpHeaders
+  # If the client has requested force login then remove the session cookie.
+  if force_login:
+    headers["Set-Cookie"] = deleteSessionCookie()
+
   configPool.withConnection config:
-    # If the client has requested force login then remove the session cookie.
-    if force_login:
-      headers["Set-Cookie"] = deleteSessionCookie()
-    
-    templatePool.withConnection obj:
-      var return_to = "http://$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [obj.realURL, client, redirect_uri, scopes.join(" ")]
-      headers["Location"] = "http://" & obj.realURL & "auth/sign_in/?return_to=" & encodeQueryComponent(return_to)
+    let url = realURL(config)
+    headers["Location"] = url & "auth/sign_in/?return_to=" & encodeQueryComponent("http://$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [url, client, redirect_uri, scopes.join(" ")])
 
   req.respond(
     303, headers, ""
@@ -256,14 +268,13 @@ proc oauthAuthorizePOST*(req: Request) =
       ## Show code to user
       var headers: HttpHeaders
       headers["Content-Type"] = "text/html"
-
-      templatePool.withConnection obj:
-        req.respond(
-          200, headers,
-          obj.renderSuccess(
-            "Authorization code: " & code
-          )
+      req.respond(
+        200, headers,
+        templateify(
+          getAsset("generic.html"),
+          success("Authorization code: " & code)
         )
+      )
 
     else:
       ## Redirect them elsewhere
@@ -278,15 +289,14 @@ proc oauthAuthorizePOST*(req: Request) =
     # There's not really anything to do.
     var headers: HttpHeaders
     headers["Content-Type"] = "text/html"
-
-    templatePool.withConnection obj:
-      req.respond(
-        200, headers,
-        obj.renderSuccess(
-          "Authorization request has been rejected!"
-        )
+    req.respond(
+      200, headers,
+      templateify(
+        getAsset("generic.html"),
+        success("Authorization request has been rejected!")
       )
-  
+    )
+
 proc oauthToken*(req: Request) =
   var
     grant_type, code, client_id, client_secret, redirect_uri = ""

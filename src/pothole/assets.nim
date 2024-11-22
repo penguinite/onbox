@@ -35,26 +35,15 @@ proc initUploads*(config: ConfigTable): string =
 
   return result
 
-proc initStatic*(config: ConfigTable): string =
-  ## Initializes the static folder by checking if the user has already defined where it should be
-  ## and creating the folder if it doesn't exist.
-  result = config.getStringOrDefault("folders", "static", "static/")
-  if not result.endsWith("/"):
-    result.add("/")
-
-  if not dirExists(result):
-    createDir(result)
-
-  return result
-
 proc getAsset*(fn: string): string =
   # Get static asset
-  case fn: 
-  of "oauth.html": return staticRead("../assets/oauth.html")
-  of "signin.html": return staticRead("../assets/signin.html")
-  of "style.css": return staticRead("../assets/style.css")
-  else:
-    raise newException(OSError, "Couldn't find asset: " & fn)
+  const table = {
+    "oauth.html": staticRead("../assets/oauth.html"),
+    "signin.html": staticRead("../assets/signin.html"),
+    "generic.html": staticRead("../assets/generic.html"),
+    "style.css": staticRead("../assets/style.css")
+  }.toTable
+  return table[fn]
 
 proc getUpload*(cnf: ConfigTable, id, name: string): string =
   ## Get media asset.

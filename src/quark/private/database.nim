@@ -18,11 +18,7 @@
 # quark/private/database.nim:
 ## This module contains all the common procedures used across the entire database.
 # From Quark
-from quark/shared import PostContent
-
 # From somewhere in the standard library
-import std/strutils except isEmptyOrWhitespace, parseBool
-
 # From somewhere else (nimble etc.)
 import db_connector/db_postgres
 export db_postgres
