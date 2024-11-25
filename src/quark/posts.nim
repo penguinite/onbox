@@ -48,8 +48,6 @@ export Post, PostPrivacyLevel, PostContent, PostContentType
 # Game plan when post is edited (For non-archived types of content, such as polls):
 # Remove existing content row
 # Create new one
-# 
-#
 
 proc newPost*(sender: string, content: seq[PostContent], replyto: string, recipients: seq[string] = @[], local = true, written: DateTime = now().utc): Post =
   if isEmptyOrWhitespace(sender):

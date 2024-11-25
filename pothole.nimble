@@ -53,6 +53,9 @@ task ctl, "Shorthand for nimble run potholectl":
   exec("nimble -d:release build potholectl")
   exec(binDir & "/potholectl " & cleanArgs().join(" "))
 
+task test, "Shorthand for testament pattern":
+  exec("testament pattern \"tests/**/*.nim\"")
+
 after build:
   cpFile("pothole.conf",binDir & "/pothole.conf")
   cpFile("LICENSE", binDir & "/LICENSE")
