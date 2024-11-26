@@ -2,11 +2,11 @@
 
 version       = "0.0.2"
 author        = "penguinite"
-description   = "A lightweight and efficient microblogging server."
+description   = "A MastoAPI backend server and a general-purpose social media/microblogging library"
 license       = "AGPL-3.0-or-later"
 srcDir        = "src"
 binDir        = "build"
-bin           = @["pothole","potholectl"]
+bin           = @["pothole","potholectl","phtestdata"]
 backend       = "c"
 
 ## The following options are required
@@ -54,6 +54,7 @@ task ctl, "Shorthand for nimble run potholectl":
   exec(binDir & "/potholectl " & cleanArgs().join(" "))
 
 task test, "Shorthand for testament pattern":
+  exec("nimble run phtestdata")
   exec("testament pattern \"tests/**/*.nim\"")
 
 after build:

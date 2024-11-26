@@ -17,10 +17,11 @@
 # debug.nim:
 ## Common procedures for debugging. This is only useful for creating
 ## fake users and fake posts (for testing)
-import std/[tables]
+import std/[tables, os]
 import quark/[users, posts]
 import pothole/[conf]
 import rng
+from db_connector/db_postgres import DbConn, open
 
 const userData = @[
   ("scout", "Jeremy", "All the ladies love me!"),
@@ -105,7 +106,6 @@ const fakeStatuses* = @[
   "I'm my own worst enemy but the enemy of my enemy is my friend so I'm also my own best friend it's just basic math"
 ]
 
-
 const reactions* = @[
   # Some sample reactions.
   "happy","sad","angry","disgusted","favorite"
@@ -137,7 +137,7 @@ proc genRandomHandles*(): seq[string] =
 
 proc genFakeReactions*(): Table[string, seq[string]] =
   ## Creates a couple of fake reactions.
-  for i in 0..rand(10):
+  for i in 0..rand(25):
     let reaction = sample(reactions)
     if not result.hasKey(reaction):
       result[reaction] = genRandomHandles()
@@ -145,7 +145,7 @@ proc genFakeReactions*(): Table[string, seq[string]] =
 
 proc genFakeBoosts*(): Table[string, seq[string]] = 
   ## Generates a couple of fake boosts
-  for i in 0..rand(10):
+  for i in 0..rand(25):
     let boost = sample(boosts)
     if not result.hasKey(boost):
       result[boost] = genRandomHandles()
@@ -154,9 +154,23 @@ proc genFakeBoosts*(): Table[string, seq[string]] =
 proc genFakeUsers*(): seq[User] =
   ## Generates a couple of fake users
   for userData in userData:
-    var user = newUser(userData[0], true, randstr(18))
+    var user = newUser(userData[0], true)
     user.id = userData[0]
     user.name = userData[1]
     user.bio = userData[2]
     result.add(user)
   return result
+
+proc connectToDb*(): DbConn =
+  ## Uses default values to connect to a database, suitable for tests.
+  proc getFromEnvOrDefault(env, default: string): string =
+    if existsEnv(env):
+      return getEnv(env)
+    return default
+
+  return open(
+    getFromEnvOrDefault("PHDB_NAME", "pothole"),
+    getFromEnvOrDefault("PHB_USER", "pothole"),
+    getFromEnvOrDefault("PHDB_HOST","127.0.0.1:5432"),
+    getFromEnvOrDefault("PHDB_PASS", "SOMETHING_SECRET")
+  )

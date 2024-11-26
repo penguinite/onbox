@@ -87,7 +87,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   result.name = newhandle
   
   result.password = ""
-  if local and not isEmptyOrWhitespace(password):
+  if local and password != "":
     result.password = hash(password, result.salt)  
 
   # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)

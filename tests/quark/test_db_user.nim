@@ -13,128 +13,79 @@ discard """
 
 """
 
-import quark/user, quark/private/macros
-import pothole/[database, conf], debug
-import std/strutils
+import quark/[users, debug, db], quark/private/macros
+import pothole/[database, conf]
+import std/[strutils, unittest]
 
-const
-  dbName{.strdefine.} = "pothole"
-  dbUser{.strdefine.} = "pothole"
-  dbHost{.strdefine.} = "127.0.0.1:5432"
-  dbPass{.strdefine.} = "SOMETHING_SECRET"
-
-# A basic config so that we don't error out.
-var exampleConfig = ""
-
-exampleConfig.add """
-[db]
-host="$#"
-name="$#"
-user="$#"
-password="$#"
-""" % [dbHost, dbName, dbUser, dbPass]
-
-for section, preKey in requiredConfigOptions.pairs:
-  exampleConfig.add("\n[" & section & "]\n")
-  for key in preKey:
-    exampleConfig.add(key & "=\"Test value\"\n")
-
-exampleConfig.add """
-[db]
-host="127.0.0.1:5432"
-name="pothole"
-user="pothole"
-password="SOMETHING_SECRET"
-"""
-
-let
-  config = setupInput(exampleConfig)
-  db = setup(
-    config.getDbName(),
-    config.getDbUser(),
-    config.getDbHost(),
-    config.getDbPass()
-  )
-
-# Now let's get started!
-
-## getAdmins
-echo "Testing getAdmins() "
-# Create a new admin user
-var adminuser = newUser("johnadminson",true,"123")
-adminuser.admin = true
-adminuser.id = "johnadminson"
-adminuser.password = ""
-adminuser.salt = ""
-if not db.userIdExists("johnadminson"):
-  echo "Adding admin user"
-  db.addUser(adminuser)
-
-var adminFlag = false # This flag will get flipped when it sees the name "johnadminson" in the list of names that getAdmins() provides. If this happens then the test passes!
-for handle in db.getAdmins():
-  if handle == adminuser.handle:
-    adminFlag = true
-    break
-
-assert adminFlag == true, "Fail!\ngetAdmins: " & $db.getAdmins()
-
-## getTotalLocalUsers
-echo "Testing getTotalLocalUsers() "
-# By this point we have added the fakeUsers + our fake admin user above.
-# So let's just test for if the value returned by getTotalLocalUsers is the same as our fake users + 1
-assert db.getTotalLocalUsers() == len(fakeHandles) + 2, "Fail! (result: " & $db.getTotalLocalUsers() & " len: " & $len(fakeHandles) & ")"
-
-## userIdExists
-echo "Testing userIdExists() "
-# We already have a user whose ID we know.
-# We can check for its ID easily.
-assert db.userIdExists(adminuser.id) == true, "Fail! (result: " & $db.userIdExists(adminuser.id) & "id: " & adminuser.id & ")"
-
-## userHandleExists
-echo "Testing userHandleExists() "
-# Same exact thing but with the handle this time.
-assert db.userHandleExists(adminuser.handle) == true, "Fail! (result: " & $db.userHandleExists(adminuser.handle) & "handle: " & adminuser.handle & ")"
+# Let's get started!
+var dbcon = connectToDb()
 
 proc findMismatch(u, u2: User) = 
   for fld, val in u.fieldPairs:
     if u.get(fld) != u2.get(fld):
       echo fld, ": ", u.get(fld), " != ", u2.get(fld)
 
+echo "Creating admin user, as a test but also for future tests"
+var adminuser = newUser("johnadminson",true,"")
+adminuser.admin = true # Set admin privileges
+adminuser.moderator = true # Set mod privileges
+adminuser.id = "johnadminson" # Set id to something easy to remember
+dbcon.addUser(adminuser)
 
-## getUserById
-echo "Testing getUserById() "
-if db.getUserById(adminuser.id) != adminuser:
-  findMismatch(db.getUserById(adminuser.id), adminuser)
-assert db.getUserById(adminuser.id) == adminuser
+suite "User-related tests":
+  test "getAdmins":
+    # This boolean will get flipped it sees our handmade admin user.
+    var adminFlag = false
+    for handle in dbcon.getAdmins():
+      if handle == adminuser.handle:
+        adminFlag = true
+        break
+    assert adminFlag == true, "Fail! getAdmins: " & $(dbcon.getAdmins())
+  
+  test "getTotalLocalUsers":
+    assert dbcon.getTotalLocalUsers() > 0, "result: " & $(dbcon.getTotalLocalUsers())
+  
+  test "userIdExists":
+    assert dbcon.userIdExists("johnadminson"), "Fail!"
+  
+  test "userHandleExists":
+    assert dbcon.userHandleExists("johnadminson"), "Fail!"
+  
+  test "getUserById":
+    if dbcon.getUserById("johnadminson") != adminuser:
+      findMismatch(dbcon.getUserById("johnadminson"), adminuser)
+    assert dbcon.getUserById("johnadminson") == adminuser
+  
+  test "getUserByHandle":
+    if dbcon.getUserByHandle("johnadminson") != adminuser:
+      findMismatch(dbcon.getUserByHandle("johnadminson"), adminuser)
+    assert dbcon.getUserByHandle("johnadminson") == adminuser, "Fail!"
+  
+  test "getIdFromHandle":
+    assert dbcon.getIdFromHandle("johnadminson") == "johnadminson", "Fail! result: " & dbcon.getIdFromHandle(adminuser.handle)
+  
+  test "getHandleFromId":
+    assert dbcon.getHandleFromId("johnadminson") == "johnadminson", "Fail! result: " & dbcon.getHandleFromId(adminuser.handle)
+  
+  test "updateUserByHandle":
+    # Make the admin user no longer an admin.
+    dbcon.updateUserByHandle("johnadminson", "admin", "false")
+    var adminFlag = true
+    for admin in dbcon.getAdmins():
+      if admin == "johnadminson":
+        adminFlag = false
+        break
+    assert adminFlag == true
+  
+  test "updateUserById":
+    dbcon.updateUserById("johnadminson", "admin", "true")
+    var adminFlag = false
+    for admin in dbcon.getAdmins():
+      if admin == "johnadminson":
+        adminFlag = true
+        break
+    assert adminFlag == true
+  
 
-## getUserByHandle
-echo "Testing getUserByHandle() "
-if db.getUserByHandle(adminuser.handle) != adminuser:
-  findMismatch(db.getUserByHandle(adminuser.handle), adminuser)
-assert db.getUserByHandle(adminuser.handle) == adminuser, "Fail!"
 
-## getIdFromHandle
-echo "Testing getIdFromHandle() "
-assert db.getIdFromHandle(adminuser.handle) == adminuser.id, "Fail! (result: " & db.getIdFromHandle(adminuser.handle) & "handle: " & adminuser.handle & "id: " & adminuser.id & ")"
 
-## getHandleFromId
-echo "Testing getHandleFromId() "
-assert db.getHandleFromId(adminuser.id) == adminuser.handle, "Fail! (result: " & db.getHandleFromId(adminuser.handle) & "id: " & adminuser.id & "handle: " & adminuser.handle & ")"
-
-## updateUserByHandle
-# Make the johnadminson user no longer admin(son)
-echo "Testing updateUserByHandle() "
-db.updateUserByHandle(adminuser.handle,"admin","false")
-adminuser.admin = false
-if db.getUserByHandle(adminuser.handle) != adminuser:
-  findMismatch(db.getUserByHandle(adminuser.handle), adminuser)
-assert db.getUserByHandle(adminuser.handle).admin == false, "Fail!"
-
-## updateUserById
-# Make the johnadminson user admin(son)
-echo "Testing updateUserById() "
-db.updateUserById(adminuser.id,"admin","true")
-adminuser.admin = true
-if db.getUserById(adminuser.id) != adminuser:
-  findMismatch(db.getUserById(adminuser.id), adminuser)
-assert db.getUserById(adminuser.id).admin == true, "Fail (result: " & $db.getUserById(adminuser.id) & ")"

@@ -69,7 +69,7 @@ proc addBoost*(db: DbConn, pid,uid,level: string) =
   if db.hasAnyBoost(pid, uid):
     return
   
-  db.exec(sql"INSERT INTO boosts (pid, uid, level) VALUES (?,?,?,?);",pid,uid,level)
+  db.exec(sql"INSERT INTO boosts (pid, uid, level) VALUES (?,?,?);",pid,uid,level)
 
 proc getNumOfBoosts*(db: DbConn, pid: string): int =
   for i in db.getAllRows(sql"SELECT level FROM boosts WHERE pid = ?;", pid):
