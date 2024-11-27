@@ -115,10 +115,23 @@ proc getTotalLocalUsers*(db: DbConn): int =
     inc(result)
   return result
 
+proc getDomainFromHandle*(hn: string): (string, string) =
+  ## Splits a handle into a username and domain part.
+  var flag = false
+  for ch in hn:
+    case ch:
+    of '@':
+      flag = true
+      continue
+    else:
+      case flag:
+      of false: result[0].add(ch)
+      of true: result[1].add(ch)
+
 proc getDomains*(db: DbConn): CountTable[string] =
   ## A procedure to get the domains known by this server.
-  for x in db.getAllRows(sql"SELECT handle FROM users WHERE local = false;"):
-    result.inc(x[0][find(x[0], '@')..^1]) # Skip the username and add the domain.
+  for handle in db.getAllRows(sql"SELECT handle FROM users WHERE local = false;")[0]:
+    result.inc(getDomainFromHandle(handle)[1]) # Skip the username and add the domain.
 
 proc getTotalDomains*(db: DbConn): int =
   return db.getDomains().len()
