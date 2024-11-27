@@ -13,7 +13,7 @@ discard """
 
 """
 
-import quark/[user, post], debug
+import quark/[users, posts], debug
 import pothole/[conf, database]
 import std/strutils
 

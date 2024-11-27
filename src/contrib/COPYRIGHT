@@ -17,3 +17,8 @@ Path: /spongebob_case_mrf.nim
 Description: MRF Policy that adds spongebob case to every post
 Copyright: © penguinite <penguinite@tuta.io> 2024
 License: AGPL-3.0-or-later
+
+Path: /test_db_post.nim
+Description: Old test file
+Copyright: © penguinite <penguinite@tuta.io> 2024
+License: AGPL-3.0-or-later
