@@ -31,18 +31,14 @@ import std/tables
 # From elsewhere
 import rng
 
-# A set of characters that you cannot use at all.
+# Whitelist set of characters.
 # this filters anything that doesn't make a valid email.
 const safeHandleChars*: set[char] = {
   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
   'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
   'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7',
-  '8', '9', '0', '.', '@', '-'
+  '8', '9', '0', '.', '@', '-',
 }
-
-# A set of characters that you cannot use
-# when registering a local user.
-const localInvalidHandle*: set[char] = {'@',':','.'}
 
 func sanitizeHandle*(handle: string, charset: set[char] = safeHandleChars): string =
   ## Checks a string against user.unsafeHandleChars
@@ -227,7 +223,7 @@ proc getFirstAdmin*(db: DbConn): string =
   return db.getRow(sql"SELECT id FROM users WHERE admin = true;")[0]
 
 proc adminAccountExists*(db: DbConn): bool = 
-  return db.getRow(sql"SELECT id FROM users WHERE admin = true;")[0] != ""
+  return has(db.getRow(sql"SELECT id FROM users WHERE admin = true;"))
 
 proc getUserBio*(db: DbConn, id: string): string = 
   return db.getRow(sql"SELECT bio FROM users WHERE id = ?;", id)[0]
