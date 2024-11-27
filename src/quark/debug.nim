@@ -23,7 +23,7 @@ import pothole/[conf]
 import rng
 from db_connector/db_postgres import DbConn, open
 
-const userData = @[
+const userData* = @[
   ("scout", "Jeremy", "All the ladies love me!"),
   ("soldier", "Jane Doe", "GOD BLESS AMERICA"),
   ("pyro", "pyro", "Apparently, this user prefers to keep an air of mystery about them."),
