@@ -1,6 +1,6 @@
 import quark/[debug, db, posts, users, boosts, reactions]
 import pothole/[lib, conf, database, routeutils]
-import rng
+import rng, std/os
 
 let config = setup(getConfigFilename())
 
@@ -64,3 +64,7 @@ for level,users in genFakeBoosts():
     let post = sample(postList).id
     log "User \"", user, "\" boosted with level \"", level, "\" to post \"", post, "\""
     deebee.addBoost(post, user, level)
+
+echo "Deleting test guard file if it exists"
+if fileExists(".testGuardTmpDELETEME"):
+  removeFile(".testGuardTmpDELETEME")

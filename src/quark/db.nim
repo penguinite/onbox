@@ -70,7 +70,7 @@ proc setup*(name, user, host, password: string,schemaCheck: bool = true): DbConn
 proc init*(name, user, host, password: string): DbConn = 
   ## This procedure quickly initializes the database by skipping a bunch of checks.
   ## It assumes that you have done these checks on startup by running the regular setup() proc once.
-  return open(host, user, password, name,)
+  return open(host, user, password, name)
 
 proc uninit*(db: DbConn): bool =
   ## Uninitialize the database.

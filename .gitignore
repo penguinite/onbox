@@ -16,3 +16,4 @@ pothole_envs
 potholectl
 !potholectl/
 .sass-cache
+.testGuard*

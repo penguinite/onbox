@@ -1,0 +1,7 @@
+*
+.*
+!*/
+!*.nim
+!*.nims
+!.gitignore
+megatest*

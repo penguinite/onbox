@@ -19,9 +19,8 @@
 ## fake users and fake posts (for testing)
 import std/[tables, os]
 import quark/[users, posts]
-import pothole/[conf]
-import rng
 from db_connector/db_postgres import DbConn, open
+import rng, iniplus
 
 const userData* = @[
   ("scout", "Jeremy", "All the ladies love me!"),
@@ -169,8 +168,22 @@ proc connectToDb*(): DbConn =
     return default
 
   return open(
-    getFromEnvOrDefault("PHDB_NAME", "pothole"),
-    getFromEnvOrDefault("PHB_USER", "pothole"),
     getFromEnvOrDefault("PHDB_HOST","127.0.0.1:5432"),
-    getFromEnvOrDefault("PHDB_PASS", "SOMETHING_SECRET")
+    getFromEnvOrDefault("PHB_USER", "pothole"),
+    getFromEnvOrDefault("PHDB_PASS", "SOMETHING_SECRET"),
+    getFromEnvOrDefault("PHDB_NAME", "pothole")
   )
+
+proc testGuard*(section, name: string) =
+  ## This is a poor guard against testament running tests multiple times.
+  const fn = ".testGuardTmpDELETEME"
+
+  var cnf: ConfigTable
+  if fileExists(fn):
+    cnf = parseFile(fn)
+  
+  if cnf.exists(section, name):
+    quit(0)
+  else:
+    cnf.setKey(section, name, newValue(true))
+    writeFile(fn, toString(cnf))
