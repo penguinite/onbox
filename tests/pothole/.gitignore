@@ -1,7 +1,0 @@
-*
-.*
-!*/
-!*.nim
-!*.nims
-!.gitignore
-megatest*
