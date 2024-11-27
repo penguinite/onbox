@@ -295,6 +295,6 @@ proc deleteUser*(db: DbConn, id: string) =
   
   db.exec(sql"DELETE FROM users WHERE id = ?;", id)
 
-proc deleteUsers*(db: DbConn, ids: seq[string]) = 
+proc deleteUsers*(db: DbConn, ids: varargs[string]) = 
   for id in ids:
     db.deleteUser(id)
