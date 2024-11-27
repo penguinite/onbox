@@ -58,7 +58,7 @@ type
     kdf*: KDF # Key derivation function version
     admin*: bool # A boolean indicating if the user is an admin.
     moderator*: bool # A boolean indicating if the user is a moderator.
+    discoverable*: bool # A boolean indicating if the user is discoverable
     is_frozen*: bool # A boolean indicating if the user is frozen/banned.
     is_verified*: bool # A boolean indicating if the user's email has been verified. 
     is_approved*: bool # A boolean indicating if the user hs been approved by an administrator
-    discoverable*: bool # A boolean indicating if the user is discoverable
