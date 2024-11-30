@@ -28,26 +28,31 @@ dbcon.addUser(u1)
 
 echo "Creating a frozen user"
 var u2 = newUser("badman", true)
+u2.id = "badman"
 u2.is_frozen = true
 dbcon.addUser(u2)
 
 echo "Creating an unapproved user"
 u2 = newUser("unapprovedman", true)
+u2.id = "unapprovedman"
 u2.is_approved = false
 dbcon.addUser(u2)
 
 echo "Creating an approved user"
 u2 = newUser("approvedman", true)
+u2.id = "approvedman"
 u2.is_approved = true
 dbcon.addUser(u2)
 
 echo "Creating an unverified user"
 u2 = newUser("unverifiedman")
+u2.id = "unverifiedman"
 u2.is_verified = false
 dbcon.addUser(u2)
 
 echo "Creating an verified user"
 u2 = newUser("verifiedman")
+u2.id = "verifiedman"
 u2.is_verified = true
 dbcon.addUser(u2)
 
@@ -133,8 +138,21 @@ suite "User-related tests":
   test "getDomains":
     # Let's make a couple of federated users.
     # 2 separate domains with 1 user each
-    dbcon.addUser(newUser("alice@wonderland.local"))
-    dbcon.addUser(newUser("bob@bobland.home"))
+    dbcon.addUser(
+      newUserX(
+        handle = "alice",
+        local = false,
+        domain = "wonderland.local"
+      )
+    )
+    
+    dbcon.addUser(
+      newUserX(
+        handle = "bob",
+        local = false,
+        domain = "bobland.home"
+      )
+    )
 
     # len(handleList) users on their own domain
     let handleList = @[
@@ -143,7 +161,9 @@ suite "User-related tests":
       "asoubou", "sayonara", "choudou"
     ]
     for handle in handleList:
-      dbcon.addUser(newUser(handle & "@infinitysongseries.cosmobsp"))
+      var user = newUser(handle, false)
+      user.domain = "infinitysongseries.cosmobsp"
+      dbcon.addUser(user)
     
     let table = dbcon.getDomains()
     assert table.hasKey("bobland.home")
@@ -199,12 +219,17 @@ suite "User-related tests":
       assert dbcon.getUserBio(data[0]) == data[2]
 
   test "deleteUser":
-    var scout = newUser("scout", true)
-    scout.name = "Jeremy"
-    scout.bio = "All the ladies love me!"
+    var scout = newUserX(
+      handle = "scout",
+      local = true,
+      id = "scout",
+      name = "Jeremy",
+      bio = "All the ladies love me!"
+    )
     dbcon.deleteUser("scout")
     assert dbcon.userIdExists("scout") == false
     dbcon.addUser(scout)
+    assert dbcon.userIdExists("scout") == true
 
   test "deleteUsers":
     for user in @[
@@ -212,8 +237,11 @@ suite "User-related tests":
       newUser("katie",true)
     ]:
       dbcon.addUser(user)
-    assert dbcon.userIdExists("johnny") == true
-    assert dbcon.userIdExists("katie") == true
-    dbcon.deleteUsers("johnny", "katie")
-    assert dbcon.userIdExists("johnny") == true
-    assert dbcon.userIdExists("katie") == true
+    assert dbcon.userHandleExists("johnny") == true
+    assert dbcon.userHandleExists("katie") == true
+    dbcon.deleteUsers(
+      dbcon.getIdFromHandle("johnny"),
+      dbcon.getIdFromHandle("katie")
+    )
+    assert dbcon.userHandleExists("johnny") == false
+    assert dbcon.userHandleExists("katie") == false
