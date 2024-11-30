@@ -90,6 +90,36 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   # The only things remaining are email and bio which the program can guess based on its own context clues (Such as if the user is local)
   return result
 
+proc newUserX*(
+  handle: string, local: bool, password = "", domain = "", name = "", email = "", bio = "", id = randstr(), salt = "",
+  kdf = latestKdf, admin = false, moderator = false, frozen = false, approved = true, verified = false, discoverable = true, kind = UserType.Person
+): User =
+  result.id = id
+  result.kind = kind
+  result.handle = sanitizeHandle(handle)
+  result.domain = domain
+  result.name = name
+  result.local = local
+  result.email = email
+  result.bio = bio
+  result.kdf = kdf
+  result.admin = admin
+  result.moderator = moderator
+  result.discoverable = discoverable
+  result.is_frozen = frozen
+  result.is_verified = verified
+  result.is_approved = approved
+  result.salt = salt
+  
+  if local and salt == "":
+    result.salt = randstr(12)
+  
+  if local and password != "":
+    result.password = hash(password,salt,kdf)
+  else:
+    result.password = password 
+  return result
+
 proc addUser*(db: DbConn, user: User) = 
   ## Add a user to the database
   ## This procedure expects an escaped user to be handed to it.
