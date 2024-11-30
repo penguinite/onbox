@@ -151,7 +151,7 @@ suite "User-related tests":
     assert table["infinitysongseries.cosmobsp"] == len(handleList)
   
   test "getTotalDomains":
-    assert dbcon.getTotalDomains() == 3
+    assert dbcon.getTotalDomains() == 13, "getTotalDomains failed: " & $(dbcon.getTotalDomains())
 
   test "userEmailExists":
     assert dbcon.userEmailExists(u1.email)

@@ -152,7 +152,10 @@ proc getDomains*(db: DbConn): CountTable[string] =
     result.inc(handle[0]) # Skip the username and add the domain.
 
 proc getTotalDomains*(db: DbConn): int =
-  return db.getDomains().len()
+  result = 0
+  for val in db.getDomains().values:
+    result = result + val
+  return result
 
 proc userIdExists*(db: DbConn, id:string): bool =
   ## A procedure to check if a user exists by id
