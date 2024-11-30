@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS apps (id TEXT PRIMARY KEY NOT NULL UNIQUE, secret TEX
 
 -- id, TEXT PRIMARY KEY NOT NULL: The user ID
 -- kind, TEXT NOT NULL: The user type, see UserType object in user.nim
--- handle, TEXT UNIQUE NOT NULL: The user's actual username (Fx. alice@alice.wonderland)
+-- handle, TEXT NOT NULL: The user's actual username (Fx. alice@alice.wonderland)
+-- domain, TEXT: The domain name that belongs to the user, for local users this is empty but for remote/federated users, this is the domain upon which they reside.
 -- name, TEXT DEFAULT 'New User': The user's display name (Fx. Alice)
 -- local, BOOLEAN NOT NULL: A boolean indicating whether the user originates from the local server or another one.
 -- email, TEXT: The user's email (Empty for remote users)
@@ -36,7 +37,7 @@ CREATE TABLE IF NOT EXISTS apps (id TEXT PRIMARY KEY NOT NULL UNIQUE, secret TEX
 -- is_frozen, BOOLEAN NOT NULL: A boolean indicating whether this user is frozen (Posts from this user will not be stored)
 -- is_verified, BOOLEAN NOT NULL: A boolean indicating whether this user's email address has been verified (NOT the same as an approval)
 -- is_approved, BOOLEAN NOT NUL: A boolean indicating if the user hs been approved by an administrator
-CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY NOT NULL, kind TEXT NOT NULL, handle TEXT UNIQUE NOT NULL, name TEXT DEFAULT 'New User', local BOOLEAN NOT NULL, email TEXT, bio TEXT, password TEXT, salt TEXT, kdf INTEGER NOT NULL, admin BOOLEAN NOT NULL DEFAULT FALSE, moderator BOOLEAN NOT NULL DEFAULT FALSE, discoverable BOOLEAN NOT NULL DEFAULT TRUE, is_frozen BOOLEAN NOT NULL, is_verified BOOLEAN NOT NULL, is_approved BOOLEAN NOT NULL);
+CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY NOT NULL, kind TEXT NOT NULL, handle TEXT UNIQUE NOT NULL, domain TEXT, name TEXT DEFAULT 'New User', local BOOLEAN NOT NULL, email TEXT, bio TEXT, password TEXT, salt TEXT, kdf INTEGER NOT NULL, admin BOOLEAN NOT NULL DEFAULT FALSE, moderator BOOLEAN NOT NULL DEFAULT FALSE, discoverable BOOLEAN NOT NULL DEFAULT TRUE, is_frozen BOOLEAN NOT NULL, is_verified BOOLEAN NOT NULL, is_approved BOOLEAN NOT NULL);
 
 -- id, TEXT PRIMARY KEY NOT NULL: The Post id
 -- recipients, TEXT: A comma-separated list of recipients since postgres arrays are a nightmare.
@@ -126,23 +127,7 @@ CREATE TABLE IF NOT EXISTS polls (id TEXT NOT NULL PRIMARY KEY, options TEXT NOT
 CREATE TABLE IF NOT EXISTS polls_answer (uid TEXT NOT NULL, poll_id TEXT NOT NULL, option TEXT NOT NULL, foreign key (uid) references users(id),foreign key (poll_id) references polls(id));
 
 -- Add a null user for when users are deleted and we need to re-assign their posts.
--- id, TEXT PRIMARY KEY NOT NULL: The user ID
--- kind, TEXT NOT NULL: The user type, see UserType object in user.nim
--- handle, TEXT UNIQUE NOT NULL: The user's actual username (Fx. alice@alice.wonderland)
--- name, TEXT DEFAULT 'New User': The user's display name (Fx. Alice)
--- local, BOOLEAN NOT NULL: A boolean indicating whether the user originates from the local server or another one.
--- email, TEXT: The user's email (Empty for remote users)
--- bio, TEXT: The user's biography 
--- password, TEXT: The user's hashed & salted password (Empty for remote users obv)
--- salt, TEXT: The user's salt (Empty for remote users obv)
--- kdf, INTEGER NOT NULL: The version of the key derivation function. See DESIGN.md's Key derivation function TABLE IF NOT EXISTS for more.
--- admin, BOOLEAN NOT NULL DEFAULT FALSE: A boolean indicating whether or not this user is an Admin.
--- moderator, BOOLEAN NOT NULL DEFAULT FALSE: A boolean indicating whether or not this user is a Moderator.
--- discoverable, BOOLEAN NOT NULL DEFAULT TRUE: A boolean indicating whether or not this user is discoverable in frontends
--- is_frozen, BOOLEAN NOT NULL: A boolean indicating whether this user is frozen (Posts from this user will not be stored)
--- is_verified, BOOLEAN NOT NULL: A boolean indicating whether this user's email address has been verified (NOT the same as an approval)
--- is_approved, BOOLEAN NOT NUL: A boolean indicating if the user hs been approved by an administrator
-INSERT INTO users VALUES ('null', 'Person', 'null', 'Deleted User', TRUE, '', '', '', '', 1000, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE) ON CONFLICT DO NOTHING;
+INSERT INTO users VALUES ('null', 'Person', 'null', '', 'Deleted User', TRUE, '', '', '', '', 1000, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE) ON CONFLICT DO NOTHING;
 
 -- Make a null app client
 INSERT INTO apps VALUES ('0', '0', 'read', '', '', '', '1970-01-01') ON CONFLICT DO NOTHING;

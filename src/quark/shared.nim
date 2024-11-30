@@ -49,6 +49,7 @@ type
     id*: string # An unique that represents the actual user
     kind*: UserType # What type of User this is. (Used for outgoing Activities)
     handle*: string # A string containing the user's actual username 
+    domain*: string # If a user is federated, then this string will contain their residency. For local users this is empty.
     name*: string # A string containing the user's display name
     local*: bool # A boolean indicating if this user is from this instance 
     email*: string # A string containing the user's email

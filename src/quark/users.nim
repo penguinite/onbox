@@ -62,7 +62,8 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   result.salt = ""
   if local:
     result.salt = randstr(12)
-
+    result.domain = ""
+  
   result.kdf = latestKdf # Always assume user is using latest KDF because why not?
   result.local = local
   result.admin = false # This is false by default.
@@ -78,7 +79,7 @@ proc newUser*(handle: string, local: bool = false, password: string = ""): User 
   if newhandle.isEmptyOrWhitespace():
     return User() # We can't use the error template for some reason.
   result.handle = newhandle
-    
+
   # Use handle as name
   result.name = newhandle
   
@@ -115,23 +116,10 @@ proc getTotalLocalUsers*(db: DbConn): int =
     inc(result)
   return result
 
-proc getDomainFromHandle*(hn: string): (string, string) =
-  ## Splits a handle into a username and domain part.
-  var flag = false
-  for ch in hn:
-    case ch:
-    of '@':
-      flag = true
-      continue
-    else:
-      case flag:
-      of false: result[0].add(ch)
-      of true: result[1].add(ch)
-
 proc getDomains*(db: DbConn): CountTable[string] =
-  ## A procedure to get the domains known by this server.
-  for handle in db.getAllRows(sql"SELECT handle FROM users WHERE local = false;")[0]:
-    result.inc(getDomainFromHandle(handle)[1]) # Skip the username and add the domain.
+  ## A procedure to get the all of the domains known by this server.
+  for handle in db.getAllRows(sql"SELECT domain FROM users WHERE domain != '';"):
+    result.inc(handle[0]) # Skip the username and add the domain.
 
 proc getTotalDomains*(db: DbConn): int =
   return db.getDomains().len()
