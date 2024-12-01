@@ -138,13 +138,11 @@ proc constructPostSemi*(db:DbConn, row: Row): Post =
   result = db.constructPost(row)
   return result
 
-
 proc constructPostFull*(db: DbConn, row: Row): Post =
   result = db.constructPostSemi(row)
   #result.reactions = db.getReactions(result.id)
   #result.boosts = db.getBoosts(result.id)
   return result
-
 
 proc addPost*(db: DbConn, post: Post) =
   ## A function add a post into the database
@@ -216,17 +214,12 @@ proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[strin
   ## A procedure that only fetches the IDs of posts made by a specific user.
   ## This is used to quickly get a list over every post made by a user, for, say,
   ## potholectl or a pothole admin frontend.
-  let sqlStatement = sql"SELECT id FROM posts WHERE sender = ?;"
+  var sqlStatement = sql"SELECT id FROM posts WHERE sender = ?;"
   if limit != 0:
-    var i = 0;
-    for post in db.getAllRows(sqlStatement, id):
-      inc(i)
-      result.add(post[0])
-      if i > limit:
-        break
-  else:
-    for post in db.getAllRows(sqlStatement, id):
-      result.add(post[0])
+    sqlStatement = sql("SELECT id FROM posts WHERE id = ? LIMIT " & $limit & ";")
+
+  for post in db.getAllRows(sqlStatement, id):
+    result.add(post[0])
   return result
 
 proc getEveryPostByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
