@@ -210,7 +210,7 @@ proc getPost*(db: DbConn, id: string): Row =
     raise newException(DbError, "Couldn't find post with id \"" & id & "\"")
   return post
 
-proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[string] = 
+proc getPostIDsByUser*(db: DbConn, id: string, limit: int = 15): seq[string] = 
   ## A procedure that only fetches the IDs of posts made by a specific user.
   ## This is used to quickly get a list over every post made by a user, for, say,
   ## potholectl or a pothole admin frontend.
@@ -222,7 +222,7 @@ proc getPostIDsByUserWithID*(db: DbConn, id: string, limit: int = 15): seq[strin
     result.add(post[0])
   return result
 
-proc getEveryPostByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
+proc getEveryPostByUser*(db: DbConn, id:string, limit: int = 20): seq[Post] =
   ## A procedure to get any user's posts using the user's id.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
   ## All of the posts returned are fully ready for displaying and parsing
@@ -234,10 +234,10 @@ proc getEveryPostByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
     sqlStatement = "SELECT * FROM posts WHERE id = ?;"
   
   for post in db.getAllRows(sql(sqlStatement), id):
-      result.add(db.constructPostFull(post))
+      result.add(db.constructPostSemi(post))
   return result
 
-proc getPostsByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
+proc getPostsByUser*(db: DbConn, id:string, limit: int = 20): seq[Post] =
   ## A procedure to get any user's posts using the user's id.
   ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
   ## All of the posts returned are fully ready for displaying and parsing
@@ -256,30 +256,22 @@ proc getPostsByUserId*(db: DbConn, id:string, limit: int = 20): seq[Post] =
 
   return result
 
-proc getPostsByUserHandle*(db: DbConn, handle:string, limit: int = 15): seq[Post] =
-  ## A procedure to get any user's posts using the user's handle
-  ## The handle can be passed plainly, it will be escaped later.
-  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
-  ## All of the posts returned are fully ready for displaying and parsing
-  return db.getPostsByUserId(db.getIdFromHandle(handle), limit)
-
 proc getPostsByUserIDPaginated*(db: DbConn, id:string, offset: int, limit: int = 15): seq[Post] =
   ## A procedure to get posts made by a specific user, this procedure is specifically optimized for pagination.
   ## In that, it supports with offsets, limits and whatnot.
-  ## Since our 
   return # TODO: Implement
 
-proc getTotalPostsByUserId*(db: DbConn, id: string): int =
+proc getNumPostsByUser*(db: DbConn, id: string): int =
   result = 0
   for row in db.getAllRows(sql"SELECT local FROM posts WHERE sender = ?;", id):
     inc(result)
   return result
 
 
-proc getTotalPosts*(db: DbConn): int =
+proc getNumTotalPosts*(db: DbConn, local = true): int =
   ## A procedure to get the total number of local posts.
   result = 0
-  for x in db.getAllRows(sql"SELECT local FROM posts WHERE local = true;"):
+  for x in db.getAllRows(sql("SELECT local FROM posts WHERE local = " & $local & ";")):
     inc(result)
   return result
 
