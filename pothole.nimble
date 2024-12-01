@@ -6,7 +6,7 @@ description   = "A MastoAPI backend server and a general-purpose social media/mi
 license       = "AGPL-3.0-or-later"
 srcDir        = "src"
 binDir        = "build"
-bin           = @["pothole","potholectl","phtestdata"]
+bin           = @["pothole","potholectl"]
 backend       = "c"
 
 ## The following options are required
@@ -52,9 +52,6 @@ task ctl, "Shorthand for nimble run potholectl":
 
   exec("nimble -d:release build potholectl")
   exec(binDir & "/potholectl " & cleanArgs().join(" "))
-
-before test:
-  exec("nimble run phtestdata")
 
 after build:
   cpFile("pothole.conf",binDir & "/pothole.conf")
