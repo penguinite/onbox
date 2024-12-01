@@ -7,6 +7,11 @@ import std/[unittest]
 # Let's get started!
 var dbcon = connectToDb()
 
+echo "Dropping everything already in db"
+dbcon.cleanDb()
+echo"Setting up db again"
+dbcon.setup()
+
 proc findMismatch(u, u2: User) = 
   for fld, val in u.fieldPairs:
     if u.get(fld) != u2.get(fld):
