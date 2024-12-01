@@ -216,7 +216,7 @@ proc getPostIDsByUser*(db: DbConn, id: string, limit: int = 15): seq[string] =
   ## potholectl or a pothole admin frontend.
   var sqlStatement = sql"SELECT id FROM posts WHERE sender = ?;"
   if limit != 0:
-    sqlStatement = sql("SELECT id FROM posts WHERE id = ? LIMIT " & $limit & ";")
+    sqlStatement = sql("SELECT id FROM posts WHERE sender = ? LIMIT " & $limit & ";")
 
   for post in db.getAllRows(sqlStatement, id):
     result.add(post[0])
