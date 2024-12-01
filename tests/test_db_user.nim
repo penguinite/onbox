@@ -1,4 +1,4 @@
-import quark/[users, debug, crypto], quark/private/macros
+import quark/[users, debug, db, crypto], quark/private/macros
 import pothole/[database, conf]
 import std/[unittest]
 
@@ -220,6 +220,8 @@ suite "User-related tests":
     assert dbcon.adminAccountExists() == true
   
   test "getUserBio":
+    for user in genFakeUsers():
+      dbcon.addUser(user)
     for data in userData:
       assert dbcon.getUserBio(data[0]) == data[2]
 
