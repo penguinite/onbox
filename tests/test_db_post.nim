@@ -9,6 +9,10 @@ dbcon.cleanDb()
 echo"Setting up db again"
 dbcon.setup()
 
+# Add the fake users.
+for user in genFakeUsers():
+  dbcon.addUser(user)
+
 # A post that we have full control over.
 var post = newPostX(
   sender = "scout",
