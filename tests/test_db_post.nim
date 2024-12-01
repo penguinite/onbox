@@ -23,8 +23,7 @@ dbcon.addPost(post)
 suite "Post-related tests":
   test "addPost":
     # This also provides the posts we need.
-    for user in genFakeUsers():
-      dbcon.addUser(user)
+    
     for post in genFakePosts():
       dbcon.addPost(post)
   
