@@ -49,7 +49,7 @@ export Post, PostPrivacyLevel, PostContent, PostContentType
 # Remove existing content row
 # Create new one
 
-proc newPost*(sender: string, content: seq[PostContent], replyto: string, recipients: seq[string] = @[], local = true, written: DateTime = now().utc): Post =
+proc newPost*(sender: string, content: seq[PostContent], replyto: string = "", recipients: seq[string] = @[], local = true, written: DateTime = now().utc): Post =
   if isEmptyOrWhitespace(sender):
     raise newException(ValueError, "Post is missing sender field.")
 
@@ -70,6 +70,27 @@ proc newPost*(sender: string, content: seq[PostContent], replyto: string, recipi
   result.level = Public
   result.client = "0"
 
+  return result
+
+proc newPostX*(
+  sender: string, content: seq[PostContent], recipients: seq[string] = @[],
+  id: string = randstr(32), replyto: string = "", written: DateTime = now().utc, modified: bool = false,
+  local: bool = true, client: string = "0", level: PostPrivacyLevel = Public,
+  reactions: Table[string, seq[string]] = initTable[string,seq[string]](),
+  boosts: Table[string, seq[string]] = initTable[string,seq[string]]()
+): Post =
+  result.id = id
+  result.recipients = recipients
+  result.sender = sender
+  result.replyto = replyto
+  result.content = content
+  result.written = written
+  result.modified = modified
+  result.local = local
+  result.client = client
+  result.level = level
+  result.reactions = reactions
+  result.boosts = boosts
   return result
 
 proc text*(content: string, date: DateTime = now().utc, format = "plain"): PostContent =
