@@ -1,4 +1,5 @@
 # Copyright © Leo Gavilieau 2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
 # 
