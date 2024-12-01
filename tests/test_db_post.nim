@@ -33,12 +33,11 @@ suite "Post-related tests":
   
   test "updatePost":
     # Let's change id
-    dbcon.updatePost(post.id, "id", "randomonium")
-    assert dbcon.postIdExists("randomonium")
+    dbcon.updatePost(post.id, "level", "100")
+    assert dbcon.getPost(post.id)[8] == "100"
     # Restore it for consistency's sake, and as an extra test
-    dbcon.updatePost("randomonium", "id", post.id)
-    assert dbcon.postIdExists(post.id)
-
+    dbcon.updatePost(post.id, "level", "0")
+    assert dbcon.getPost(post.id)[8] == "0"
   
   test "getPost":
     # On the one hand, we shouldn't hard-code or encourage hardcoding database specifics
