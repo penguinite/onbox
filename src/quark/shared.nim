@@ -12,6 +12,7 @@ type
     of Text:
       published*: DateTime # The timestamp of when then Post was last edited
       text*: string # The text
+      format*: string # The format that the text is written in.
     of Poll:
       id*: string # The poll ID
       votes*: CountTable[string] # How many votes each option has.

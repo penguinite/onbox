@@ -72,10 +72,11 @@ proc newPost*(sender: string, content: seq[PostContent], replyto: string, recipi
 
   return result
 
-proc text*(content: string, date: DateTime = now().utc): PostContent =
+proc text*(content: string, date: DateTime = now().utc, format = "plain"): PostContent =
   result = PostContent(kind: Text)
   result.text = content
   result.published = date
+  result.format = format
   return result
 
 proc constructPost*(db: DbConn, row: Row): Post =

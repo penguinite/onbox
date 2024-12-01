@@ -15,7 +15,6 @@ SET standard_conforming_strings = on;
 -- last_accessed, TIMESTAMP: Last used timestamp, when this is older than 2 weeks, the row is deleted.
 CREATE TABLE IF NOT EXISTS apps (id TEXT PRIMARY KEY NOT NULL UNIQUE, secret TEXT NOT NULL UNIQUE,  scopes TEXT NOT NULL, redirect_uri TEXT DEFAULT 'urn:ietf:wg:oauth:2.0:oob', name TEXT, link TEXT, last_accessed TIMESTAMP);
 
-
 -- TODO: Separate a user's handle into two components.
 -- A username and a domain.
 -- Or, do this only if there are any benefits to be gained.
@@ -59,10 +58,11 @@ CREATE TABLE IF NOT EXISTS posts_content (pid TEXT PRIMARY KEY NOT NULL,kind sma
 -- It could be done with separate tables (Overkill) or a column dictating the format.
 -- pid, TEXT PRIMARY KEY NOT NULL: The post id that the best belongs to
 -- content, TEXT NOT NULL: The text content itself
+-- format, TEXT: The format for the content.
 -- published, TIMESTAMP NOT NULL: The date that this content was published
 -- latest, BOOLEAN NOT NULL DEFAULT TRUE: Whether or not this is the latest post
 -- foreign key (pid) references posts(id): Some foreign keys for integrity
-CREATE TABLE IF NOT EXISTS posts_text (pid TEXT PRIMARY KEY NOT NULL, content TEXT NOT NULL, published TIMESTAMP NOT NULL, latest BOOLEAN NOT NULL DEFAULT TRUE, foreign key (pid) references posts(id) );
+CREATE TABLE IF NOT EXISTS posts_text (pid TEXT PRIMARY KEY NOT NULL, content TEXT NOT NULL, format TEXT, published TIMESTAMP NOT NULL, latest BOOLEAN NOT NULL DEFAULT TRUE, foreign key (pid) references posts(id) );
 
 -- pid, TEXT NOT NULL: ID of post that the user reacted to
 -- uid, TEXT NOT NULL: ID of user who reacted to that post
