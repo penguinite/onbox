@@ -140,14 +140,14 @@ proc user_delete*(args: seq[string], purge = false, id = true, handle = false, c
   if purge:
     # Delete every post first.
     try:
-      db.deletePosts(db.getPostIDsByUserWithID(id))
+      db.deletePosts(db.getPostIDsByUser(id))
     except CatchableError as err:
       error "Failed to delete posts by user: ", err.msg
   else:
     # We must reassign every post made this user to the `null` user
     # Otherwise the database will freakout.
     try:
-      db.reassignSenderPosts(db.getPostIDsByUserWithID(id), "null")
+      db.reassignSenderPosts(db.getPostIDsByUser(id), "null")
     except CatchableError as err:
       log "There's probably some database error somewhere..."
       error "Failed to reassign posts by user: ", err.msg
