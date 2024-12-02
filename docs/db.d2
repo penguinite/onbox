@@ -1,0 +1,61 @@
+apps: {
+  shape: sql_table
+  id: string {constraint: [primary_key; unique]}
+  secret: string {constraint: unique}
+  scopes: string
+  redirect_uri: string
+  name: string
+  link: string
+  last_accessed: timestamp
+}
+
+users: {
+  shape: sql_table
+  id: string {constraint: [primary_key; unique]}
+  kind: string
+  handle: string
+  domain: string
+  name: string
+  local: bool
+  email: string
+  bio: string
+  password: string
+  salt: string
+  kdf: int
+  admin: bool
+  moderator: bool
+  discoverable: bool
+  is_frozen: bool
+  is_verified: bool
+  is_approved: bool
+}
+
+posts: {
+  shape: sql_table
+  id: string {constraint: [primary_key; unique]}
+  recipients: string
+  sender: string {constraint: foreign_key}
+  replyto: string {constraint: foreign_key}
+  written: timestamp
+  modified: bool
+  local: bool
+  client: text {constraint: foreign_key}
+  level: int
+}
+
+posts_content: {
+  shape: sql_table
+  pid: string {constraint: [primary_key; foreign_key]}
+  kind: int
+  cid: string {constraint: foreign_key}
+}
+
+posts_text: {
+  shape: sql_table {constraint: primary_key}
+  
+}
+
+posts.sender -> users.id
+posts.replyto -> posts.id
+posts.client -> apps.id
+posts_content.pid -> posts.id
