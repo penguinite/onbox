@@ -23,7 +23,7 @@
 
 # From Quark
 import quark/private/[macros, database]
-import quark/[strextra, shared, users]
+import quark/[strextra, shared]
 export shared
 
 # From the standard library
@@ -174,8 +174,8 @@ proc addPost*(db: DbConn, post: Post) =
     of Text:
       # Insert post text
       db.exec(
-        sql"INSERT INTO posts_text (pid,content,published,latest) VALUES (?,?,?,?);",
-        post.id, content.text, toDbString(content.published), true
+        sql"INSERT INTO posts_text (pid,content,format,published,latest) VALUES (?,?,?,?,?);",
+        post.id, content.text, content.format, toDbString(content.published), true
       )
 
       # And then insert the post content
