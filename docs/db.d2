@@ -51,11 +51,108 @@ posts_content: {
 }
 
 posts_text: {
-  shape: sql_table {constraint: primary_key}
-  
+  shape: sql_table
+  id: string {constraint: [primary_key; foreign_key]}
+  content: string
+  format: string
+  published: timestamp
+  latest: bool
 }
 
+reactions: {
+  shape: sql_table
+  pid: string {constraint: foreign_key}
+  uid: string {constraint: foreign_key}
+  reaction: string
+}
+
+follows: {
+  shape: sql_table
+  follower: string {constraint: foreign_key}
+  following: string {constraint: foreign_key}
+  approved: bool
+}
+
+boosts: {
+  shape: sql_table
+  pid: string {constraint: foreign_key}
+  uid: string {constraint: foreign_key}
+  level: string
+}
+
+fields: {
+  shape: sql_table
+  key: string
+  value: string
+  uid: string {constraint: foreign_key}
+  verified: bool
+  verified_at: timestamp
+}
+
+sessions: {
+  shape: sql_table
+  id: string {constraint: primary_key}
+  uid: string {constraint: foreign_key}
+  last_used: timestamp
+}
+
+auth_codes: {
+  shape: sql_table
+  id: string {constraint: primary_key}
+  uid: string {constraint: foreign_key}
+  cid: string {constraint: foreign_key}
+  scopes: string
+}
+
+oauth: {
+  shape: sql_table
+  id: string {constraint: primary_key}
+  uses_code: bool
+  code: string {constraint: foreign_key}
+  cid: string {constraint: foreign_key}
+  last_use: timestamp
+}
+
+email_codes: {
+  shape: sql_table
+  id: string {constraint: primary_key}
+  uid: string {constraint: foreign_key}
+  date: timestamp
+}
+
+bookmarks: {
+  shape: sql_table
+  pid: string {constraint: foreign_key}
+  uid: string {constraint: foreign_key}
+}
+
+polls: {
+  shape: sql_table
+  id: string {constraint: [primary_key; foreign_key]}
+  options: string
+  expiration_date: timestamp
+  multi_choice: bool
+}
+
+bookmarks.uid -> users.id
+bookmarks.pid -> posts.id
+email_codes.uid -> users.id
+oauth.code -> auth_codes.id
+oauth.cid -> apps.id
+auth_codes.uid -> users.id
+auth_codes.cid -> apps.id
+sessions.uid -> users.id
+fields.uid -> users.id
+boosts.pid -> posts.id
+boosts.uid -> users.id
+follows.follower -> users.id
+follows.following -> users.id
+reactions.pid -> posts.id
+reactions.uid -> users.id
 posts.sender -> users.id
 posts.replyto -> posts.id
 posts.client -> apps.id
 posts_content.pid -> posts.id
+posts_content.kind -> posts_text.pid
+posts_content.kind -> polls.id
+posts_text.pid -> posts.id
