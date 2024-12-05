@@ -63,7 +63,7 @@ proc account*(user_id: string): JsonNode =
     user = db.getUserById(user_id)
     followers = db.getFollowersCount(user_id)
     following = db.getFollowingCount(user_id)
-    totalPosts = db.getTotalPostsByUserId(user_id)
+    totalPosts = db.getNumPostsByUser(user_id)
 
   configPool.withConnection config:
     avatar = config.getAvatar(user_id)
@@ -183,7 +183,7 @@ proc v1Instance*(): JsonNode =
 
   dbPool.withConnection db:
     userCount = db.getTotalLocalUsers()
-    postCount = db.getTotalPosts()
+    postCount = db.getNumTotalPosts()
     domainCount = db.getTotalDomains()
     admin = db.getFirstAdmin()
 
