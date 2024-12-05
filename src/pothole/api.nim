@@ -41,22 +41,3 @@ const apiRoutes* =  @[
   ("/.well-known/nodeinfo", "GET", resolveNodeinfo),
   ("/nodeinfo/2.0", "GET", nodeInfo2x0),
 ]
-
-
-proc logAPI*(req: Request) =
-  ## This is tremendously slow, *only* use it for logging API routes.
-  ## Do NOT use it ever in production.
-  log "httpVersion: \"", req.httpVersion
-  log "httpMethod: \"", req.httpMethod
-  log "uri: \"", req.uri
-  log "path: \"", req.path
-  log "queryParams: \"", req.queryParams
-  log "pathParams: \"", req.pathParams
-  log "headers: \"", req.headers
-  log "body: \"", req.body
-  log "remoteAddress: \"", req.remoteAddress
-  
-  for route in apiRoutes:
-    if req.path == route[0] and req.httpMethod == route[1]:
-      route[2](req)
-  
