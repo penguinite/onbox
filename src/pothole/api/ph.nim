@@ -36,6 +36,6 @@ proc phAbout*(req: Request) =
     "version": lib.phVersion,
     "mastoapi_version": lib.phMastoCompat,
     "source_url": lib.phSourceUrl,
-    "kdf": crypto.kdf,
+    "kdf": latestKdf,
     "crash_dir": lib.globalCrashDir
   }))
