@@ -81,10 +81,10 @@ for route in apiRoutes:
   router.addRoute(route[1], route[0], route[2])
   router.addRoute(route[1], route[0] & "/", route[2]) # Trailing slash fix.
 
-# Add magical routes
-for url, route in urlRoutes.pairs:
-  router.addRoute(route[0], url, route[1])
-  router.addRoute(route[0], url & "/", route[1]) # Trailing slash fix.
+# Add URL routes
+for route in urlRoutes:
+  router.addRoute(route[1], route[0], route[2])
+  router.addRoute(route[1], route[0] & "/", route[2]) # Trailing slash fix.
 
 log "Serving on http://localhost:" & $port
 initEverythingForRoutes()

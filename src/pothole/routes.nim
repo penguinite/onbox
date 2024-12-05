@@ -200,9 +200,9 @@ proc serveCSS*(req: Request) =
   headers["Content-Type"] = "text/css"
   req.respond(200, headers, getAsset("style.css"))
 
-const urlRoutes* = {
-  "/static/style.css": ("GET", serveCSS),
-  "/auth/sign_in": ("GET", signInGet),
-  "/auth/sign_in": ("POST", signInPost),
-  "/auth/logout": ("GET", logoutSession),
-}.toTable
+const urlRoutes* = @[
+  ("/static/style.css", "GET", serveCSS),
+  ("/auth/sign_in", "GET", signInGet),
+  ("/auth/sign_in", "POST", signInPost),
+  ("/auth/logout", "GET", logoutSession)
+]
