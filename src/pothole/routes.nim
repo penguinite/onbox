@@ -34,8 +34,11 @@ proc signInGet*(req: Request) =
   # Remove session cookie from user's browser.
   if req.hasSessionCookie():
     headers["Set-Cookie"] = deleteSessionCookie()
-    # Check if it actaully exists in the db before removing.
-    # In theory this shouldn't matter but its a good thing to do anyway
+    # Check if it actually exists in the db before removing.
+    #
+    # We don't *need* to check, since it's a DELETE FROM statement
+    # and those don't usually error out when nothing is found.
+    # But it's a good idea to do anyway.
     let id = req.fetchSessionCookie()
     var user = ""
     dbPool.withConnection db:
