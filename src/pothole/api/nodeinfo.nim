@@ -49,7 +49,7 @@ proc nodeInfo2x0*(req: Request) =
     totalSessions = db.getTotalSessions()
     totalValidSessions = db.getTotalValidSessions()
     totalUsers = db.getTotalLocalUsers()
-    totalPosts = db.getTotalPosts()
+    totalPosts = db.getNumTotalPosts()
 
   configPool.withConnection config:
     var protocols: seq[string] = @[]
