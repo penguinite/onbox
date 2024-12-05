@@ -35,6 +35,7 @@ const apiRoutes* =  @[
   ("/oauth/authorize", "POST" , oauthAuthorizePOST),
   ("/oauth/token",  "POST", oauthToken),
   ("/oauth/revoke",  "POST", oauthRevoke),
+  ("/.well-known/oauth-authorization-server", "GET", oauthInfo),
   ("/api/v1/accounts/verify_credentials",  "GET", accountsVerifyCredentials),
   ("/api/v1/accounts/@id", "GET", accountsGet),
   ("/api/v1/accounts", "GET", accountsGetMultiple),

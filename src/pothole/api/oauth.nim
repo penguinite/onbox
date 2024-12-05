@@ -174,7 +174,6 @@ proc oauthAuthorizeGET*(req: Request) =
 
   req.renderAuthForm(scopes, client_id, redirect_uri)
 
-
 proc oauthAuthorizePOST*(req: Request) =
   let fm = req.unrollForm()
 
@@ -404,11 +403,6 @@ proc oauthToken*(req: Request) =
       "created_at": toTime(utc(now())).toUnix()
     })
   )
-
-    
-
-
-  return
   
 proc oauthRevoke*(req: Request) =
   var headers: HttpHeaders
@@ -478,7 +472,29 @@ proc oauthRevoke*(req: Request) =
   #
   # In our case, if we delete a non-existent OAuth token, then we will get a database error
   
+proc oauthInfo*(req: Request) =
+  var url = ""
+  configPool.withConnection config:
+    url = realURL(config)
 
-  
-    
-    
+  respJson($(
+    %*{
+      "issuer": url,
+      "service_documentation": "https://docs.joinmastodon.org/",
+      "authorization_endpoint": url & "oauth/authorize",
+      "token_endpoint": url & "oauth/token",
+      "app_registration_endpoint": url & "api/v1/apps",
+      "revocation_endpoint": url & "oauth/revoke",
+      # I had to write this manually
+      # TODO: It would be nice if we had a way to automate this of some sort.
+      "scopes_supported": ["read", "write", "push", "follow", "admin:read", "admin:write", "read:accounts", "read:blocks", "read:bookmarks", "read:favorites", "read:favourites", "read:filters", "read:follows", "read:lists", "read:mutes", "read:notifications", "read:search", "read:statuses", "wite:accounts", "wite:blocks", "wite:bookmarks", "wite:favorites", "wite:favourites", "wite:filters", "wite:follows", "wite:lists", "wite:mutes", "wite:notifications", "wite:search", "wite:statuses", "admin:write:accounts", "admin:write:reports", "admin:write:domain_allows", "admin:write:domain_blocks", "admin:write:ip_blocks", "admin:write:email_domain_blocks", "admin:write:canonical_domain_blocks", "admin:read:accounts", "admin:read:reports", "admin:read:domain_allows", "admin:read:domain_blocks", "admin:read:ip_blocks", "admin:read:email_domain_blocks", "admin:read:canonical_domain_blocks"],
+      # The rest we send back as-is, since we don't do things differently.
+      "response_types_supported": ["code"],
+      "response_modes_supported": ["query", "fragment", "form_post"],
+      "code_challenge_methods_supported": ["S256"],
+      "grant_types_supported": ["authorization_code", "client_credentials"],
+      "token_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post"]
+    }
+  ))
+
+
