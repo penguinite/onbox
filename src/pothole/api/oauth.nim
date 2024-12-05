@@ -95,7 +95,7 @@ proc redirectToLogin*(req: Request, client, redirect_uri: string, scopes: seq[st
 
   configPool.withConnection config:
     let url = realURL(config)
-    headers["Location"] = url & "auth/sign_in/?return_to=" & encodeQueryComponent("http://$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [url, client, redirect_uri, scopes.join(" ")])
+    headers["Location"] = url & "auth/sign_in/?return_to=" & encodeQueryComponent("$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [url, client, redirect_uri, scopes.join(" ")])
 
   req.respond(
     303, headers, ""
