@@ -1,30 +1,32 @@
 # Pothole
 
-A lightweight, federated and powerful microblogging server written in Nim. Pothole allows you to share your digital life without the constraints of modern, commercial social media!
+A lightweight and powerful backend social networking server written in Nim. Pothole allows you to share your digital life without the constraints of modern, commercial social media!
 
-*Note:* Pothole is a work-in-progress. Lots of implementation details are being figured out just now and are thus likely to change over time. In other words, this is pre-alpha or even *research* stage. 
+*Note:* Pothole is a work-in-progress. A lot of features are missing and the codebase is still likely to change. In other words, this is still in pre-alpha stage. Using it right now isn't recommended.
 
-*Note:* This is the `main` branch which contains a bleeding-edge codebase, which isn't stable at all for production environments, consider downloading the `stable` branch instead which is more stable. (Although, there is no `stable` branch as of yet since nothing works yet) So pick your poison! stability or bleeding-edge (or pick a specific feature branch to test out a feature if you are a developer.)
+*Note 2:* This is the `main` branch which contains a bleeding-edge codebase, which isn't stable at all for production environments. There will be a `stable` branch for you to download from when Pothole inevitably stabilizes.
 
 ## What is Pothole?
 
-Pothole is a microblogging server written in Nim, it's designed to be simple & fast. It has unique features such as allowing user-profiles to be customized. Pothole is far more reminiscent of Tumblr in this sense since it allows you to customize your profile and unleash your creativity in ways that other microblogging services simply cannot do.
+A social media website (such as Tumblr, Twitter and so on) usually consists of two parts: The frontend and the backend. The frontend is the part of the website that is visible to everyone, it's the homepage, it's the app, it's what you usually use to post new messages. The second part is the backend which handles everything internally, There is *no* user interface at all, unless it's related to authentication. Pothole is the latter, it's a backend program that processes messages but it does not show them to you via a website.
 
-Pothole federates to other servers using the ActivityPub protocol which means you can communicate to users on Mastodon, Akkoma, Misskey or whatever website that implements ActivityPub. Pothole is also compatible with Mastodon's API interface, so your clients, frontends and bots should work with as few changes as possible.
+The main goal with Pothole was for it to be a simple backend server that is as efficient as possible. When you set it up, it just starts processing messages, nothing more. A backend server is useless by itself so we've designed Pothole to also be compatible with the Mastodon API interface, which means you can install just about any [Mastodon client](https://joinmastodon.org/apps) and it should work out of the box with Pothole.
 
-## Does it work?
+## Does it work? Should I use it?
 
-No. You are better off using [Pleroma](https://pleroma.social/) for a stable backend or [GoToSocial](https://gotosocial.org/) for a light-as-air backend.
+Sadly, Pothole is still very incomplete and it is way too low-level to use comfortably. You are better off using [Pleroma](https://pleroma.social/), or you could also use [GoToSocial](https://gotosocial.org/) if you're okay with some bugs and you still want a lightweight server.
 
-Development is slow because creating anything remotely like this is incredibly difficult, I am trying to emphasize speed & safety over shiny features, and that means I keep planning ahead for new things and that's why this is taking so long. Pothole is still in a sort-of research state, I believe it will stabilize over the coming months but I can't guarantee anything.
+Pothole is a low-level program, it can't setup a proper social media website on its own. You would need to setup a client or a frontend (Pothole is designed to work with [Mastodon clients](https://joinmastodon.org/apps)) and currently this procedure is incredibly difficult to do since there is no documentation on how to do it and I can't offer much help because there are so many clients/frontends to consider.
+
+In addition, Pothole is *still* in development, a lot of things haven't been fully implemented yet and the codebase still changes constantly. If I **have** to give an estimate as to when it will become more stable, then it'd be far into 2025. There is still a lot of work to be done.
 
 ## How do I use Pothole?
 
-Install [nim](https://nim-lang.org/), your favorite C compiler (gcc is recommended, clang might not be optimal) and nimble. Run `nimble -d:release build` and it will build with release settings. (You will also need to install postgres as a library and database server somewhere.)
+Install the latest version of [nim](https://nim-lang.org/), your favorite C compiler (gcc is recommended but use whatever modern C compiler you've got) and nimble. Run `nimble -d:release build` and it will build with release settings. (You will also need to install postgres as a library and database server somewhere.)
 
 Pothole's main database is postgres, and so it expects an actively-running postgres server process in the background to work. You can change the database connection settings by editing the `pothole.conf` configuration file. If you don't want to (or can't) install postgres but you have access to docker, then you can run the `potholectl db docker` command to generate a postgres database docker container configured for pothole. `potholectl` can be found in the `build/` folder when you finish building pothole.
 
-Assuming you did not change the port that pothole uses in the configuration file, head over to [127.0.0.1:3500](http://127.0.0.1:3500) and experience its glory! This is a basic demonstration setup, a proper setup procedure with reverse proxying and media proxy can be found is coming soon!
+Assuming the port in the config file isn't changed, Pothole starts running at `http://localhost:3500`, but do know that Pothole is meant to be a backend server. For a proper user interface, you need to supplement it with a client/frontend. And this is also just a basic demonstration setup, a proper setup would include a reverse and media proxy.
 
 ## Copyright
 
