@@ -81,32 +81,34 @@ proc getAppFromAuthCode*(db: DbConn, id: string): string =
 
 proc authCodeValid*(db: DbConn, id: string): bool =
   ## Does some extra checks in addition to authCodeExists()
+  # Obviously check if the auth code exists first.
   if not db.authCodeExists(id):
     return false
   
   # Check if the associated app exists
-  if not db.clientExists(
-    db.getAppFromAuthCode(id)
-  ):
-    db.deleteAuthCode(id)
+  # If an auth code isn't assigned to any valid app then it's invalid
+  if not db.clientExists(db.getAppFromAuthCode(id)):
     return false
   
   # Check if the associated user exists
-  if not db.userIdExists(
-    db.getUserFromAuthCode(id)
-  ):
-    db.deleteAuthCode(id)
+  # If the auth token is associated to a non-existent user then it is invalid.
+  if not db.userIdExists(db.getUserFromAuthCode(id)):
     return false
 
+  # Check if the auth code is assigned to the "Null" user
+  # No auth code should be assigned to null, but it might happen.
   if db.getUserFromAuthCode(id) == "null":
-    db.deleteAuthCode(id)
     return false
 
+  # If all our checks succeed then it has to be a valid auth code.
   return true
 
 proc cleanupCodes*(db: DbConn) =
+  ## Purge any codes that are invalid.
   for row in db.getAllRows(sql"SELECT id FROM auth_codes;"):
-    discard db.authCodeValid(row[0])
+    if not db.authCodeValid(row[0]):
+      db.deleteAuthCode(row[0])
+    
 
 proc cleanupCodesVerbose*(db: DbConn): seq[(string, string, string)] =
   ## Same as cleanupCodes but it returns a list of all of the codes that were deleted.
