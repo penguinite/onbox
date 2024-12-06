@@ -199,7 +199,7 @@ proc v1Instance*(): JsonNode =
           config.getString("instance","summary")
         ),
         "email": config.getStringOrDefault("instance","email",""),
-        "version": lib.phVersion,
+        "version": lib.phVersion & "(compatible; Pothole " & lib.phMastoCompat & ")",
         "urls": {
           "streaming_api": "wss://" & config.getString("instance","uri") & config.getStringOrDefault("instance", "endpoint", "/")
         },
@@ -251,7 +251,7 @@ proc v2Instance*(): JsonNode =
       {
         "domain": config.getString("instance","uri"),
         "title": config.getString("instance","name"),
-        "version": lib.phVersion,
+        "version": lib.phVersion & "(compatible; Pothole " & lib.phMastoCompat & ")",
         "source_url": lib.phSourceUrl,
         "description": config.getStringOrDefault(
           "instance", "description",
