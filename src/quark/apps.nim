@@ -31,6 +31,19 @@ import std/[strutils, times]
 # From elsewhere (third-party libraries)
 import rng
 
+## APIDIFF: (API Difference)
+## Apps in Pothole are handled different than by Mastodon.
+## 
+## In any version newer than v4.3, apps *CANNOT* be automatically deleted or purged at all
+## In any version older than v4.3, apps *CAN* be deleted *UNLESS* an app requests a token, in which case, it is immortal.
+## 
+## Pothole on startup however deletes any app that was last used a week ago, to prevent the accumulation of dead apps that use up space.
+## Apps are considered "temporary data" , meaning they can be deleted at any point if they are not used frequently.
+## Other examples of "temporary data" are:
+## - auth codes: These aren't deleted depending on the date they were last used but whether or not they are valid. See authCodeValid() in auth_codes.nim
+## - email codes: Deleted if the code is a day old and if they are assigned to the "null" user. (See cleanupCodes() in email_codes.nim)
+## 
+
 proc purgeOldApps*(db: DbConn) =
   for row in db.getAllRows(sql"SELECT id, last_accessed FROM apps;"):
     if row[0] == "0": # Skip "null" app.
