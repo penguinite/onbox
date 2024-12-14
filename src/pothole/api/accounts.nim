@@ -37,7 +37,7 @@ proc accountsVerifyCredentials*(req: Request) =
     respJsonError("The access token is invalid")
   
   let token = req.getAuthHeader()
-  var result: JsonNode
+  var user = ""
 
   dbPool.withConnection db:
     # Check if token actually exists
@@ -47,8 +47,30 @@ proc accountsVerifyCredentials*(req: Request) =
     # Check if token is assigned to a user
     if not db.tokenUsesCode(token):
       respJsonError("This method requires an authenticated user", 422)
-    result = credentialAccount(db.getTokenUser(token))
-  req.respond(200, headers, $(result))
+
+    user = db.getTokenUser(token)
+
+    # Check if that user's account is frozen (suspended).
+    if db.userFrozen(user):
+      respJsonError("Your login is currently disabled", 403)
+    
+    # Check if the user's email has been verified.
+    # But only if user.require_verification is true
+    configPool.withConnection config:
+      if config.getBoolOrDefault("user", "require_verification", false) and not db.userVerified(user):
+        respJsonError("Your login is missing a confirmed e-mail address", 403)
+    
+    # Check if the user's account is pending verification
+    if not db.userApproved(user):
+      respJsonError("Your login is currently pending approval", 403)
+
+    # Check if the app is actually allowed to access this.
+    # We are just checking to see if 
+    let app = db.getTokenApp(token)
+    if not db.hasScope(app, "read:account") and not db.hasScope(app, "profile"):
+      respJsonError("This method requires an authenticated user", 422)
+
+  req.respond(200, headers, $(credentialAccount(user)))
 
 proc accountsGet*(req: Request) =
   var headers: HttpHeaders
