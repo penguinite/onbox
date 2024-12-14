@@ -126,7 +126,7 @@ proc signInPost*(req: Request) =
       renderError("Your account hasn't been approved yet, please wait or contact an administrator.", 403)
       
     configPool.withConnection config:
-      if not db.userVerified(id) and config.getBoolOrDefault("user", "require_verification", true):
+      if not db.userVerified(id) and config.getBoolOrDefault("user", "require_verification", false):
         ## TODO: Send a code if there hasn't been one yet
         ## TODO: Allow for re-sending codes, say, if a user logins 10 mins after their previous code and still isn't verified.
         renderError("Your account hasn't been verified yet. Check your email for a verification link.", 403)
