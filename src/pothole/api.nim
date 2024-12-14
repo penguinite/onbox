@@ -18,7 +18,7 @@
 
 # From somewhere in Pothole
 import pothole/lib
-import pothole/api/[instance, apps, oauth, nodeinfo, accounts]
+import pothole/api/[instance, apps, oauth, nodeinfo, accounts, email]
 
 # From somewhere else
 import mummy
@@ -36,6 +36,7 @@ const apiRoutes* =  @[
   ("/oauth/token",  "POST", oauthToken),
   ("/oauth/revoke",  "POST", oauthRevoke),
   ("/.well-known/oauth-authorization-server", "GET", oauthInfo),
+  ("/api/v1/emails/confirmations", "POST", emailConfirmation),
   ("/api/v1/accounts/verify_credentials",  "GET", accountsVerifyCredentials),
   ("/api/v1/accounts/@id", "GET", accountsGet),
   ("/api/v1/accounts", "GET", accountsGetMultiple),
