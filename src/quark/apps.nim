@@ -143,7 +143,7 @@ proc verifyScope*(pre_scope: string): bool =
   # it's one of the simpler scopes.
   if ':' notin scope:
     case scope:
-    of "read", "write", "push", "follow": # Yes, follow is a deprecated scope... But that doesn't stop apps from using it! :D
+    of "read", "write", "push", "profile", "follow": # Yes, follow is a deprecated scope... But that doesn't stop apps from using it! :D
       return true
     else:
       return false
@@ -186,6 +186,7 @@ proc humanizeScope*(pre_scope: string): string =
   case scope:
   of "read": return "Full read access for everything except admin actions."
   of "write": return "Full write access for everything except admin actions."
+  of "profile": return "Read access to account metadata"
   of "push": return "Access to the Web Push API."
   of "admin:write": return "Full write access for everything admin-related."
   of "admin:read": return "Full read access for everything admin-related."
