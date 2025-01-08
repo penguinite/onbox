@@ -19,7 +19,7 @@ import pothole/private/[jsonhelpers, reqhelpers, resphelpers]
 import pothole/[database, conf]
 
 # From the standard library
-import std/mimetypes
+import std/[mimetypes, os]
 from std/strutils import parseInt, `%`
 
 # From elsewhere
@@ -37,8 +37,11 @@ var
 proc realURL*(config: ConfigTable): string =
   return "http://" & config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/")
 
-proc initEverythingForRoutes*() = 
-  configPool = newConfigPool(parseInt(getEnvOrDefault("POTHOLE_CONFIG_SIZE", "75")))
+proc initEverythingForRoutes*() =
+  var size = 75
+  if existsEnv("POTHOLE_CONFIG_SIZE"):
+    size = parseInt(getEnv("POTHOLE_CONFIG_SIZE"))
+  configPool = newConfigPool(size)
 
   configPool.withConnection config:
     dbPool = newPostgresPool(
