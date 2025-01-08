@@ -19,114 +19,137 @@
 ## Such as getConfigFilename()
 ## Currently, this module serves as a wrapper over the iniplus config parser.
 
-# From pothole
-import lib
-
 # From standard library
 import std/[os, tables]
-import std/strutils except isEmptyOrWhitespace, parseBool
 
 # From elsewhere
+{.define: iniplusCheckmaps.}
 import iniplus
 export iniplus
 
+## TODO: Iniplus checkmaps could reduce this API's surface.
+## And also make pothole way more performant (Less checks when retrieving config values)
+
 # Required configuration file options to check for.
 # Split by ":" and use the first item as a section and the other as a key
-const requiredConfigOptions*: Table[string, seq[string]] = {
-  "instance": @["name", "summary", "uri"]
-}.toTable
 
-proc setupInput*(input: string, check: bool = true): ConfigTable =
-  ## This procedure does the same thing as setup() but it accepts the input it gets
-  ## in the parameter as the actual config file.
-  result = parseString(input)
-  if check:
-    for section,preKey in requiredConfigOptions.pairs:
-      for key in preKey:
-        if not result.exists(section, key):
-          error "Missing essential key \"", key, "\" in section \"", section, "\""
-  return result
+const required = {
+  "db": {
+    "password": @= CVString
+  }.toTable,
+  "instance": {
+    "name": @= CVString,
+    "summary": @= CVString,
+    "description": @= CVString,
+    "uri": @= CVString,
+    "email": @= CVString
+  }.toTable,
+}
 
-proc setup*(filename: string, check: bool = true): ConfigTable =
-  return setupInput(
-    readFile(filename),
-    check
-  )
+const optional = {
+  "db": {
+    "host": @= "127.0.0.1:5432",
+    "name": @= "pothole",
+    "user": @= "pothole"
+  }.toTable,
+  "instance": {
+    "rules": @= @[""],
+    "languages": @= @["en"],
+    "disguised_uri": @= "",
+    "federated": @= true,
+    "remote_size_limit": @= 30
+  }.toTable,
+  "web": {
+    "show_staff": @= true,
+    "show_version": @= true,
+    "port": @= 3500,
+    "endpoint": @= "/",
+    "signin_link": @= "/auth/sign_in/",
+    "signup_link": @= "/auth/sign_up/",
+    "logout_link": @= "/auth/logout/",
+    "whitelist_mode": @= false
+  }.toTable,
+  "storage": {
+    "type": @= "flat",
+    "uploads_folder": @= "uploads/",
+    "upload_uri": @= "",
+    "upload_server": @= "",
+    "default_avatar_location": @= "default_avatar.webp",
+    "upload_size_limit": @= 30
+  }.toTable,
+  "user": {
+    "registrations_open": @= true,
+    "require_approval": @= false,
+    "require_verification": @= false,
+    "max_attachments": @= 8,
+    "max_chars": @= 2000,
+    "max_poll_options": @= 20,
+    "max_featured_tags": @= 10,
+    "max_pins": @= 20
+  }.toTable,
+  "email": {
+    "enabled": @= false,
+    "host": @= "",
+    "port": @= 0,
+    "form": @= "",
+    "ssl": @= true,
+    "user": @= "",
+    "pass": @= ""
+  }.toTable,
+  "mrf": {
+    "active_builtin_policies": @= @["noop"],
+    "active_custom_policies": @= @[""]
+  }.toTable
+}
 
-proc getBoolOrDefault*(config: ConfigTable, section, key: string, default: bool): bool =
-  if config.exists(section, key):
-    return config.getBool(section, key)
-  return default
-
-proc getTable*(table: ConfigTable, section, key: string): Table[string, string] =
-  let
-    arr1 = table.getStringArray(section, key)
-    arr2 = table.getStringArray(section, key & "_reasons")
- 
-  if len(arr1) != len(arr2):
-    log "Length of array 1 (Key: \"", key ,"\", Section: \"", section ,"\"): ", len(arr1)
-    log "Length of array 2 (Key: \"", key & "_reasons" ,"\", Section: \"", section ,"\"): ", len(arr2)
-    error "Lengths do not match, please double check your configuration."
-  
-  var i = -1
-  let arr2Len = high(arr2) # Caching it so we don't call this all the time.
-  for key in arr1:
-    inc(i)
-    if i > arr2Len:
-      break
- 
-    let val = arr2[i]
-    result[key] = val
-  return result 
+proc setup*(filename: string): ConfigTable =
+  return parseString(readFile(filename), required, optional)
 
 proc getConfigFilename*(): string =
+  ## Returns the filename for the 
   result = "pothole.conf"
   if existsEnv("POTHOLE_CONFIG"):
     result = getEnv("POTHOLE_CONFIG")
   return result
 
-proc isNil*(table: ConfigTable): bool =
-  # We can cheat a bit and just check for the existence of a required key.
-  if len(table) == 0:
-    return true
-  return false
-
-proc getIntOrDefault*(config: ConfigTable, section, key: string, default: int): int =
-  if config.exists(section, key):
-    return config.getInt(section, key)
-  return default
-
-proc getStringArrayOrDefault*(config: ConfigTable, section, key: string, default: seq[string]): seq[string] = 
-  if config.exists(section, key):
-    return config.getStringArray(section, key)
-  return default
-
 proc getEnvOrDefault*(env: string, default: string): string =
+  {.deprecated: "Deprecated to reduce Pothole's API, do not use.".}
   if not existsEnv(env):
     return default
   return getEnv(env)
 
+## This is a config file pool.
+## Mummy is a multi-threaded database server, and so using global variables is a bad idea.
+## The configuration file is mutable even if we do not mutate it.
+## So nim demands that we either store multiple copies (by using a pool) or
+## we re-write our entire config system to be compile-tme instead of run-tme.
+## 
+## And we can't use let instead of var, because in Nim's eyes, let is still considered a GC-unsafe global.
+## I don't know why let is considered GC-unsafe, it just is.
+## (Maybe someone has to send a PR to re-classify it as a GC-safe global)
+## 
+## With let out of the way, pools are the only thing remaining.
+## So we use waterpark and create a brand new "config file" pool.
+## And we just use configPool.withConnection config:
+## whenever we need access to the config file.
+## 
+## TODO: Figure out a way to trick nim into thinking config files are non-mutable or
+## send a PR to reclassify let as a GC-safe non-mutable global. (As it should have been all these years)
+## 
+## Note: You can also use threadvars but those are fucking horrible, and pools are way easier to use.
+## SERIOUSLY, I USED THREADVARS BEFORE, ITS THE EXACT SAME THING AS A POOL BUT 90% MORE ANNOYING TO USE.
+
 import waterpark
 
-type
-  ConfigPool* = object
-    pool: Pool[ConfigTable]
-
-proc borrow*(pool: ConfigPool): ConfigTable {.inline, raises: [], gcsafe.} =
-  pool.pool.borrow()
-
-proc recycle*(pool: ConfigPool, conn: ConfigTable) {.inline, raises: [], gcsafe.} =
-  pool.pool.recycle(conn)
+type ConfigPool* = Pool[ConfigTable]
 
 proc newConfigPool*(size: int, filename: string = getConfigFilename()): ConfigPool =
-  result.pool = newPool[ConfigTable]()
-  try:
-    for _ in 0 ..< size:
-      result.pool.recycle(setup(filename))
-  except CatchableError as err:
-    error "Couldn't initialize config pool: ", err.msg
+  ## Creates a new configuration pool.
+  result = newPool[ConfigTable]()
+  for _ in 0 ..< size: result.recycle(setup(filename))
 
 template withConnection*(pool: ConfigPool, config, body) =
+  ## Syntactic sugar for automagically borrowing and returning a config table from a pool.
   block:
     let config = pool.borrow()
     try:
