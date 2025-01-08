@@ -400,7 +400,7 @@ proc oauthToken*(req: Request) =
       "access_token": token,
       "token_type": "Bearer",
       "scope": scopes.join(" "),
-      "created_at": toTime(utc(now())).toUnix()
+      "created_at": 0
     })
   )
   
