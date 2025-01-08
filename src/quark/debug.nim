@@ -21,6 +21,7 @@
 import std/[tables, os]
 import quark/[users, posts]
 from db_connector/db_postgres import DbConn, open
+{.define: iniplusCheckmaps.}
 import rng, iniplus
 
 const userData* = @[
@@ -181,10 +182,10 @@ proc testGuard*(section, name: string) =
 
   var cnf: ConfigTable
   if fileExists(fn):
-    cnf = parseFile(fn)
+    cnf = parseString(readFile(fn))
   
   if cnf.exists(section, name):
     quit(0)
   else:
-    cnf.setKey(section, name, newValue(true))
+    cnf.setKey(section, name, newCValue(true))
     writeFile(fn, toString(cnf))
