@@ -22,7 +22,7 @@ import quark/[users, posts, sessions, crypto]
 import pothole/[conf, assets, database, routeutils, lib]
 
 # From somewhere in the standard library
-import std/[tables, strutils]
+import std/[tables, strutils, times]
 
 # From nimble/other sources
 import mummy, temple
