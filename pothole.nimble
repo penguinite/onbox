@@ -61,7 +61,7 @@ after build:
 requires "nim >= 2.0.0"
 requires "nimcrypto >= 0.5.4"
 requires "rng >= 0.1.0"
-requires "iniplus >= 0.3.2"
+requires "iniplus#7829f5b3215e6e30ae01a74a86669068ab8d25ba"
 requires "temple >= 0.2.3"
 requires "db_connector >= 0.1.0"
 requires "mummy >= 0.4.2"
