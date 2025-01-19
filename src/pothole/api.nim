@@ -36,6 +36,7 @@ const apiRoutes* =  @[
   ("/api/v1/accounts/verify_credentials",  "GET", accountsVerifyCredentials),
   ("/api/v1/accounts/@id", "GET", accountsGet),
   ("/api/v1/accounts", "GET", accountsGetMultiple),
+  ("/api/v1/followed_tags", "GET", followedTags),
   ("/.well-known/nodeinfo", "GET", resolveNodeinfo),
   ("/nodeinfo/2.0", "GET", nodeInfo2x0),
 ]
