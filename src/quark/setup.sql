@@ -72,6 +72,20 @@ CREATE TABLE IF NOT EXISTS reactions (pid TEXT NOT NULL, uid TEXT NOT NULL, reac
 -- approved, BOOLEAN NOT NULL: Whether or not the follow has gone-through, ie. if its approved
 CREATE TABLE IF NOT EXISTS follows (follower TEXT NOT NULL,following TEXT NOT NULL,approved BOOLEAN NOT NULL,foreign key (follower) references users(id),foreign key (following) references users(id));
 
+-- name, PRIMARY KEY TEXT NOT NULL: The name of the hashtag itself
+-- url, TEXT: An optional URL for the hashtag (dictated by MastoAPI)
+-- trendable, BOOLEAN DEFAULT true: Whether or not the hashtag is allowed to trend.
+-- usable, BOOLEAN DEFAULT true: Whether or not the hashtag is disabled from auto-linking.
+-- requires_review, BOOLEAN DEFAULT false: Whether or not the hashtag has yet been reviewed to approve or deny the trendable attribute.
+--
+-- Non-MastoAPI columns:
+-- description, TEXT: An optional description for the hashtag (Next to url)
+-- system, BOOLEAN DEFAULT false: Allows you to specify whether or not the hashtag is a hard requirement.
+-- (Ie, it's a required option among others for sending a post, useful for implementing categories in nimforum.)
+-- (After requires_review)
+CREATE TABLE IF NOT EXISTS tag (name TEXT PRIMARY KEY NOT NULL, url TEXT NOT NULL, description TEXT, trendable BOOLEAN DEFAULT true, usable BOOLEAN DEFAULT true, requires_review BOOLEAN DEFAULT false, system BOOLEAN DEFAULT false);
+
+
 -- pid, TEXT NOT NULL: ID of post that user boosted
 -- uid, TEXT NOT NULL: ID of user that boosted post
 -- level, TEXT NOT NULL: The boost level, ie. is it followers-only or whatever.
