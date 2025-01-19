@@ -26,6 +26,27 @@ proc tagExists*(db: DbConn, tag: string): bool =
 proc getTagUrl*(db: DbConn, tag: string): string =
   return db.getRow(sql"SELECT url FROM tag WHERE name = ?;", tag)[0]
 
+proc userFollowsTag*(db: DbConn, tag, user: string): bool =
+  ## Returns true if a user (supplied by ID) follows a hashtag
+  return has(db.getRow(sql"SELECT following FROM tag_follows WHERE follower = ? AND following = ?;", user, tag))
+
+proc getTagsFollowedByUser*(db: DbConn, user: string, limit = 100): seq[string] =
+  for i in db.getAllRows(sql"SELECT following FROM tag_follows WHERE follower = ? LIMIT ?;", user, $(limit)):
+    result.add(i[0])
+  return result
+
+proc followTag*(db: DbConn, tag, user: string) =
+  db.exec(
+    sql"INSERT INTO tag_follows VALUES (?,?);",
+    user, tag
+  )
+
+proc unfollowTag*(db: DbConn, tag, user: string) =
+  db.exec(
+    sql"DELETE FROM tag_follows WHERE follower = ? AND following = ?;",
+    user, tag
+  )
+
 proc createTag*(db: DbConn, name: string, url = "", desc = "", trendable = true, usable = true, requires_review = false, system = false) =
   ## Creates a new tag object in the database and returns the ID associated with it.
   db.exec(
