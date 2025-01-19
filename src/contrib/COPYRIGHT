@@ -22,3 +22,8 @@ Path: /test_db_post.nim
 Description: Old test file
 Copyright: © penguinite <penguinite@tuta.io> 2024
 License: AGPL-3.0-or-later
+
+Path: /iniplus_checkmap.nim
+Description: Iniplus checkmaps for pothole (DOES NOT WORK)
+Copyright: © penguinite <penguinite@tuta.io> 2024
+License: AGPL-3.0-or-later
