@@ -26,9 +26,9 @@ proc getFollowersQuick*(db: DbConn, user: string): seq[string] =
     result.add(db.getHandleFromId(row[0]))
   return result
 
-proc getFollowingQuick*(db: DbConn, user: string): seq[string] =
+proc getFollowingQuick*(db: DbConn, user: string, limit = 20): seq[string] =
   ## Returns a set of handles that a specific user follows
-  for row in db.getAllRows(sql"SELECT following FROM follows WHERE follower = ? AND approved = true;", user):
+  for row in db.getAllRows(sql"SELECT following FROM follows WHERE follower = ? AND approved = true LIMIT ?;", user, $limit):
     result.add(db.getHandleFromId(row[0]))
   return result
 
