@@ -22,7 +22,6 @@ import quark/[db]
 import pothole/[routes, lib, conf, database, api, routeutils]
 
 # From standard library
-import std/[tables]
 from std/strutils import join
 
 # From nimble

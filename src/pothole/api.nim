@@ -17,11 +17,7 @@
 ## This module just serves as a wrapper for all the modules in the api folder
 
 # From somewhere in Pothole
-import pothole/lib
-import pothole/api/[instance, apps, oauth, nodeinfo, accounts, email]
-
-# From somewhere else
-import mummy
+import pothole/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_tags]
 
 const apiRoutes* =  @[
   # (URLRoute, HttpMethod, RouteProcedure)

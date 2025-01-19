@@ -17,11 +17,10 @@
 ## This module contains all the email-related API routes.
 
 # From somewhere in Quark
-import quark/[crypto, oauth, auth_codes, apps]
+import quark/[oauth, auth_codes]
 
 # From somewhere in Pothole
-import pothole/[lib]
-import pothole/[routeutils, database, conf]
+import pothole/[routeutils, database]
 
 # From somewhere in the standard library
 import std/[json]

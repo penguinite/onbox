@@ -54,9 +54,7 @@ CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY NOT NULL, recipients TEXT,
 -- cid, TEXT DEFAULT '': The id for the content, if applicable.
 CREATE TABLE IF NOT EXISTS posts_content (pid TEXT PRIMARY KEY NOT NULL,kind smallint NOT NULL DEFAULT 0, cid TEXT DEFAULT '', foreign key (pid) references posts(id));
 
--- TODO: Add support for other formats such as HTML, Markdown, Rst and so on.
--- It could be done with separate tables (Overkill) or a column dictating the format.
--- pid, TEXT PRIMARY KEY NOT NULL: The post id that the best belongs to
+-- pid, TEXT PRIMARY KEY NOT NULL: The post id that the text belongs to
 -- content, TEXT NOT NULL: The text content itself
 -- format, TEXT: The format for the content.
 -- published, TIMESTAMP NOT NULL: The date that this content was published

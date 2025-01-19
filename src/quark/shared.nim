@@ -5,7 +5,11 @@ type
     Public, Unlisted, FollowersOnly, Private
 
   PostContentType* = enum
-    Text = "0", Poll = "1", Media = "2", Card = "3", Unknown = "9999"
+    Text = "0"
+    Poll = "1"
+    Media = "2"
+    Card = "3"
+    Unknown = "9999"
 
   PostContent* = object of RootObj
     case kind*: PostContentType

@@ -31,6 +31,7 @@ import std/strutils except isEmptyOrWhitespace, parseBool
 import mummy, temple
 
 proc success(msg: string): Table[string, string] =
+  ## Returns a table suitable for further processing in templateify()
   return {
     "title": "Success!",
     "message_type": "success",
@@ -38,6 +39,7 @@ proc success(msg: string): Table[string, string] =
   }.toTable
 
 proc error(msg: string): Table[string, string] =
+  ## Returns a table suitable for further processing in templateify()
   return {
     "title": "Error!",
     "message_type": "error",
@@ -45,13 +47,15 @@ proc error(msg: string): Table[string, string] =
   }.toTable
 
 proc getSeparator(s: string): char =
+  ## When given a string containing a set of separated scopes, it tries to find out what the separator is.
+  ## This is needed because the Mastodon API allows the use of + signs and spaces as separators.
+  ## Personally, I think this is fucking stupid, and it would have made everything easier to just use one symbol.
   for ch in s:
     case ch:
     of '+': return '+'
     of ' ': return ' '
-    else:
-      continue
-  return ' '
+    else: continue
+  return ' ' # If a separator can't be found, then it's safe to assume it's a space-separated scope.
 
 proc renderAuthForm(req: Request, scopes: seq[string], client_id, redirect_uri: string) =
   ## A function to render the auth form.
@@ -136,7 +140,7 @@ proc oauthAuthorizeGET*(req: Request) =
     scopeSeparator = ' '
   if req.isValidQueryParam("scope"):
     # According to API, we can either split by + or space.
-    # so we run this to figure it out. Defaulting to spaces if need
+    # so we run this to figure it out. Defaulting to spaces if needed
     scopeSeparator = getSeparator(req.getQueryParam("scope")) 
     scopes = req.getQueryParam("scope").split(scopeSeparator)
   
@@ -468,7 +472,7 @@ proc oauthRevoke*(req: Request) =
   # You're supposed to simultaneously check if the token exists and to let it be deleted multiple times?
   # I think Mastodon either doesn't actually delete the token (they just mark it as deleted, which is stupid)
   # or they don't check for the existence of the token before deleting it.
-  # Anyway, this API is not idempotent because thats stupid
+  # Anyway, this API is not idempotent because thats stupid and there's NO REASON for it to be idempotent in the first place!
   #
   # In our case, if we delete a non-existent OAuth token, then we will get a database error
   
