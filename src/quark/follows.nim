@@ -18,7 +18,7 @@
 ## This module contains all database logic for handling followers, following and so on.
 
 import quark/private/database
-import quark/users
+import quark/[users, tag, strextra]
 
 proc getFollowersQuick*(db: DbConn, user: string): seq[string] =
   ## Returns a set of handles that follow a specific user
@@ -96,3 +96,38 @@ proc unfollowUser*(db: DbConn, follower, following: string) =
     sql"DELETE FROM follows WHERE follower = ? AND following = ?;",
     follower, following
   )
+
+
+
+proc getHomePosts*(db: DbConn, user: string, limit = 20): seq[string] =
+  ## Returns a list of IDs to posts sent by users that `user` follows or in hashtags that `user` follows.
+  # Let's see who this user follows 
+  var
+    following = db.getFollowingQuick(user, limit)
+    followingTags = db.getTagsFollowedByUser(user, limit)
+  
+  # We will start by fetching X number of posts from the db
+  # (where X is the limit, oh and the order is chronological, according to *creation* date.)
+  # And then checking if its creator was followed or if it has a hashtag we follow.
+  #
+  # This seemed like the best solution at the time given the circumstances
+  # But if it isn't then whoopsie! We will make another one!
+  var last_post = ""
+  while len(result) < limit:
+    if last_post != "":
+      let post_date = toDateFromDb(db.getRow(sql"SELECT written FROM posts WHERE id = ?;", last_post)[0])
+
+    for row in db.getAllRows(sql"SELECT pid,sender FROM posts WHERE date(written) >= ? ORDER BY written ASC LIMIT ?;", toDbString(post_date), $limit):
+      last_post = row[0]
+      if row[1] in following:
+        result.add(row[0])
+        continue
+      
+      # This part seems like the bottleneck.
+      var post_tag = db.getPostTags(row[0])
+      for tag in followingTags:
+        if tag in post_tag:
+          result.add(row[0])
+          continue
+  
+  return result
