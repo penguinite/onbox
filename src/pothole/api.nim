@@ -17,7 +17,7 @@
 ## This module just serves as a wrapper for all the modules in the api folder
 
 # From somewhere in Pothole
-import pothole/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_tags]
+import pothole/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_tags, timelines]
 
 const apiRoutes* =  @[
   # (URLRoute, HttpMethod, RouteProcedure)
@@ -37,6 +37,7 @@ const apiRoutes* =  @[
   ("/api/v1/accounts/@id", "GET", accountsGet),
   ("/api/v1/accounts", "GET", accountsGetMultiple),
   ("/api/v1/followed_tags", "GET", followedTags),
+  ("/api/v1/timelines/home", "GET", timelinesHome),
   ("/.well-known/nodeinfo", "GET", resolveNodeinfo),
   ("/nodeinfo/2.0", "GET", nodeInfo2x0),
 ]
