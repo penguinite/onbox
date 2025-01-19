@@ -99,7 +99,7 @@ proc unfollowUser*(db: DbConn, follower, following: string) =
 
 
 
-proc getHomePosts*(db: DbConn, user: string, limit = 20): seq[string] =
+proc getHomeTimeline*(db: DbConn, user: string, limit = 20): seq[string] =
   ## Returns a list of IDs to posts sent by users that `user` follows or in hashtags that `user` follows.
   # Let's see who this user follows 
   var
