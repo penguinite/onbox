@@ -85,6 +85,15 @@ CREATE TABLE IF NOT EXISTS follows (follower TEXT NOT NULL,following TEXT NOT NU
 -- (After requires_review)
 CREATE TABLE IF NOT EXISTS tag (name TEXT PRIMARY KEY NOT NULL, url TEXT NOT NULL, description TEXT, trendable BOOLEAN DEFAULT true, usable BOOLEAN DEFAULT true, requires_review BOOLEAN DEFAULT false, system BOOLEAN DEFAULT false);
 
+-- pid, TEXT PRIMARY KEY NOT NULL: The post id that the tag is associated with.
+-- tag, TEXT NOT NULL: The hashtag itself
+-- sender, TEXT NOT NULL: The sender of the post.
+-- use_date, DATE: the time that the hashtag was added
+-- foreign key (sender) references users(id)
+-- foreign key (pid) references posts(id)
+-- foreign key (tag) references tag(name)
+CREATE TABLE IF NOT EXISTS posts_tag(pid TEXT PRIMARY KEY NOT NULL, tag TEXT NOT NULL, sender TEXT NOT NULL, use_date DATE, foreign key (sender) references users(id), foreign key (pid) references posts(id), foreign key (tag) references tag(name))
+
 -- follower, TEXT NOT NULL: ID of user that is following
 -- following, TEXT NOT NULL: the hashtag being followed
 -- foreign key (follower) references users(id)

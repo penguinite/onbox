@@ -23,7 +23,7 @@
 
 # From Quark
 import quark/private/[macros, database]
-import quark/[strextra, shared]
+import quark/[strextra, shared, tag]
 export shared
 
 # From the standard library
@@ -183,10 +183,20 @@ proc addPost*(db: DbConn, post: Post) =
         sql"INSERT INTO posts_content (pid,kind,cid) VALUES (?,?,?);",
         post.id, "0", ""
       )
+    of Tag:
+      # Hashtag usage is just tracked by inserting a value into the posts_tag table
+
+      # So first, we check if the hashtag exists in the first place.
+      # Creating it if it doesn't. Cause there's a foreign_key on posts_tag.tag
+      if not db.tagExists(content.tag_used):
+        db.createTag(content.tag_used)
+      db.exec(
+        sql"INSERT INTO posts_tag VALUES (?,?,?,?);",
+        post.id, content.tag_used, post.sender, toDbString(content.tag_date)
+      )
     else:
       # If you encounter this error then flag it immediately to the devs.
       raise newException(DbError, "Unknown post content type: " & $(content.kind))
-    
 
 proc postIdExists*(db: DbConn, id: string): bool =
   ## A function to see if a post id exists in the database

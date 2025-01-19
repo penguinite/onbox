@@ -54,3 +54,16 @@ proc createTag*(db: DbConn, name: string, url = "", desc = "", trendable = true,
     name, url, desc, trendable, usable, requires_review, system
   )
 
+proc hashtag*(name: string, date = now().utc): PostContent =
+  return PostContent(
+    kind: Tag, tag_used: name, tag_date: date
+  )
+
+# For the next three procs
+# Given that this API is called on startup by a staggering number of clients,
+# The top priority was to strike a balance between performance and storage costs
+# If I wanted absolute performance, I would have embedded the sender ID of each account into the posts_tag table.
+# If I wanted as little as storage cost, I would have had *no posts_tag table* at all
+# Anyway, the game plan is that posts_tag records date info for every hashtag in every post.
+# And we use that not just to return the number of unique posts, but also we use an extra db call to
+# figure out the sender and return the number of unique accounts

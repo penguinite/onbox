@@ -9,6 +9,7 @@ type
     Poll = "1"
     Media = "2"
     Card = "3"
+    Tag = "4"
     Unknown = "9999"
 
   PostContent* = object of RootObj
@@ -17,6 +18,9 @@ type
       published*: DateTime # The timestamp of when then Post was last edited
       text*: string # The text
       format*: string # The format that the text is written in.
+    of Tag:
+      tag_used*: string # The name of the hashtag being used (Part after the # symbol)
+      tag_date*: DateTime # The date the hashtag was added
     of Poll:
       id*: string # The poll ID
       votes*: CountTable[string] # How many votes each option has.
