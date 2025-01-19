@@ -34,17 +34,6 @@ proc followedTags*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "application/json"
   
-  # Parse ?limit=x
-  # If ?limit isn't present then default to 100
-  var limit = 100
-
-  if req.isValidQueryParam("limit"):
-    limit = parseInt(req.getQueryParam("limit"))
-
-  if limit > 200:
-    # MastoAPI docs sets a limit of 200.
-    # So we will throw an error if it is over 200.
-    respJsonError("Limit cannot be over 200", 401)
   
   # TODO: Implement pagination *properly*
   # If any of these are present, then just error out.
@@ -85,11 +74,20 @@ proc followedTags*(req: Request) =
 
   var result = newJArray()
   
+  # Parse ?limit=x
+  # If ?limit isn't present then default to 100
+  var limit = 100
+
   if req.queryParams.contains("limit"):
     try:
       limit = parseInt(req.queryParams["limit"])
     except:
-      limit = 20
+      limit = 100
+  
+  if limit > 200:
+    # MastoAPI docs sets a limit of 200.
+    # So we will throw an error if it is over 200.
+    respJsonError("Limit cannot be over 200", 401)
 
   dbPool.withConnection db:
     for tag in db.getTagsFollowedByUser(user, limit):
