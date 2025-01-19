@@ -114,10 +114,11 @@ proc getHomeTimeline*(db: DbConn, user: string, limit = 20): seq[string] =
   # But if it isn't then whoopsie! We will make another one!
   var last_post = ""
   while len(result) < limit:
+    var post_date = now().utc
     if last_post != "":
-      let post_date = toDateFromDb(db.getRow(sql"SELECT written FROM posts WHERE id = ?;", last_post)[0])
+      post_date = toDateFromDb(db.getRow(sql"SELECT written FROM posts WHERE id = ?;", last_post)[0])
 
-    for row in db.getAllRows(sql"SELECT pid,sender FROM posts WHERE date(written) >= ? ORDER BY written ASC LIMIT ?;", toDbString(post_date), $limit):
+    for row in db.getAllRows(sql"SELECT pid,sender FROM posts WHERE date(written) <= ? ORDER BY written ASC LIMIT ?;", toDbString(post_date), $limit):
       last_post = row[0]
       if row[1] in following:
         result.add(row[0])
