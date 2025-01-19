@@ -18,7 +18,7 @@
 
 
 # From somewhere in Quark
-import quark/[users, posts, fields, follows, reactions, boosts, bookmarks, strextra]
+import quark/[users, posts, fields, follows, reactions, boosts, bookmarks, strextra, tag]
 
 # From somewhere in Pothole
 import pothole/[conf, database, routeutils, lib, assets]
@@ -44,6 +44,42 @@ proc fields*(user_id: string): JsonNode =
       else:
         jason["verified_at"] = newJNull()
       result.add(jason)
+
+proc tagHistory(tag: string): seq[JsonNode] =
+  var
+    postNum, accNum: seq[int]
+
+  dbPool.withConnection db:
+    accNum = db.getTagUsageUserNum(tag, days = 7)
+    postNum = db.getTagUsagePostNum(tag, days = 7)
+
+  var i = -1
+  for date in getTagUsageDays(7):
+    inc i
+    result.add(
+      %* {
+        "day": date,
+        "uses": postNum[i],
+        "accounts": accNum[i]
+      }
+    )
+
+proc tag*(tag: string, user = ""): JsonNode =
+  var
+    url = ""
+    following = false
+
+  dbPool.withConnection db:
+    url = db.getTagUrl(tag)
+    if user != "":
+      following = db.userFollowsTag(tag, user)
+
+  return %* {
+    "name": tag,
+    "url": url,
+    "history": tagHistory(tag),
+    "following": following
+  }
 
 proc account*(user_id: string): JsonNode =
   ## Create an account entity
@@ -176,6 +212,10 @@ proc extendedDescription*(): JsonNode =
       )
     }
 
+proc mastoAPIVersion*(): string =
+  ## Returns Pothole's version in a way that indicates Mastodon API level support.
+  return lib.phMastoCompat & " (compatible; Pothole " & lib.phVersion & ")"
+
 proc v1Instance*(): JsonNode = 
   var
     userCount, postCount, domainCount: int
@@ -199,7 +239,7 @@ proc v1Instance*(): JsonNode =
           config.getString("instance","summary")
         ),
         "email": config.getStringOrDefault("instance","email",""),
-        "version": lib.phVersion & "(compatible; Pothole " & lib.phMastoCompat & ")",
+        "version": mastoAPIVersion(),
         "urls": {
           "streaming_api": "wss://" & config.getString("instance","uri") & config.getStringOrDefault("instance", "endpoint", "/")
         },
@@ -251,7 +291,7 @@ proc v2Instance*(): JsonNode =
       {
         "domain": config.getString("instance","uri"),
         "title": config.getString("instance","name"),
-        "version": lib.phVersion & "(compatible; Pothole " & lib.phMastoCompat & ")",
+        "version": mastoAPIVersion(),
         "source_url": lib.phSourceUrl,
         "description": config.getStringOrDefault(
           "instance", "description",

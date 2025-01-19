@@ -67,3 +67,72 @@ proc hashtag*(name: string, date = now().utc): PostContent =
 # Anyway, the game plan is that posts_tag records date info for every hashtag in every post.
 # And we use that not just to return the number of unique posts, but also we use an extra db call to
 # figure out the sender and return the number of unique accounts
+
+proc getTagUsagePostNum*(db: DbConn, tag: string, days = 2): seq[int] =
+  ## Returns the number of posts using a tag in the past couple X days.
+  for i in countup(0,days - 1):
+    var x = 0
+    
+    # TODO: This feels a bit inefficient... Could we optimize it?
+    for row in db.getAllRows(
+      sql"SELECT 0 FROM posts_tag WHERE tag = ? AND use_date = ?;",
+      tag, getDateStr(now().utc - i.days)
+    ):
+      inc x
+    
+    result.add(x)
+  return result
+
+proc getTagUsageUserNum*(db: DbConn, tag: string, days = 2): seq[int] =
+  ## Returns the number of accounts using a tag in the past couple X days
+  ## 
+  for i in countup(0,days - 1):
+    var x = 0
+
+    # TODO: This feels a bit inefficient... Could we optimize it?
+    for row in db.getAllRows(
+      sql"SELECT DISTINCT ON (sender) 0 FROM posts_tag WHERE tag = ? AND use_date = ?;",
+      tag, getDateStr(now().utc - i.days)
+    ):
+      inc x
+    
+    result.add(x)
+  return result
+
+proc getTagUsageDays*(days = 2): seq[int64] =
+  ## Used only for the Tag ApiEntity
+  for i in countup(0,days - 1):
+    result.add(toUnix(toTime(now().utc - i.days)))
+
+# Test suite:
+#[
+when isMainModule:
+  import quark/[db, users, posts]
+  import pothole/[conf, database]
+  var config = setup(getConfigFilename())
+  var deebee = setup(
+    config.getDbName(),
+    config.getDbUser(),
+    config.getDbHost(),
+    config.getDbPass()
+  )
+
+  var
+    userA = newUser("a", true, "")
+    userB = newUser("b", true, "")
+    postA = newPost(userA.id, @[text("Badabing badaboom!"), hashtag("hi")])
+    postB = newPost(userA.id, @[text("Badabing badaboom 2!"), hashtag("hi")])
+    postC = newPost(userB.id, @[text("Badabing badaboom 3?"), hashtag("hi")])
+
+  deebee.addUser(userA)
+  deebee.addUser(userB)
+  deebee.addPost(postA)
+  deebee.addPost(postB)
+  deebee.addPost(postC)
+  
+
+  if not deebee.tagExists("hi"):
+    deebee.createTag("hi")
+  echo deebee.getTagUsagePostNum("hi")
+  echo deebee.getTagUsageUserNum("hi")
+]#
