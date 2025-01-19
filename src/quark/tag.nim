@@ -99,6 +99,14 @@ proc getTagUsageUserNum*(db: DbConn, tag: string, days = 2): seq[int] =
     result.add(x)
   return result
 
+proc getPostTags*(db: DbConn, post: string): seq[string] =
+  for row in db.getAllRows(sql"SELECT tag FROM post_tags WHERE pid = ?;", post):
+    result.add(row[0])
+  return result
+
+proc postHasTag*(db: DbConn, post, tag: string): bool =
+  return has(db.getRow(sql"SELECT 0 FROM post_tags WHERE pid = ? AND tag = ?;", post, tag))
+
 proc getTagUsageDays*(days = 2): seq[int64] =
   ## Used only for the Tag ApiEntity
   for i in countup(0,days - 1):
