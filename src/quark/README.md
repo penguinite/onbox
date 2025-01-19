@@ -1,3 +1,3 @@
 # Quark
 
-Contains the core of Pothole's database layer.
+Quark is Pothole's database layer, where each file corresponds to a specific table.

@@ -50,7 +50,8 @@ const optional = {
   "db": {
     "host": @= "127.0.0.1:5432",
     "name": @= "pothole",
-    "user": @= "pothole"
+    "user": @= "pothole",
+    "pool_size": @= 10
   }.toTable,
   "instance": {
     "rules": @= @[""],
