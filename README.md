@@ -32,6 +32,6 @@ Assuming the port in the config file isn't changed, Pothole starts running at `h
 
 Copyright © Leo Gavilieau <xmoo@privacyrequired.com> 2022-2023
 
-Copyright © penguinite <penguinite@tuta.io> 2024
+Copyright © penguinite <penguinite@tuta.io> 2024-2025
 
 Licensed under GNU Affero General Public License version 3 or later. A copy is is available as the `LICENSE` file.
