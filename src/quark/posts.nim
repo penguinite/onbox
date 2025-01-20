@@ -279,10 +279,15 @@ proc getNumPostsByUser*(db: DbConn, id: string): int =
 
 
 proc getNumTotalPosts*(db: DbConn, local = true): int =
-  ## A procedure to get the total number of local posts.
+  ## A procedure to get the total number of posts. You can choose where or not they should be local-only with the local parameter.
   result = 0
-  for x in db.getAllRows(sql("SELECT local FROM posts WHERE local = " & $local & ";")):
-    inc(result)
+  case local:
+  of true:
+    for x in db.getAllRows(sql("SELECT 0 FROM posts WHERE local = 'true';")):
+      inc(result)
+  of false:
+    for x in db.getAllRows(sql("SELECT 0 FROM posts;")):
+      inc(result)
   return result
 
 proc deletePost*(db: DbConn, id: string) = 

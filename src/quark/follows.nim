@@ -18,12 +18,19 @@
 ## This module contains all database logic for handling followers, following and so on.
 
 import quark/private/database
-import quark/[users, tag, strextra]
+import quark/[users, tag, strextra, posts]
+import std/sequtils
 
 proc getFollowersQuick*(db: DbConn, user: string): seq[string] =
   ## Returns a set of handles that follow a specific user
   for row in db.getAllRows(sql"SELECT follower FROM follows WHERE following = ? AND approved = true;", user):
     result.add(db.getHandleFromId(row[0]))
+  return result
+
+proc getFollowingAsIDQuick*(db: DbConn, user: string, limit = 20): seq[string] =
+  ## Returns a set of IDs that a specific user follows
+  for row in db.getAllRows(sql"SELECT following FROM follows WHERE follower = ? AND approved = true LIMIT ?;", user, $limit):
+    result.add(row[0])
   return result
 
 proc getFollowingQuick*(db: DbConn, user: string, limit = 20): seq[string] =
@@ -73,7 +80,7 @@ proc getFollowStatus*(db: DbConn, follower, following: string): FollowStatus =
   return NoFollowRequest
 
 proc followUser*(db: DbConn, follower, following: string, approved: bool = true) =
-  ## Follows a user
+  ## Follows a user (THEY ALL MUST BE IN IDS)
   if not db.userIdExists(follower) or not db.userIdExists(following):
     return # Since users don't exist, we just leave.
 
@@ -97,38 +104,97 @@ proc unfollowUser*(db: DbConn, follower, following: string) =
     follower, following
   )
 
-
-
-proc getHomeTimeline*(db: DbConn, user: string, limit = 20): seq[string] =
+proc getHomeTimeline*(db: DbConn, user: string, limit: var int = 20): seq[string] =
   ## Returns a list of IDs to posts sent by users that `user` follows or in hashtags that `user` follows.
   # Let's see who this user follows 
   var
-    following = db.getFollowingQuick(user, limit)
+    following = db.getFollowingAsIDQuick(user, limit)
     followingTags = db.getTagsFollowedByUser(user, limit)
   
+  # First we check to see if the limit is realistic
+  # (ie. do we have enough posts to fill it)
+  # If not then we just reset the limit to something sane.
+  let t_limit = db.getNumTotalPosts(false)
+  if limit > t_limit:
+    limit = t_limit
+
   # We will start by fetching X number of posts from the db
   # (where X is the limit, oh and the order is chronological, according to *creation* date.)
   # And then checking if its creator was followed or if it has a hashtag we follow.
   #
   # This seemed like the best solution at the time given the circumstances
   # But if it isn't then whoopsie! We will make another one!
-  var last_post = ""
-  while len(result) < limit:
-    var post_date = now().utc
-    if last_post != "":
-      post_date = toDateFromDb(db.getRow(sql"SELECT written FROM posts WHERE id = ?;", last_post)[0])
-
-    for row in db.getAllRows(sql"SELECT pid,sender FROM posts WHERE date(written) <= ? ORDER BY written ASC LIMIT ?;", toDbString(post_date), $limit):
-      last_post = row[0]
+  # TODO: Help.
+  var
+    last_date = now().utc
+    flag = false
+  while len(result) < limit and flag == false:
+    echo last_date
+    for row in db.getAllRows(sql"SELECT id,sender,written FROM posts WHERE date(written) >= ? ORDER BY written ASC LIMIT ?", toDbString(last_date), $limit):
       if row[1] in following:
-        result.add(row[0])
+        result.add row[0]
         continue
       
-      # This part seems like the bottleneck.
-      var post_tag = db.getPostTags(row[0])
+      let tags = db.getPostTags(row[0])
       for tag in followingTags:
-        if tag in post_tag:
-          result.add(row[0])
+        if tag in tags:
+          result.add row[0]
           continue
-  
+    flag = true
+    result = result.deduplicate()
   return result
+
+## Test suite!
+#[
+when isMainModule:
+  import quark/[db, users, posts]
+  import pothole/[conf, database]
+  var config = setup(getConfigFilename())
+  var deebee = setup(
+    config.getDbName(),
+    config.getDbUser(),
+    config.getDbHost(),
+    config.getDbPass()
+  )
+
+  var
+    userA = newUser("a", true, "a") # Home timeline user
+    niceGuy = newUser("nice", true, "") # Followed user, followed hashtag
+    rudeGuy = newUser("rude", true, "") # Followed user, unfollowed hashtag
+
+    postB = newPost(niceGuy.id, @[text("Badabing badaboom!"), hashtag("followed")]) # Followed user, followed hashtag
+    postC = newPost(niceGuy.id, @[text("Badabing badaboom Electric boogaloo!"), hashtag("unfollowed")]) # Followed user, unfollowed hashtag
+    postD = newPost(rudeGuy.id, @[text("Badabing badaboom Electric Electric boogaloo!"), hashtag("followed")]) # Unfollowed user, followed hashtag
+    postE = newPost(rudeGuy.id, @[text("Badabing badaboom Electric Electric II Boogaloo??"), hashtag("unfollowed")]) # Unfollowed user, unfollowed hashtag
+
+  deebee.addUser(userA)
+  deebee.addUser(niceGuy)
+  deebee.addUser(rudeGuy)
+  deebee.followUser(userA.id, niceGuy.id)
+  if not deebee.tagExists("followed"):
+    deebee.createTag("followed")
+  deebee.followTag("followed", userA.id)
+
+  deebee.addPost(postB)
+  deebee.addPost(postC)
+  deebee.addPost(postD)
+  deebee.addPost(postE)
+
+  var limit = 4
+  let home = deebee.getHomeTimeline(userA.id, limit)
+  echo home
+  for post in home:
+    if post == postB.id:
+      echo "found: Followed user, followed hashtag"
+    elif post == postC.id:
+      echo "found: Followed user, unfollowed hashtag"
+    elif post == postD.id:
+      echo "found: Unfollowed user, followed hashtag"
+    elif post == postE.id:
+      echo "found: Unfollowed user, unfollowed hashtag"
+
+  assert postB.id in home, "Failed test: Followed user, followed hashtag"
+  assert postC.id in home, "Failed test: Followed user, unfollowed hashtag"
+  assert postD.id in home, "Failed test: Unfollowed user, followed hashtag"
+  assert postE.id notin home, "Failed test: Unfollowed user, unfollowed hashtag"
+]#
