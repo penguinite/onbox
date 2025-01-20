@@ -129,7 +129,6 @@ proc getHomeTimeline*(db: DbConn, user: string, limit: var int = 20): seq[string
     last_date = now().utc
     flag = false
   while len(result) < limit and flag == false:
-    echo last_date
     for row in db.getAllRows(sql"SELECT id,sender,written FROM posts WHERE date(written) >= ? ORDER BY written ASC LIMIT ?", toDbString(last_date), $limit):
       if row[1] in following:
         result.add row[0]

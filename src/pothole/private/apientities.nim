@@ -27,7 +27,10 @@ import pothole/[conf, database, routeutils, lib, assets]
 import std/[json, times]
 
 proc formatDate(date: DateTime): string =
-  return date.format("yyyy-mm-dd") & "T" & date.format("hh:mm:ss") & "Z"
+  # API Example format str:     [YYYY]-[MM]-[DD]T[hh]:[mm]:[ss].[s][TZD]
+  # API Example formatted date:  1994 - 11 - 05 T 13 : 15 : 30 . 0  Z
+  # Broken example format date:  2025 - 01 - 20 T 04 : 14 : 31 Z
+  return date.format("YYYY-MM-dd") & "T" & date.format("hh:mm:ss") & ".000Z"
 
 proc fields*(user_id: string): JsonNode =
   ## Initialize profile fields
@@ -353,10 +356,16 @@ proc v2Instance*(): JsonNode =
         },
         "rules": rules()
       }
-  
+
+proc contentToHtml*(post_id: string): string =
+  # TODO: actually properly implement this.
+  return "fuck me..."
+
 proc status*(id: string, user_id = ""): JsonNode =
   if id == "":
     return newJNull()
+  else:
+    result = newJObject()
 
   var
     post: Post
@@ -375,17 +384,6 @@ proc status*(id: string, user_id = ""): JsonNode =
   configPool.withConnection config:
     realurl = realURL(config)
 
-  case post.level:
-  of Public:
-    result["visibility"] = newJString("public")
-  of Unlisted:
-    result["visibility"] = newJString("unlisted")
-  of FollowersOnly:
-    # Confusingly, what MastoAPI calls "private" is called followersonly here.
-    result["visibility"] = newJString("private")
-  of Private:
-    result["visibility"] = newJString("direct")
-
   result = %*{
     "id": post.id,
     "uri": realurl & "notice/" & post.id,
@@ -396,12 +394,23 @@ proc status*(id: string, user_id = ""): JsonNode =
     "favourites_count": reactionnums,
     # TODO: Implement the following:
     "sensitive": false,
+    "content": contentToHtml(post.id),
     "spoiler_text": "",
     "language": "en",
-    "emojis": newJArray(),
-
+    "emojis": newJArray()
   }
   result["account"] = account(post.sender)
+  
+  case post.level:
+  of Public:
+    result["visibility"] = newJString("public")
+  of Unlisted:
+    result["visibility"] = newJString("unlisted")
+  of FollowersOnly:
+    # Confusingly, what MastoAPI calls "private" is called followersonly here.
+    result["visibility"] = newJString("private")
+  of Private:
+    result["visibility"] = newJString("direct")
 
   if replyto_sender != "":
     result["in_reply_to_id"] = newJString(post.replyto)
@@ -419,5 +428,3 @@ proc status*(id: string, user_id = ""): JsonNode =
       ## TODO: If we have implemented pinned posts, then add the pinned attribute.
       ## TODO: If we have implemented filters, then add the filtered attribute.
       ## or actually, keep it optional, its alright.
-
-  return result
