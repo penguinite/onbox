@@ -287,6 +287,31 @@ proc getNumPostsByUser*(db: DbConn, id: string): int =
     inc(result)
   return result
 
+proc rowToContent*(db: DbConn, row: Row, pid: string): PostContent =
+  ## Converts a row consisting of a kind, and cid into a proper PostContent object.
+  ## 
+  ## Note: This makes extra calls to the database depending on the type.
+  case row[0]
+  of "0": # Text kind
+    # We must fetch from posts_text.
+    let textRow = db.getRow(sql"SELECT content,format,published FROM posts_text WHERE pid = ?;", pid)
+    return PostContent(
+      kind: Text,
+      text: textRow[0],
+      format: textRow[1],
+      published: toDateFromDb(textRow[2])
+    )
+  of "4": # Hashtag
+    # We do need to fetch the date when the tag was used from posts_tag
+    return PostContent(
+      kind: Tag,
+      tag_used: row[1],
+      tag_date: toDateFromDb(db.getRow(sql"SELECT use_date FROM posts_tag WHERE pid = ? and tag = ?;", pid, row[1])[0])
+    )
+  else:
+    # If you encounter this error then flag it immediately to the devs.
+    raise newException(DbError, "Unknown post content type: " & row[0])
+
 
 proc getNumTotalPosts*(db: DbConn, local = true): int =
   ## A procedure to get the total number of posts. You can choose where or not they should be local-only with the local parameter.
