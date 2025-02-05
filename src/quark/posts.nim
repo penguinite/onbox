@@ -312,6 +312,10 @@ proc rowToContent*(db: DbConn, row: Row, pid: string): PostContent =
     # If you encounter this error then flag it immediately to the devs.
     raise newException(DbError, "Unknown post content type: " & row[0])
 
+proc getPostContents*(db: DbConn, id: string): seq[PostContent] = 
+  for row in db.getAllRows(sql"SELECT kind,cid FROM posts_content WHERE pid = ?;", id):
+    result.add(db.rowToContent(row, id))
+  return result
 
 proc getNumTotalPosts*(db: DbConn, local = true): int =
   ## A procedure to get the total number of posts. You can choose where or not they should be local-only with the local parameter.
