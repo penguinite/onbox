@@ -141,6 +141,8 @@ proc getHomeTimeline*(db: DbConn, user: string, limit: var int = 20): seq[string
           continue
     flag = true
     result = result.deduplicate()
+  
+  # TODO: This does not include posts that have boosts... Too bad!
   return result
 
 ## Test suite!
