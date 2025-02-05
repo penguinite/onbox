@@ -22,16 +22,30 @@ In addition, Pothole is *still* in development, a lot of things haven't been ful
 
 ## How do I use Pothole?
 
-Install the latest version of [nim](https://nim-lang.org/), your favorite C compiler (gcc is recommended but use whatever modern C compiler you've got) and nimble. Run `nimble -d:release build` and it will build with release settings. (You will also need to install postgres as a library and database server somewhere.)
+You can find pre-built binaries [here](https://ftp.penguinite.dev/rosecli/), when you extract you'll find a copy of `pothole` which is the actual server daemon, `potholectl` which is used for common maintenance tasks and an example configuration file that you're expected to edit.
 
-Pothole's main database is postgres, and so it expects an actively-running postgres server process in the background to work. You can change the database connection settings by editing the `pothole.conf` configuration file. If you don't want to (or can't) install postgres but you have access to docker, then you can run the `potholectl db docker` command to generate a postgres database docker container configured for pothole. `potholectl` can be found in the `build/` folder when you finish building pothole.
+These binaries are built for Linux x64_86 glibc (meaning that they don't work with Alpine), they are sadly not reproducible (switching to musl libc might improve reproducibility, decrease attack surface, increase compatability and improve performance, and I am considering it.) 
 
-Assuming the port in the config file isn't changed, Pothole starts running at `http://localhost:3500`, but do know that Pothole is meant to be a backend server. For a proper user interface, you need to supplement it with a client/frontend. And this is also just a basic demonstration setup, a proper setup would include a reverse and media proxy.
+### How do I compile Pothole myself?
+
+Note: *Compilling on non-Linux platforms might not be supported as I am a solo developer and can only support one platform at a time.*
+
+Dependencies:
+- Compile-time: libpostgres headers
+- Run-time: Postgresql server
+
+Install the latest version of [nim](https://nim-lang.org/), your favorite C compiler (gcc is recommended) and nimble. Run `nimble build -d:release` and it should work all by itself.
+
+Pothole's main database is postgres, and so it expects an actively-running postgres server process in the background to work. You can change the database connection settings by editing the `pothole.conf` configuration file.
+
+If you don't want to (or can't) install postgres but you have access to docker, then you can run the `potholectl db docker` command to generate a postgres database docker container configured for pothole. `potholectl` can be found in the `build/` folder when you finish building pothole.
+
+Assuming the port in the config file isn't changed, Pothole starts running at `http://localhost:3500`, but do know that Pothole is meant to be a backend server. For a proper user interface, you need to supplement it with a client/frontend. And this is also just a basic demonstration setup, a proper setup would include a reverse proxy and a media proxy.
 
 ## Copyright
 
-Copyright © Leo Gavilieau <xmoo@privacyrequired.com> 2022-2023
-
 Copyright © penguinite <penguinite@tuta.io> 2024-2025
+
+Copyright © Leo Gavilieau <xmoo@privacyrequired.com> 2022-2023
 
 Licensed under GNU Affero General Public License version 3 or later. A copy is is available as the `LICENSE` file.
