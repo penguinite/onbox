@@ -194,6 +194,16 @@ proc addPost*(db: DbConn, post: Post) =
         sql"INSERT INTO posts_tag VALUES (?,?,?,?);",
         post.id, content.tag_used, post.sender, toDbString(content.tag_date)
       )
+
+      # Note: For rowToContent (and all the functions that depend on it) to work
+      # We need to insert the tag into posts_tag as well...
+      #
+      # TODO: This seems stupid and inefficient... Because it is...
+      # Find out a way to remove posts_content or posts_tag
+      db.exec(
+        sql"INSERT INTO posts_content (pid,kind,cid) VALUES (?,?,?);",
+        post.id, "4", content.tag_used
+      )
     else:
       # If you encounter this error then flag it immediately to the devs.
       raise newException(DbError, "Unknown post content type: " & $(content.kind))
