@@ -8,9 +8,7 @@ type
     Text = "0"
     Poll = "1"
     Media = "2"
-    Card = "3"
     Tag = "4"
-    Unknown = "9999"
 
   PostContent* = object of RootObj
     case kind*: PostContentType
@@ -29,8 +27,6 @@ type
       expiration*: DateTime # How long until the poll is dead and no one can post in it.
     of Media:
       media_id*: string
-    else:
-      discard
 
   Post* = object
     id*: string # A unique id.
