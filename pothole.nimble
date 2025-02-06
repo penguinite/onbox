@@ -53,6 +53,9 @@ task ctl, "Shorthand for nimble run potholectl":
   exec("nimble -d:release build potholectl")
   exec(binDir & "/potholectl " & cleanArgs().join(" "))
 
+task musl, "A task to build a binary linked with musl rather than glibc":
+  exec("nimble build -d:musl -d:release --opt:speed")
+
 after build:
   cpFile("pothole.conf",binDir & "/pothole.conf")
   cpFile("LICENSE", binDir & "/LICENSE")
