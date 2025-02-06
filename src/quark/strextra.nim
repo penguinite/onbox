@@ -247,9 +247,8 @@ proc toContentTypeFromDb*(row: string): PostContentType =
   of "0": return Text
   of "1": return Poll
   of "2": return Media
-  of "3": return Card
-  else: return Unknown
-
+  of "4": return Tag
+  
 proc toKdfFromDb*(num: string): KDF =
   ## Converts a string to a KDF object.
   ## You can use this instead of IntToKDF for when you are dealing with database rows.
