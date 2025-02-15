@@ -75,7 +75,3 @@ suite "Post-related tests":
     assert dbcon.getPostIDsByUser(post.sender, 1)[0] != "" # An empty item shouldn't be returned
     # It's not guaranteed that our post is in this list.
     # So we can't test for it reliably.
-  
-  test "getEveryPostByUser (Without limit)":
-    
-  
