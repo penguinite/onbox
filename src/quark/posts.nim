@@ -134,16 +134,6 @@ proc constructPost*(db: DbConn, row: Row): Post =
       result.get(key) = toPrivacyLevelFromDb(row[i])
   return result
 
-proc constructPostSemi*(db:DbConn, row: Row): Post =
-  result = db.constructPost(row)
-  return result
-
-proc constructPostFull*(db: DbConn, row: Row): Post =
-  result = db.constructPostSemi(row)
-  #result.reactions = db.getReactions(result.id)
-  #result.boosts = db.getBoosts(result.id)
-  return result
-
 proc addPost*(db: DbConn, post: Post) =
   ## A function add a post into the database
   ## This function uses parameterized substitution
