@@ -114,6 +114,8 @@ proc getTagUsageDays*(days = 2): seq[int64] =
 
 # Test suite:
 #[
+# TODO: This code uses the old newPost proc, maybe make sure to migrate it properly to the new one? (Previously named newPostX)
+
 when isMainModule:
   import quark/[db, users, posts]
   import pothole/[conf, database]

@@ -49,49 +49,27 @@ export Post, PostPrivacyLevel, PostContent, PostContentType
 # Remove existing content row
 # Create new one
 
-proc newPost*(sender: string, content: seq[PostContent], replyto: string = "", recipients: seq[string] = @[], local = true, written: DateTime = now().utc): Post =
-  if isEmptyOrWhitespace(sender):
-    raise newException(ValueError, "Post is missing sender field.")
-
-  if len(content) == 0:
-    raise newException(ValueError, "Post is missing content field.")
-
-  # Generate post id
-  result.id = randstr(32)
-  
-  # Just do this stuff...
-  result.sender = sender
-  result.recipients = recipients
-  result.local = local
-  result.modified = false
-  result.content = content
-  result.replyto = replyto
-  result.written = written
-  result.level = Public
-  result.client = "0"
-
-  return result
-
-proc newPostX*(
+proc newPost*(
   sender: string, content: seq[PostContent], recipients: seq[string] = @[],
-  id: string = randstr(32), replyto: string = "", written: DateTime = now().utc, modified: bool = false,
-  local: bool = true, client: string = "0", level: PostPrivacyLevel = Public,
-  reactions: Table[string, seq[string]] = initTable[string,seq[string]](),
-  boosts: Table[string, seq[string]] = initTable[string,seq[string]]()
+  replyto = "", written = now().utc, modified = false, local = true,
+  level = Public, id = randstr(32), client = "0",
+  reactions = initTable[string,seq[string]](),
+  boosts = initTable[string,seq[string]]()
 ): Post =
-  result.id = id
-  result.recipients = recipients
-  result.sender = sender
-  result.replyto = replyto
-  result.content = content
-  result.written = written
-  result.modified = modified
-  result.local = local
-  result.client = client
-  result.level = level
-  result.reactions = reactions
-  result.boosts = boosts
-  return result
+  return Post(
+    id: id,
+    recipients: recipients,
+    sender: sender,
+    replyto: replyto,
+    content: content,
+    written: written,
+    modified: modified,
+    local: local,
+    client: client,
+    level: level,
+    reactions: reactions,
+    boosts: boosts
+  )
 
 proc text*(content: string, date: DateTime = now().utc, format = "plain"): PostContent =
   result = PostContent(kind: Text)

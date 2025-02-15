@@ -86,7 +86,6 @@ proc post_new*(data: seq[string], mentioned = "", replyto = "", date = "", confi
     content = @[text(content, written)],
     replyto = replyto,
     recipients = recipients,
-    local = true,
     written = written
   )
 

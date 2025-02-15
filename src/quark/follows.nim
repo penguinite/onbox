@@ -147,6 +147,9 @@ proc getHomeTimeline*(db: DbConn, user: string, limit: var int = 20): seq[string
 
 ## Test suite!
 #[
+
+# TODO: This code uses the old newPost proc, maybe make sure to migrate it properly to the new one? (Previously named newPostX)
+
 when isMainModule:
   import quark/[db, users, posts]
   import pothole/[conf, database]

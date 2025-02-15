@@ -123,8 +123,7 @@ proc genFakePosts*(): seq[Post] =
     result.add(
       newPost(
         sender = sample(userData)[0],
-        content = @[text(txt)],
-        replyto = ""
+        content = @[text(txt)]
       )
     )
   return result
