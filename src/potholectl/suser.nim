@@ -137,20 +137,20 @@ proc user_delete*(args: seq[string], purge = false, id = true, handle = false, c
   if id == "null":
     error "Deleting the null user is not allowed."
 
-  if purge:
-    # Delete every post first.
+  for pid in db.getPostsByUser(id):
     try:
-      db.deletePosts(db.getPostIDsByUser(id))
+      # If the user says its ok to put extra strain on the db
+      # and actually delete the posts made by this user
+      # Then we'll do it! Otherwise, we'll just reset the sender to "null"
+      # (Which marks it as deleted internally but doesnt do anything.)
+      if purge:
+        echo "Deleting post \"", pid, "\""
+        db.deletePost(pid)
+      else:
+        echo "Marking post \"", pid, "\" as deleted"
+        db.updatePostSender(pid, "null")
     except CatchableError as err:
-      error "Failed to delete posts by user: ", err.msg
-  else:
-    # We must reassign every post made this user to the `null` user
-    # Otherwise the database will freakout.
-    try:
-      db.reassignSenderPosts(db.getPostIDsByUser(id), "null")
-    except CatchableError as err:
-      log "There's probably some database error somewhere..."
-      error "Failed to reassign posts by user: ", err.msg
+      error "Failed to process user posts: ", err.msg
     
   # Delete the user
   try:
