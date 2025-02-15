@@ -1,4 +1,4 @@
-import quark/[users, posts, debug, db, crypto], quark/private/macros
+import quark/[users, posts, debug, db]
 import std/[unittest], rng
 
 # Let's get started!
