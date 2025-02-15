@@ -366,3 +366,26 @@ proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Row] =
   for post in db.getAllRows(sqlStatement):
     result.add(post)
   return result
+
+import packages/docutils/[rst, rstgen], std/strtabs
+
+proc contentToHtml*(content: PostContent): string =
+  ## Converts a PostContent object into safe, sanitized HTML. Ready for displaying!
+  case content.kind:
+  of Text:
+    ## TODO: Add support for HTML, ie. do HTML sanitization the way that Mastodon does it.
+    case content.format:
+    of "txt":
+      result.add("<p>" & safeHtml(content.text) & "</p>")
+    of "md":
+      result.add(rstToHtml(
+          safeHtml(content.text), {roPreferMarkdown}, newStringTable()
+        )
+      )
+    of "rst":
+      result.add(
+        rstToHtml(safeHtml(content.text), {}, newStringTable())
+      )
+    else: raise newException(ValueError, "Unexpected text format: " & $(content.format))
+  else: raise newException(ValueError, "Unexpected content type: " & $(content.kind))
+  return result

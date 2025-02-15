@@ -285,5 +285,13 @@ func toString*(t: UserType): string =
     of Group: "Group"
     of Service: "Service"
 
-func `$`*(t: UserType): string =
-  return toString(t)
+func `$`*(t: UserType): string = return toString(t)
+
+proc safeHtml*(s: string): string =
+  ## Converts any greater-than and less-than signs to a sanitized HTML equivalent
+  for ch in s:
+    case ch:
+    of '<': result.add("&lt;")
+    of '>': result.add("&gt;")
+    else: result.add ch
+  return result

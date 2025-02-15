@@ -363,20 +363,29 @@ proc status*(id: string, user_id = ""): JsonNode =
 
   var
     post: Post
+    contents: seq[PostContent] = @[]
     replynum, boostsnum, reactionnums = 0
     replyto_sender = ""
 
   dbPool.withConnection db:
-    post = db.constructPostSemi(db.getPost(id))
+    post = db.constructPost(db.getPost(id))
     replynum = db.getNumOfReplies(post.id)
     boostsnum = db.getNumOfBoosts(post.id)
     reactionnums = db.getNumOfReactions(post.id)
     if not post.replyto.isEmptyOrWhitespace():
       replyto_sender = db.getPostSender(post.replyto)
+    contents = db.getPostContents(post.id)
   
   var realurl = ""
   configPool.withConnection config:
     realurl = realURL(config)
+  
+  # We could re-write this to avoid declaring an extra variable
+  # But then we would have to suffer the overheads of newJString() and getStr()
+  # And it's probably best to just keep it this way.
+  var tmp = ""
+  for content in contents:
+    tmp = tmp & contentToHtml(content) & "\n"
 
   result = %*{
     "id": post.id,
@@ -385,16 +394,16 @@ proc status*(id: string, user_id = ""): JsonNode =
     "created_at": formatDate(post.written),
     "replies_count": replynum,
     "reblogs_count": boostsnum,
+    "content": tmp,
     "favourites_count": reactionnums,
+    "account": account(post.sender),
     # TODO: Implement the following:
     "sensitive": false,
-    "content": postToHtml(post.id),
     "spoiler_text": "",
     "language": "en",
     "emojis": newJArray()
   }
-  result["account"] = account(post.sender)
-  
+
   case post.level:
   of Public:
     result["visibility"] = newJString("public")
