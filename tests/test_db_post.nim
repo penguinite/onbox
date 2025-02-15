@@ -57,21 +57,21 @@ suite "Post-related tests":
     assert dbcon.getPost(post.id)[7] == "0" # Client
     assert dbcon.getPost(post.id)[8] == "0" # Post privacy level
 
-  test "getPostIDsByUser (Without limit)":
+  test "getPostsByUser (Without limit)":
     # Our sender shouldn't have an empty list.
-    assert dbcon.getPostIDsByUser(post.sender, 0) != @[]
+    assert dbcon.getPostsByUser(post.sender, 0) != @[]
     # Let's see if this post is in this list.
-    assert post.id in dbcon.getPostIDsByUser(post.sender, 0)
+    assert post.id in dbcon.getPostsByUser(post.sender, 0)
 
     # Let's test with a nonexistent user
-    assert dbcon.getPostIDsByUser(randstr(1), 0) == @[]
-    assert dbcon.getPostIDsByUser(randstr(1), 0).len() == 0
-    assert dbcon.getPostIDsByUser(randstr(1), 0) != @[post.id]
+    assert dbcon.getPostsByUser(randstr(1), 0) == @[]
+    assert dbcon.getPostsByUser(randstr(1), 0).len() == 0
+    assert dbcon.getPostsByUser(randstr(1), 0) != @[post.id]
 
-  test "getPostIDsByUser (With limit)":
+  test "getPostsByUser (With limit)":
     # Our sender shouldn't have an empty list.
-    assert dbcon.getPostIDsByUser(post.sender, 1) != @[]
-    assert dbcon.getPostIDsByUser(post.sender, 1).len() == 1
-    assert dbcon.getPostIDsByUser(post.sender, 1)[0] != "" # An empty item shouldn't be returned
+    assert dbcon.getPostsByUser(post.sender, 1) != @[]
+    assert dbcon.getPostsByUser(post.sender, 1).len() == 1
+    assert dbcon.getPostsByUser(post.sender, 1)[0] != "" # An empty item shouldn't be returned
     # It's not guaranteed that our post is in this list.
     # So we can't test for it reliably.
