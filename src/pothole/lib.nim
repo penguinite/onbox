@@ -1,3 +1,4 @@
+# Copyright © penguinite 2024-2025 <penguinite@tuta.io>
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 #
 # This file is part of Pothole.
@@ -14,22 +15,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# lib.nim:
-## This module contains useful procedures and functions.
-## Like for error reporting and whatnot. It also contains important
-## contants for post-mortem debugging, version numbers, what kdf to use.
-##
-## This module pre-9f3077d used to store the User and Post type definitions
-## but these have been moved, and this module has been re-purposed.
-## The User and Post definitions are now stored in pothole/user and pothole/post respectively.
+# src/pothole/lib.nim:
+## This module contains procedures, templates, constants and other data
+## to be shared across Pothole, or that is used many times across many places.
+## 
+## Some of the stuff included here is the globalCrashDir constant for post-mortem debugging
+## API compatability level constant, source repo URL constant and log + error procedures.
 
-# TODO: Remove this module once everything has been properly migrated.
- 
- # A folder to save debugging data to.
-const globalCrashDir* {.strdefine.}: string = "CAR_CRASHED_INTO_POTHOLE!"
+# Originally, the plan was to retire this module ASAP and move the data here elsewhere
+# But increasingly, it doesn't look like this module will be retired.
+# Instead, we have yet another "shared" module (quark/shared)
+# So, TODO: Merge quark/shared and pothole/lib or get rid of both.
 
-# App version and other useful data.
+# Useful data
 const
+  globalCrashDir* {.strdefine.}: string = "CAR_CRASHED_INTO_POTHOLE" ## Which folder to use when storing data for post-mortem debugging in crashes.
   phVersion* {.strdefine.}: string = "0.0.2" ## To customize the version, compile with the option: `-d:phVersion=whatever`
   phMastoCompat* {.strdefine.}: string = "wip" ## The level of API compatability, this option doesn't do anything. It's just reported in the API.
   phSourceUrl* {.strdefine.}: string = "https://github.com/penguinite/pothole" ## To customize the source URL, compile with the option: `-d:phSourceUrl="Link"`
