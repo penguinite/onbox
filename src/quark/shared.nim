@@ -1,3 +1,30 @@
+# Copyright © penguinite 2024-2025 <penguinite@tuta.io>
+#
+# This file is part of Pothole.
+# 
+# Pothole is free software: you can redistribute it and/or modify it under the terms of
+# the GNU Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+# 
+# Pothole is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+# for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
+#
+# src/quark/shared.nim:
+## This module contains important type definitions for User, Post, PostContent and anything else we use.
+## 
+## Why aren't they stored in their respective modules?
+## Well the issue is that it would introduce cyclic dependencies.
+## For example, let's say you have a procedure in quark/posts which needs to access user data somehow.
+## The preferred thing to do, for readability reasons, is to import quark/users and to just use the proc you need.
+## But then, when we need to write a proc in quark/users which needs to access post data, we can't!
+
+## TODO: Find a way to put each type in its own module.
+
 import std/[tables, times]
 
 type
