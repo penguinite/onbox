@@ -102,12 +102,8 @@ proc text*(content: string, date: DateTime = now().utc, format = "plain"): PostC
 
 proc constructPost*(db: DbConn, row: Row): Post =
   ## Converts a post minimally.
-  ## This means no reactions list, no boost list
+  ## This means no reactions, no boosts
   ## and no post content.
-  ## 
-  ## If you need all those bits of data then use constructPostFull() instead.
-  ## 
-  ## If you need *just* the post and its content then use constructPostSemi() instead.
   
   var i: int = -1;
 
@@ -220,7 +216,7 @@ proc getPost*(db: DbConn, id: string): Row =
     raise newException(DbError, "Couldn't find post with id \"" & id & "\"")
   return post
 
-proc getPostIDsByUser*(db: DbConn, id: string, limit: int = 15): seq[string] = 
+proc getPostsByUser*(db: DbConn, id: string, limit: int = 15): seq[string] = 
   ## A procedure that only fetches the IDs of posts made by a specific user.
   ## This is used to quickly get a list over every post made by a user, for, say,
   ## potholectl or a pothole admin frontend.
@@ -232,50 +228,9 @@ proc getPostIDsByUser*(db: DbConn, id: string, limit: int = 15): seq[string] =
     result.add(post[0])
   return result
 
-proc getEveryPostByUser*(db: DbConn, id:string, limit: int = 20): seq[Post] =
-  ## A procedure to get any user's posts using the user's id.
-  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
-  ## All of the posts returned are fully ready for displaying and parsing
-  ## *Note:* This procedure returns every post, even private ones. For public posts, use getPostByUserId()
-  var sqlStatement = ""
-  if limit != 0:
-    sqlStatement = "SELECT * FROM posts WHERE id = ? LIMIT " & $limit & ";"
-  else:
-    sqlStatement = "SELECT * FROM posts WHERE id = ?;"
-  
-  for post in db.getAllRows(sql(sqlStatement), id):
-      result.add(db.constructPostSemi(post))
-  return result
-
-proc getPostsByUser*(db: DbConn, id:string, limit: int = 20): seq[Post] =
-  ## A procedure to get any user's posts using the user's id.
-  ## The limit parameter dictates how many posts to retrieve, set the limit to 0 to retrieve all posts.
-  ## All of the posts returned are fully ready for displaying and parsing
-  ## *Note:* This procedure only returns posts that are public. For private posts, use getEveryPostByUserId()
-  var sqlStatement = ""
-  if limit != 0:
-    sqlStatement = "SELECT * FROM posts WHERE sender = ? LIMIT " & $limit & ";"
-  else:
-    sqlStatement = "SELECT * FROM posts WHERE sender = ?;"
-  
-  for post in db.getAllRows(sql(sqlStatement), id):
-    # Check for if post is unlisted or public, only then can we add it into the list.
-    let postObj = db.constructPostFull(post)
-    if postObj.level == Public or postObj.level == Unlisted:
-      result.add(postObj)
-
-  return result
-
-proc getPostsByUserIDPaginated*(db: DbConn, id:string, offset: int, limit: int = 15): seq[Post] =
-  ## A procedure to get posts made by a specific user, this procedure is specifically optimized for pagination.
-  ## In that, it supports with offsets, limits and whatnot.
-  return # TODO: Implement
-
 proc getNumPostsByUser*(db: DbConn, id: string): int =
-  result = 0
-  for row in db.getAllRows(sql"SELECT local FROM posts WHERE sender = ?;", id):
-    inc(result)
-  return result
+  ## Returns the number of posts made by a specific user.
+  return len(db.getAllRows(sql"SELECT 0 FROM posts WHERE sender = ?;", id))
 
 proc rowToContent*(db: DbConn, row: Row, pid: string): PostContent =
   ## Converts a row consisting of a kind, and cid into a proper PostContent object.
@@ -322,24 +277,19 @@ proc getNumTotalPosts*(db: DbConn, local = true): int =
 proc deletePost*(db: DbConn, id: string) = 
   db.exec(sql"DELETE FROM posts WHERE id = ?;", id)
 
-proc deletePosts*(db: DbConn, sequence: seq[string]) =
-  for id in sequence:    
-    db.deletePost(id)
-
-proc reassignSenderPost*(db: DbConn, post_id, sender: string) =
-  db.exec(sql"UPDATE posts SET sender = ? WHERE id = ?;", sender, post_id)
-
 proc getNumOfReplies*(db: DbConn, post_id: string): int =
-  for i in db.getAllRows(sql"SELECT id FROM posts WHERE replyto = ?;", post_id):
-    inc(result)
-  return result
+  return len(db.getAllRows(sql"SELECT 0 FROM posts WHERE replyto = ?;", post_id))
 
 proc getPostSender*(db: DbConn, post_id: string): string =
   return db.getRow(sql"SELECT sender FROM posts WHERE id = ?;", post_id)[0]
 
-proc reassignSenderPosts*(db: DbConn, post_ids: seq[string], sender: string) =
-  for post_id in post_ids:
-    db.reassignSenderPost(post_id, sender)
+proc updatePostSender*(db: DbConn, post_id, sender: string) =
+  ## Updates the `sender` for any post
+  ## 
+  ## Used when deleting users, since we can save on processing costs
+  ## by marking posts as "deleted" or "unavailable"
+  ## (And this, we do by setting the sender to null)
+  db.exec(sql"UPDATE posts SET sender = ? WHERE id = ?;", sender, post_id)
 
 proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Row] =
   ## A procedure to get posts from local users only.
@@ -351,7 +301,7 @@ proc getLocalPosts*(db: DbConn, limit: int = 15): seq[Row] =
   if limit != 0:
     sqlStatement = sql("SELECT * FROM posts WHERE local = TRUE LIMIT " & $limit & ";")
   else:
-    sqlStatement = sql"SELECT * FROM posts WHERE local = TRUE;"
+    sqlStatement = sql("SELECT * FROM posts WHERE local = TRUE;")
   
   for post in db.getAllRows(sqlStatement):
     result.add(post)
