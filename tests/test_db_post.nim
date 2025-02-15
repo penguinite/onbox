@@ -18,12 +18,14 @@ var post = newPostX(
   sender = "scout",
   content = @[text(sample(fakeStatuses))]
 )
-dbcon.addPost(post)
+
 
 suite "Post-related tests":
+  test "Add custom Post":
+    dbcon.addPost(post)
+
   test "addPost":
     # This also provides the posts we need.
-    
     for post in genFakePosts():
       dbcon.addPost(post)
   
@@ -31,17 +33,20 @@ suite "Post-related tests":
     assert dbcon.postIdExists(post.id), "Custom post apparently doesn't exist?"
   
   test "updatePost":
-    # Let's change id
+    # Let's change the post privacy level
     dbcon.updatePost(post.id, "level", "100")
     assert dbcon.getPost(post.id)[8] == "100"
-    # Restore it for consistency's sake, and as an extra test
+
+    # Restore it so everything else won't run impacted,
+    # and also this serves as an extra test
     dbcon.updatePost(post.id, "level", "0")
     assert dbcon.getPost(post.id)[8] == "0"
   
   test "getPost":
     # On the one hand, we shouldn't hard-code or encourage hardcoding database specifics
-    # On the other hand, we are literally exposing database rows in a public APi.
-    # So, we might as well *try* to be more backwards compatible.
+    # On the other hand, we are returning db rows when everything else is meant to be an abstraction.
+    # So this serves as a nice way to test database compatability.
+    # (And to serve as a barrier against regressions in the future)
     assert dbcon.getPost(post.id)[0] == post.id
     assert dbcon.getPost(post.id)[1] == "" # Recipients
     assert dbcon.getPost(post.id)[2] == post.sender
@@ -71,5 +76,6 @@ suite "Post-related tests":
     # It's not guaranteed that our post is in this list.
     # So we can't test for it reliably.
   
-  test "deleteUsers":
-    assert dbcon.userHandleExists("katie") == false
+  test "getEveryPostByUser (Without limit)":
+    
+  
