@@ -24,7 +24,7 @@ import quark/[users, posts, fields, follows, reactions, boosts, bookmarks, strex
 import pothole/[conf, database, routeutils, lib, assets]
 
 # From somewhere in the standard library
-import packages/docutils/[rst, rstgen], std/[json, times, strtabs]
+import std/[json, times]
 
 proc formatDate(date: DateTime): string =
   # API Example format str:     [YYYY]-[MM]-[DD]T[hh]:[mm]:[ss].[s][TZD]
@@ -356,37 +356,6 @@ proc v2Instance*(): JsonNode =
         },
         "rules": rules()
       }
-
-
-proc safeHtml*(s: string): string =
-  for ch in s:
-    case ch:
-    of '<': result.add("&lt;")
-    of '>': result.add("&gt;")
-    else: result.add ch
-  return result
-
-proc textToHtml*(content: PostContent): string =
-  case content.format:
-  of "txt":
-    return "<p>" & safeHtml(content.text) & "</p>"
-  of "md","rst":
-    return rstToHtml(
-        safeHtml(content.text),
-        {roSupportMarkdown},
-        newStringTable()
-      )
-  else:
-    raise newException(ValueError, "Unexpected text format: " & $(content.kind))
-  ## TODO: Add support for HTML, ie. do HTML sanitization the way that Mastodon does it.
-
-proc postToHtml*(post_id: string): string =
-  dbPool.withConnection db:
-    for content in db.getPostContents(post_id):
-      case content.kind:
-      of Text: result.add(textToHtml(content))
-      else: continue
-  return result
 
 proc status*(id: string, user_id = ""): JsonNode =
   if id == "": return newJNull()
