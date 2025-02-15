@@ -14,7 +14,7 @@ for user in genFakeUsers():
   dbcon.addUser(user)
 
 # A post that we have full control over.
-var post = newPostX(
+var post = newPost(
   sender = "scout",
   content = @[text(sample(fakeStatuses))]
 )
