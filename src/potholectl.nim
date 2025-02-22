@@ -78,10 +78,11 @@ dispatchMulti(
       "config": "Location to config file"
     }],
 
-  [db_check, help= {"config": "Location to config file"}],
-  [db_clean, help= {"config": "Location to config file"}],
-  [db_purge, help= {"config": "Location to config file"}],
-  [db_psql, help= {"config": "Location to config file"}],
+  [db_check, help = {"config": "Location to config file"}],
+  [db_clean, help = {"config": "Location to config file"}],
+  [db_purge, help = {"config": "Location to config file"}],
+  [db_psql, help = {"config": "Location to config file"}],
+  [db_run, help = {"file": "Location to SQL script.", "config": "Location to config file"}],
   [db_docker,
     help= {
       "config": "Location to config file",

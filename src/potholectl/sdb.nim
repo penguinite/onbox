@@ -30,7 +30,7 @@ import pothole/[database, lib, conf]
 
 # From standard libraries
 from std/os import execShellCmd
-from std/strutils import split, `%`
+from std/strutils import split, `%`, splitLines
 
 # From elsewhere
 import rng
@@ -104,11 +104,33 @@ proc db_docker*(config = "pothole.conf", name = "potholeDb", allow_weak_password
 proc db_psql*(config = "pothole.conf"): int = 
   ## This command opens a psql shell in the database container.
   ## This is useful for debugging operations and generally figuring out where we went wrong. (in life)
+  ## 
+  ## Note: This command only works with the database container created by the db_docker cmd.
   let
     cnf = conf.setup(config)
     cmd = "docker exec -it potholeDb psql -U " & cnf.getDbUser() & " " & cnf.getDbName()
   echo "Executing: ", cmd
   discard execShellCmd cmd
+
+proc db_run*(file: string, config = "pothole.conf"): int =
+  ## Run any SQL-containing file on your Pothole database!
+  ## 
+  ## Note: Due to technical limitations, the file **HAS** to have each query/command on a single line!
+  ## Seriously, if you forget this, you're gonna have an awful time! I am not joking!!!
+  ## 
+  ## Also, PLEASE BE SANE! DON'T RUN ANYTHING THAT YOU DIDN'T DOUBLE CHECK!
+  let cnf = conf.setup(config)
+  let db = init(
+    cnf.getDbName(),
+    cnf.getDbUser(),
+    cnf.getDbHost(),
+    cnf.getDbPass(),
+  )
+
+  for line in readFile(file).splitLines:
+    echo "Running: ", line
+    db.exec(sql(line))
+
 
 proc db_clean*(config = "pothole.conf"): int =
   ## This command runs some cleanup procedures.
