@@ -205,6 +205,7 @@ proc toDbString*(pl: PostPrivacyLevel): string =
   of Unlisted: return "1"
   of FollowersOnly: return "2"
   of Private: return "3"
+  of Limited: return "4"
 
 proc toDbString*(date: DateTime): string = 
   ## Converts a date into a database-compatible string
@@ -227,6 +228,7 @@ proc toPrivacyLevelFromDb*(row: string): PostPrivacyLevel =
   of "1": return Unlisted
   of "2": return FollowersOnly
   of "3": return Private
+  of "4": return Limited
   else:
     return Public
 

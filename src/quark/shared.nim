@@ -29,7 +29,7 @@ import std/[tables, times]
 
 type
   PostPrivacyLevel* = enum
-    Public, Unlisted, FollowersOnly, Private
+    Public, Unlisted, FollowersOnly, Limited, Private
 
   PostContentType* = enum
     Text = "0"
