@@ -102,8 +102,8 @@ CREATE TABLE IF NOT EXISTS tag_follows (follower TEXT NOT NULL,following TEXT NO
 
 -- pid, TEXT NOT NULL: ID of post that user boosted
 -- uid, TEXT NOT NULL: ID of user that boosted post
--- level, TEXT NOT NULL: The boost level, ie. is it followers-only or whatever.
-CREATE TABLE IF NOT EXISTS boosts (pid TEXT NOT NULL,uid TEXT NOT NULL,level TEXT NOT NULL,foreign key (pid) references posts(id), foreign key (uid) references users(id));
+-- level, smallint NOT NULL DEFAULT 0: The boost level, ie. is it followers-only or whatever. (Same as post privacy level)
+CREATE TABLE IF NOT EXISTS boosts (pid TEXT NOT NULL,uid TEXT NOT NULL,level smallint NOT NULL DEFAULT 0,foreign key (pid) references posts(id), foreign key (uid) references users(id));
 
 -- TODO: This is poorly implemented, we don't even store the domain we need to verify...
 
