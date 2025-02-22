@@ -357,6 +357,28 @@ proc v2Instance*(): JsonNode =
         "rules": rules()
       }
 
+proc levelToStr*(l: PostPrivacyLevel): string =
+  # Our "Private" is the MastoAPI's "direct"
+  # Our "FollowersOnly" is the MastoAPI's "private"
+  case l:
+  of Public: return "public"
+  of Unlisted: return "unlisted"
+  of FollowersOnly: return "private"
+  of Limited: return "limited"
+  of Private: return "direct"
+
+proc strToLevel*(s: string): PostPrivacyLevel =
+  # Our "Private" is the MastoAPI's "direct"
+  # Our "FollowersOnly" is the MastoAPI's "private"
+  case s:
+  of "public": return Public
+  of "unlisted": return Unlisted
+  of "private": return FollowersOnly 
+  of "limited": return Limited
+  of "direct": return Private
+  else:
+    raise newException(ValueError, "Unacceptable value for converting to Post Privacy Level: " & s)
+
 proc status*(id: string, user_id = ""): JsonNode =
   if id == "": return newJNull()
   else: result = newJObject()
@@ -405,16 +427,7 @@ proc status*(id: string, user_id = ""): JsonNode =
     "emojis": newJArray()
   }
 
-  case post.level:
-  of Public:
-    result["visibility"] = newJString("public")
-  of Unlisted:
-    result["visibility"] = newJString("unlisted")
-  of FollowersOnly:
-    # Confusingly, what MastoAPI calls "private" is called followersonly here.
-    result["visibility"] = newJString("private")
-  of Private:
-    result["visibility"] = newJString("direct")
+  result["visibility"] = newJString(levelToStr(post.level))
 
   if replyto_sender != "":
     result["in_reply_to_id"] = newJString(post.replyto)
