@@ -19,7 +19,6 @@ var post = newPost(
   content = @[text(sample(fakeStatuses))]
 )
 
-
 suite "Post-related tests":
   test "Add custom Post":
     dbcon.addPost(post)

@@ -158,6 +158,8 @@ proc genFakeUsers*(): seq[User] =
     user.id = userData[0]
     user.name = userData[1]
     user.bio = userData[2]
+    user.is_frozen = true
+    user.password = "DISABLED_FOREVER"
     result.add(user)
   return result
 

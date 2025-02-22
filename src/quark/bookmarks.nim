@@ -20,7 +20,7 @@
 import quark/private/database
 
 proc bookmarkExists*(db: DbConn, user, post: string): bool =
-  return has(db.getRow(sql"SELECT uid FROM bookmarks WHERE uid = ? AND pid = ?;", user, post))
+  return has(db.getRow(sql"SELECT 0 FROM bookmarks WHERE uid = ? AND pid = ?;", user, post))
 
 proc bookmarkPost*(db: DbConn, user, post: string) =
   if db.bookmarkExists(user, post):
