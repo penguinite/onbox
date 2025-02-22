@@ -71,7 +71,7 @@ proc newPost*(
     boosts: boosts
   )
 
-proc text*(content: string, date: DateTime = now().utc, format = "plain"): PostContent =
+proc text*(content: string, date: DateTime = now().utc, format = "txt"): PostContent =
   result = PostContent(kind: Text)
   result.text = content
   result.published = date
