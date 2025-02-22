@@ -25,7 +25,7 @@ proc bookmarkExists*(db: DbConn, user, post: string): bool =
 proc bookmarkPost*(db: DbConn, user, post: string) =
   if db.bookmarkExists(user, post):
     return
-  db.exec(sql"INSERT INTO bookmarks VALUES (?,?);", user, post)
+  db.exec(sql"INSERT INTO bookmarks VALUES (?,?);",post, user)
 
 proc getBookmarks*(db: DbConn, user: string, limit = 20): seq[string] =
   for row in db.getAllRows(sql("SELECT pid FROM bookmarks WHERE uid = ? LIMIT " & $limit & ";"), user):
