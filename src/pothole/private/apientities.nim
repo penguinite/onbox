@@ -398,6 +398,7 @@ proc status*(id: string, user_id = ""): JsonNode =
     "favourites_count": reactionnums,
     "account": account(post.sender),
     # TODO: Implement the following:
+    "media_attachments": [],
     "sensitive": false,
     "spoiler_text": "",
     "language": "en",
