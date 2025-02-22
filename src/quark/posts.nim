@@ -293,7 +293,7 @@ proc contentToHtml*(content: PostContent): string =
   of Text:
     ## TODO: Add support for HTML, ie. do HTML sanitization the way that Mastodon does it.
     case content.format:
-    of "txt":
+    of "txt", "plain":
       result.add("<p>" & safeHtml(content.text) & "</p>")
     of "md":
       result.add(rstToHtml(
