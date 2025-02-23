@@ -19,6 +19,8 @@
 # From somewhere in Pothole
 import pothole/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_tags, timelines, statuses]
 
+# These are in order of implementation by the way.
+
 const apiRoutes* =  @[
   # (URLRoute, HttpMethod, RouteProcedure)
   ("/api/v1/instance", "GET", v1InstanceView),
@@ -43,5 +45,6 @@ const apiRoutes* =  @[
   ("/api/v1/statuses/@id/reblog", "POST", boostStatus),
   ("/api/v1/statuses/@id/unreblog", "POST", unboostStatus),
   ("/api/v1/statuses/@id/bookmark", "POST", bookmarkStatus),
-  ("/api/v1/statuses/@id/unbookmark", "POST", unbookmarkStatus)
+  ("/api/v1/statuses/@id/unbookmark", "POST", unbookmarkStatus),
+  ("/api/v1/statuses/@id", "GET", viewStatus),
 ]

@@ -307,3 +307,19 @@ proc contentToHtml*(content: PostContent): string =
     else: raise newException(ValueError, "Unexpected text format: " & $(content.format))
   else: raise newException(ValueError, "Unexpected content type: " & $(content.kind))
   return result
+
+proc getPostPrivacyLevel*(db: DbConn, id: string): PostPrivacyLevel =
+  return toPrivacyLevelFromDb(db.getRow(sql"SELECT level FROM posts WHERE id =?;", id)[0])
+
+proc getSender*(db: DbConn, pid: string): string =
+  return db.getRow(sql"SELECT sender FROM posts WHERE id = ?;", pid)[0]
+
+proc getRecipients*(db: DbConn, pid: string): seq[string] =
+  result = split(db.getRow(sql"GET recipients FROM posts WHERE id = ?;", pid)[0], ",")
+
+  # the split() proc sometimes creates items in the sequence
+  # even when there isn't. So this bit of code manually
+  # clears the list if two specific conditions are met.
+  if len(result) == 1 and result[0] == "":
+    result = @[]
+  return result
