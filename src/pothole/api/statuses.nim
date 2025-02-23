@@ -21,7 +21,7 @@
 import quark/[posts, apps, oauth, auth_codes, boosts, bookmarks, strextra]
 
 # From somewhere in Pothole
-import pothole/[database, routeutils], pothole/private/apientities
+import pothole/[database, routeutils, conf, lib], pothole/private/apientities
 
 # From somewhere in the standard library
 import std/[json]
@@ -69,7 +69,7 @@ proc boostStatus*(req: Request) =
     # Check if the client registered to the token
     # has a public oauth scope.
     if not db.hasScope(db.getTokenApp(token), "write:statuses"):
-      respJsonError("The access token is invalid (scope read or write:statuses is missing) ", 401)
+      respJsonError("The access token is invalid (scope write or write:statuses is missing) ", 401)
 
     user = db.getTokenUser(token)
 
@@ -148,7 +148,7 @@ proc unboostStatus*(req: Request) =
     # Check if the client registered to the token
     # has a public oauth scope.
     if not db.hasScope(db.getTokenApp(token), "write:statuses"):
-      respJsonError("The access token is invalid (scope read or write:statuses is missing) ", 401)
+      respJsonError("The access token is invalid (scope write or write:statuses is missing) ", 401)
 
     user = db.getTokenUser(token)
 
@@ -192,7 +192,7 @@ proc bookmarkStatus*(req: Request) =
     # Check if the client registered to the token
     # has a public oauth scope.
     if not db.hasScope(db.getTokenApp(token), "write:bookmarks"):
-      respJsonError("The access token is invalid (scope read or write:bookmarks is missing) ", 401)
+      respJsonError("The access token is invalid (scope write or write:bookmarks is missing) ", 401)
 
     user = db.getTokenUser(token)
 
@@ -236,7 +236,7 @@ proc unbookmarkStatus*(req: Request) =
     # Check if the client registered to the token
     # has a public oauth scope.
     if not db.hasScope(db.getTokenApp(token), "write:bookmarks"):
-      respJsonError("The access token is invalid (scope read or write:bookmarks is missing) ", 401)
+      respJsonError("The access token is invalid (scope write or write:bookmarks is missing) ", 401)
 
     user = db.getTokenUser(token)
 
@@ -249,4 +249,74 @@ proc unbookmarkStatus*(req: Request) =
     if not db.postIdExists(id):
       respJsonError("Record not found", 404)
     db.unbookmarkPost(id, user)
+  req.respond(200, headers, $(status(id)))
+
+
+proc verifyAccess*(req: Request, scope: string) =
+  runnableExamples:
+    try:
+      req.verifyAccess("read:statuses")
+    except CatchableError as err:
+      req.respJsonError(err.msg, 401)
+
+  # Let's do authentication first...
+  if not req.authHeaderExists():
+    raise newException(CatchableError, "The access token is invalid (No auth header present)")
+    
+  let token = req.getAuthHeader()
+  dbPool.withConnection db:
+    # Check if the token exists in the db
+    if not db.tokenExists(token):
+      raise newException(CatchableError, "The access token is invalid (token not found in db)")
+        
+    # Check if the token has a user attached
+    if not db.tokenUsesCode(token):
+      raise newException(CatchableError, "The access token is invalid (token isn't using an auth code)")
+        
+    # Double-check the auth code used.
+    if not db.authCodeValid(db.getTokenCode(token)):
+      raise newException(CatchableError, "The access token is invalid (auth code used by token isn't valid)")
+    
+    # Check if the client registered to the token
+    # has a public oauth scope.
+    if not db.hasScope(db.getTokenApp(token), scope):
+      raise newException(CatchableError, "The access token is invalid (missing scope) ")
+
+
+proc viewStatus*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+  
+  # Here's what we want to do:
+  # First check if the post exists, failing if it doesn't.
+  #
+  # Then If the instance is in lockdown mode or if the post we want to view
+  # is private then we will require authentication with a read or read:statuses scope
+  # (Also verifying if the user is allowed to see it.)
+  # 
+  # Now we return the post.
+
+  # Check if the post id is valid.
+  var id = req.pathParams["id"]
+  if id.isEmptyOrWhitespace():
+    respJsonError("Invalid post id!", 400)
+  
+  var level = Public
+  dbPool.withConnection db:
+    if not db.postIdExists(id):
+      respJsonError("Record not found", 404)
+    
+    level = db.getPostPrivacyLevel(id)
+    if not db.canSeePost(db.getTokenUser(req.getAuthHeader()), id, level):
+      respJsonError("Record not found", 404)
+  
+  configPool.withConnection config:
+    # Check if the instance is in lockdown mode.
+    if config.getBoolOrDefault("web", "whitelist_mode", false) or level notin {Public, Unlisted}:
+      try:
+        req.verifyAccess("read:statuses")
+      except CatchableError as err:
+        req.respond(401, createHeaders("application/json"), $(%*{"error": err.msg}))
+        return
+
   req.respond(200, headers, $(status(id)))
