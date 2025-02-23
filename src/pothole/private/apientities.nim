@@ -26,7 +26,13 @@ import pothole/[conf, database, routeutils, lib, assets]
 # From somewhere in the standard library
 import std/[json, times]
 
+# TODO: One easy way to improve performance would be to switch
+# to another JSON library such as treeform's jsony or disruptek's jason.
+# treeform's jsony is the fastest but it insists on using objects to serialization.
+# and that doesn't work well here.
+
 proc formatDate(date: DateTime): string =
+  ## Formats dates into a string exactly the way that the API expects.
   # API Example format str:     [YYYY]-[MM]-[DD]T[hh]:[mm]:[ss].[s][TZD]
   # API Example formatted date:  1994 - 11 - 05 T 13 : 15 : 30 . 0  Z
   # Broken example format date:  2025 - 01 - 20 T 04 : 14 : 31 Z
