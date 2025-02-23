@@ -23,7 +23,7 @@
 
 # From Quark
 import quark/private/[macros, database]
-import quark/[strextra, shared, tag]
+import quark/[strextra, shared, tag, follows]
 export shared
 
 # From the standard library
@@ -323,3 +323,19 @@ proc getRecipients*(db: DbConn, pid: string): seq[string] =
   if len(result) == 1 and result[0] == "":
     result = @[]
   return result
+
+proc canSeePost*(db: DbCOnn, uid, pid: string, level: PostPrivacyLevel): bool =
+  case level:
+  of Public, Unlisted:
+    # Of course the user is allowed to see these...
+    return true
+  of FollowersOnly:
+    # Check if user is following sender
+    # If so, then yes, they can see the post.
+    return db.getFollowStatus(uid, db.getSender(pid)) == AcceptedFollowRequest
+  of Limited, Private:
+    # TODO: Limited is different from Private but the MastoAPI docs don't clarify hpw.
+    # Please figure out the difference and fix this bug.
+    # For now, we will check if the user has been directly mentioned in the post they
+    # want to see.
+    return uid in db.getRecipients(pid)
