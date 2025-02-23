@@ -18,7 +18,7 @@
 ## This module contains all database logic for handling followers, following and so on.
 
 import quark/private/database
-import quark/[users, tag, strextra, posts]
+import quark/[users, tag, strextra]
 import std/sequtils
 
 proc getFollowersQuick*(db: DbConn, user: string): seq[string] =
@@ -114,7 +114,13 @@ proc getHomeTimeline*(db: DbConn, user: string, limit: var int = 20): seq[string
   # First we check to see if the limit is realistic
   # (ie. do we have enough posts to fill it)
   # If not then we just reset the limit to something sane.
-  let t_limit = db.getNumTotalPosts(false)
+
+  # Note: Due to a circular dependency on posts, we have to use this
+  # Instead of calling getNumTotalPosts()
+  var t_limit: int = 0
+  for x in db.getAllRows(sql("SELECT 0 FROM posts;")):
+      inc(t_limit)
+
   if limit > t_limit:
     limit = t_limit
 
