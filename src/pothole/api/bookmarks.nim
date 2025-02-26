@@ -17,6 +17,7 @@
 ## This module contains all the routes for the bookmarks method in the mastodon api.
 
 # From somewhere in Pothole
+import quark/[apps, oauth, auth_codes, bookmarks]
 import pothole/[routeutils, database, conf]
 import pothole/private/apientities
 from std/strutils import parseInt
