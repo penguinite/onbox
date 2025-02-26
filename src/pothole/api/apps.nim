@@ -38,21 +38,7 @@ proc v1Apps*(req: Request) =
   # Typical form submissions: x-www-form-urlencoded
   # Typical multipart: multipart/form-data
   # JSON via request body: application/json
-  var contentType = "application/x-www-form-urlencoded"
-  if req.headers.contains("Content-Type"):
-    contentType = req.headers["Content-Type"]
-
-  case contentType:
-  of "application/x-www-form-urlencoded", "multipart/form-data", "application/json":
-    discard
-  else:
-    # Throw an error if the format of the message can't be understood
-    req.respond(
-      400,
-      headers,
-      $(%*{"error": "Couldn't process request!"})
-    )
-  
+  var contentType = req.getContentType()
 
   var result: JsonNode
 
@@ -154,7 +140,7 @@ proc v1Apps*(req: Request) =
     "redirect_uri": redirect_uris,
     "client_id": client_id,
     "client_secret": client_secret,
-    "scopes": scopes.split(" ") # Undocumented.
+    "scopes": scopes.split(" ") # Non-standard: Undocumented.
   }
 
   req.respond(200, headers, $(result))

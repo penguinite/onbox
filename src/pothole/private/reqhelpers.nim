@@ -106,6 +106,19 @@ proc fetchSessionCookie*(req: Request): string =
     if val == "session":  
       flag = true
 
+proc getContentType*(req: Request): string =
+  result = "application/x-www-form-urlencoded"
+  if req.headers.contains("Content-Type"):
+    result = req.headers["Content-Type"]
+  
+  # Some clients such as tuba send their content-type as
+  # multipart/form-data; boundary=...
+  # And so, we will return everything before
+  # the first semicolon 
+  if ';' in result:
+    result = result.split(';')[0]
+
+
 proc deleteSessionCookie*(): string = 
   return "session=\"\"; path=/; Max-Age=0"
 

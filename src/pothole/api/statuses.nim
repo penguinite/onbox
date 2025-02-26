@@ -21,7 +21,7 @@
 import quark/[posts, apps, oauth, auth_codes, boosts, bookmarks, strextra]
 
 # From somewhere in Pothole
-import pothole/[database, routeutils, conf, lib], pothole/private/apientities
+import pothole/[database, routeutils, conf], pothole/private/apientities
 
 # From somewhere in the standard library
 import std/[json]
