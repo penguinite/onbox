@@ -86,6 +86,8 @@ for route in urlRoutes:
   router.addRoute(route[1], route[0], route[2])
   router.addRoute(route[1], route[0] & "/", route[2]) # Trailing slash fix.
 
+router.get("/", serveHome)
+
 log "Serving on http://localhost:" & $port
 initEverythingForRoutes()
 newServer(router).serve(Port(port))

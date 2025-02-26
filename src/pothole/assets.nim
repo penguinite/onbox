@@ -41,6 +41,7 @@ proc getAsset*(fn: string): string =
     "oauth.html": staticRead("../assets/oauth.html"),
     "signin.html": staticRead("../assets/signin.html"),
     "generic.html": staticRead("../assets/generic.html"),
+    "home.html": staticRead("../assets/home.html"),
     "style.css": staticRead("../assets/style.css")
   }.toTable
   return table[fn]

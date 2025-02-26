@@ -203,6 +203,12 @@ proc serveCSS*(req: Request) =
   headers["Content-Type"] = "text/css"
   req.respond(200, headers, getAsset("style.css"))
 
+proc serveHome*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "text/html"
+  req.respond(200, headers, getAsset("home.html"))
+
+
 const urlRoutes* = @[
   ("/static/style.css", "GET", serveCSS),
   ("/auth/sign_in", "GET", signInGet),
