@@ -1,4 +1,5 @@
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
+# Copyright © penguinite 2024-2025 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
 # 
@@ -14,21 +15,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
-# assets.nim:
-## This module basically acts as the assets store
-import std/tables, iniplus
-proc getAsset*(fn: string): string =
-  # Get static asset
-  const table = {
-    "oauth.html": staticRead("../assets/oauth.html"),
-    "signin.html": staticRead("../assets/signin.html"),
-    "generic.html": staticRead("../assets/generic.html"),
-    "home.html": staticRead("../assets/home.html"),
-    "style.css": staticRead("../assets/style.css")
-  }.toTable
-  return table[fn]
+# db/private/utils.nim:
+## This module contains common procedures & macros used by the database layer
+## in Pothole.
+import std/macros
 
-proc getAvatar*(config: ConfigTable, user_id: string): string =
-  return # TODO: Implement
-proc getHeader*(config: ConfigTable, user_id: string): string =
-  return # TODO: Implement
+macro get*(obj: object, fld: string): untyped =
+  ## A procedure to get a field of an object using a string.
+  ## Like so: user.get("local") == user.local
+  newDotExpr(obj, newIdentNode(fld.strVal))

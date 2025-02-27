@@ -18,10 +18,13 @@
 
 
 # From somewhere in Quark
-import quark/[follows, apps, oauth, auth_codes]
+import quark/[follows, apps, oauth, auth_codes, strextra]
 
 # From somewhere in Pothole
-import pothole/[database, routeutils], pothole/private/apientities
+import pothole/[database, conf]
+
+# Helper procs
+import pothole/helpers/[req, resp, routes, entities]
 
 # From somewhere in the standard library
 import std/[json]
@@ -37,7 +40,7 @@ proc timelinesHome*(req: Request) =
   # TODO: Implement pagination *properly*
   # If any of these are present, then just error out.
   for i in @["max_id", "since_id", "min_id"]:
-    if req.isValidQueryParam(i):
+    if req.queryParamExists(i):
       respJson("You're using a pagination feature and I honest to goodness WILL NOT IMPLEMENT IT NOW", 500)
   
   # Now we can begin actually implementing the API
@@ -46,8 +49,8 @@ proc timelinesHome*(req: Request) =
   # If ?limit isn't present then default to 20 posts
   var limit = 20
 
-  if req.isValidQueryParam("limit"):
-    limit = parseInt(req.getQueryParam("limit"))
+  if req.queryParamExists("limit"):
+    limit = parseInt(req.queryParams["limit"])
 
   if limit > 40:
     # MastoAPI docs sets a limit of 40.
@@ -83,5 +86,66 @@ proc timelinesHome*(req: Request) =
 
   dbPool.withConnection db:
     for postId in db.getHomeTimeline(user, limit):
+      result.elems.add(status(postId))
+  req.respond(200, headers, $(result))
+
+
+
+proc timelinesHashtag*(req: Request) =
+  var headers: HttpHeaders
+  headers["Content-Type"] = "application/json"
+  
+  # TODO: Implement pagination *properly* and tag searching
+  # If any of these are present, then just error out.
+
+  for i in @["max_id", "since_id", "min_id", "any", "all", "none"]:
+    if req.queryParamExists(i):
+      respJson("You're using an unsupported feature and I honest to goodness WILL NOT IMPLEMENT IT NOW", 500)
+  
+  # These booleans control which types of post to show
+  # Fx. if local is disabled then we won't include local posts
+  # if remote is disabled then we won't include remote posts
+  # if both are enabled (the default) then we will include all types of post.
+  var local, remote = true
+
+  # The mastodon API has 2 query parameters for this API endpoint
+  # local, which when set to true, tells the server to include only local posts
+  # and remote which does the same as local but with remote posts instead.
+  # Both are set to false...
+  if req.queryParamExists("local"):
+    local = parseBool(req.queryParams["local"])
+    remote = not parseBool(req.queryParams["local"])
+
+  if req.queryParamExists("remote"):
+    remote = parseBool(req.queryParams["remote"])
+    local = not parseBool(req.queryParams["remote"])
+  
+  var onlyMedia = false
+  # TODO: Implement the "only_media" query parameter for this API endpoint.
+  # We dont have media handling yet and so we can't test it.
+
+  # If ?limit isn't present then default to 20 posts
+  var limit = 20
+
+  if req.queryParamExists("limit"):
+    limit = parseInt(req.queryParams["limit"])
+
+  if limit > 40:
+    # MastoAPI docs sets a limit of 40.
+    # So we will throw an error if it is over 40
+    respJsonError("Limit cannot be over 40", 401)
+
+  configPool.withConnection config:
+    if config.getBoolOrDefault("web", "whitelist_mode", false):
+      dbPool.withConnection db:
+        try:
+          req.verifyAccess(db, "read:statuses")
+        except CatchableError as err:
+          respJsonError(err.msg, 401)
+
+  var result = newJArray()
+
+  dbPool.withConnection db:
+    for postId in db.getTagTimeline(req.pathParams["tag"], limit, local, remote):
       result.elems.add(status(postId))
   req.respond(200, headers, $(result))

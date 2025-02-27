@@ -1,5 +1,4 @@
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
-# Copyright © penguinite 2024 <penguinite@tuta.io>
 #
 # This file is part of Pothole.
 # 
@@ -15,203 +14,223 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
-# From somewhere in Quark
-import quark/[users, posts, sessions, crypto]
-
 # From somewhere in Pothole
-import pothole/[conf, assets, database, routeutils, lib]
+import pothole/[database, conf]
+import pothole/db/[strextra, apps, oauth, auth_codes]
 
-# From somewhere in the standard library
-import std/[tables, strutils, times]
+# From the standard library
+import std/[mimetypes, os, macros, tables, json]
+import std/strutils except isEmptyOrWhitespace, parseBool
 
-# From nimble/other sources
-import mummy, temple
+# From elsewhere
+import waterpark/postgres, db_connector/db_postgres, mummy, mummy/multipart
+export postgres
 
-proc signInGet*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
+const mimedb*: MimeDB = newMimetypes()
 
-  # Remove session cookie from user's browser.
-  if req.hasSessionCookie():
-    headers["Set-Cookie"] = deleteSessionCookie()
-    # Check if it actually exists in the db before removing.
-    #
-    # We don't *need* to check, since it's a DELETE FROM statement
-    # and those don't usually error out when nothing is found.
-    # But it's a good idea to do anyway.
-    let id = req.fetchSessionCookie()
-    var user = ""
-    dbPool.withConnection db:
-      if db.sessionValid(id):
-        headers["Set-Cookie"] = ""
-        user = db.getSessionUserHandle(id)
+var
+  configPool*: ConfigPool
+  dbPool*: PostgresPool
 
-    req.respond(
-      200, headers,
-      templateify(
-        getAsset("signin.html"), {"login": user}.toTable
-      )
-    )
-  else:
-    req.respond(
-      200, headers,
-      templateify(getAsset("signin.html"), {"login": ""}.toTable)
+proc realURL*(config: ConfigTable): string =
+  return "http://" & config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/")
+
+proc initEverythingForRoutes*() =
+  var size = 75
+  if existsEnv("POTHOLE_CONFIG_SIZE"):
+    size = parseInt(getEnv("POTHOLE_CONFIG_SIZE"))
+  configPool = newConfigPool(size)
+
+  configPool.withConnection config:
+    dbPool = newPostgresPool(
+      config.getIntOrDefault("db", "pool_size", 10),
+      config.getdbHost(),
+      config.getdbUser(),
+      config.getdbPass(),
+      config.getdbName()
     )
 
+proc createHeaders*(a: string): HttpHeaders =
+  result["Content-Type"] = a
+  return
 
-proc signInPost*(req: Request) =
-  var
-    fm: FormEntries
-    headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
-  
-  template renderError(err: string, code = 400) =
-    req.respond(
-      code, headers,
-      templateify(
-        getAsset("signin.html"),
-        {"message_type": "error", "message": err}.toTable
-      )
+macro respJsonError*(msg: string, code = 400, headers = createHeaders("application/json")) =
+  var req = ident"req"
+
+  result = quote do:
+    `req`.respond(
+      `code`, `headers`, $(%*{"error": `msg`})
     )
     return
 
-  template renderSuccess(msg: string, code = 200) =
-    req.respond(
-      code, headers,
-      templateify(
-        getAsset("signin.html"),
-        {"message_type": "success", "message": msg}.toTable
-      )
+macro respJson*(msg: string, code = 200, headers = createHeaders("application/json")) =
+  var req = ident"req"
+
+  result = quote do:
+    `req`.respond(
+      `code`, `headers`, `msg`
     )
     return
 
-  # Check if the user is already logged in.
-  if req.hasSessionCookie():
-    renderError("You are already logged in.")
+proc queryParamExists*(req: Request, query: string): bool =
+  ## Check if a query parameter (such as "?query=parameter") is valid and not empty
+  return not req.queryParams[query].isEmptyOrWhitespace()
 
-  # Unroll form submission data.
-  try:
-    fm = req.unrollForm()
-  except CatchableError as err:
-    log "Couldn't process request: ", err.msg
-    renderError("Couldn't process requests!")
+proc pathParamExists*(req: Request, path: string): bool =
+  ## Checks if a path parameter such as /users/{user} is valid and not empty
+  return not req.pathParams[path].isEmptyOrWhitespace()
 
-  # Check first if user and password exist.
-  if not fm.isValidFormParam("user") or not fm.isValidFormParam("pass"):
-    renderError("Missing required fields. Make sure the Username and Password fields are filled out properly.")
+type
+  MultipartEntries* = Table[string, string]
+  FormEntries* = Table[string, string]
 
-  # Then, see if the user exists at all via handle or email.
-  var id = ""
-  dbPool.withConnection db:
-    var user = fm.getFormParam("user")
-    if db.userEmailExists(user):
-      id = db.getUserIdByEmail(user)
+proc unrollMultipart*(req: Request): MultipartEntries =
+  ## Unrolls a Mummy multipart data thing into a table of strings.
+  ## which is way easier to handle.
+  ## TODO: Maybe reconsider this approach? The example file mentions a way to do this *without* copying.
+  for entry in req.decodeMultipart():
+    if entry.data.isNone():
+      continue
     
-    if db.userHandleExists(sanitizeHandle(user)):
-      id = db.getIdFromHandle(sanitizeHandle(user))
-  
-  if id == "":
-    renderError("User doesn't exist!")
+    let
+      (start, last) = entry.data.get()
+      val = req.body[start .. last]
 
-  # Then retrieve various stuff from the database.
+    if val.isEmptyOrWhitespace():
+      continue
+
+    result[entry.name] = val
+  return result
+
+proc multipartParamExists*(mp: MultipartEntries, param: string): bool =
+  ## Returns a parameter submitted via a HTML form
+  return mp.hasKey(param) and not mp[param].isEmptyOrWhitespace()
+
+proc unrollForm*(req: Request): FormEntries =
+  let entries = req.body.smartSplit('&')
+
+  for entry in entries:
+    if '=' notin entry:
+      continue # Invalid entry: Does not have equal sign.
+
+    let entrySplit = entry.smartSplit('=') # let's just re-use this amazing function.
+
+    if len(entrySplit) != 2:
+      continue # Invalid entry: Does not have precisely two parts.
+
+    var
+      key = entrySplit[0].decodeQueryComponent()
+      val = entrySplit[1].decodeQueryComponent()
+
+    if key.isEmptyOrWhitespace() or val.isEmptyOrWhitespace():
+      continue # Invalid entry: Key or val (or both) are empty or whitespace. Invalid.
+
+    result[key] = val
+  
+  return result
+
+proc formParamExists*(fe: FormEntries, param: string): bool =
+  ## Returns a parameter submitted via a HTML form
+  return fe.hasKey(param) and not fe[param].isEmptyOrWhitespace()
+
+
+proc hasSessionCookie*(req: Request): bool =
+  ## Checks if the request has a Session cookie for authorization.
+  
+  # The cookie header might contain other cookies.
+  # So we need to parse this header.
+  # The header looks like so: Name=Value; Name=Value
+  if not req.headers.contains("Cookie"):
+    return false
+
   var
-    hash, salt: string
-    kdf: KDF
-
-  dbPool.withConnection db:
-    if db.userFrozen(id):
-      renderError("Your account has been frozen. Contact an administrator.", 403)
-
-    if not db.userApproved(id):
-      renderError("Your account hasn't been approved yet, please wait or contact an administrator.", 403)
-      
-    configPool.withConnection config:
-      if not db.userVerified(id) and config.getBoolOrDefault("user", "require_verification", false):
-        ## TODO: Send a code if there hasn't been one yet
-        ## TODO: Allow for re-sending codes, say, if a user logins 10 mins after their previous code and still isn't verified.
-        renderError("Your account hasn't been verified yet. Check your email for a verification link.", 403)
-    salt = db.getUserSalt(id)
-    kdf = db.getUserKDF(id)
-    hash = db.getUserPass(id)
+    val = ""
+    flag = false
+  for item in req.headers["Cookie"].smartSplit('='):
+    case flag:
+    of false:
+      if item == "session":
+        flag = true
+        continue
+    of true:
+      val = item
+      break
   
-  # Finally, compare the hashes.
-  if hash != crypto.hash(fm.getFormParam("pass"), salt, kdf):
-    renderError("Invalid password!")
+  return not (val.isEmptyOrWhitespace() and val != "null")
 
-  # And then, see if we need to update the hash
-  # Since we have the password in memory
-  if kdf != crypto.latestKdf:
-    log "Updating password hash from KDF:", $kdf, " to KDF:", crypto.latestKdf, " for user \"", id, "\""
-    var newhash = crypto.hash(
-      fm.getFormParam("pass"),
-      salt, crypto.latestKdf
-    )
-
-    dbPool.withConnection db:
-      db.updateUserById(
-        id, "password", newhash
-      )
-
-  if fm.isValidFormParam("rememberme"):
-    var session: string
-    let date = utc(now() + 400.days) # 400 days is the upper limit on cookie age for chrome.
-    dbPool.withConnection db:
-      session = db.createSession(id)
-    # This is a lengthy one-liner, maybe replace it with something more concise?
-    headers["Set-Cookie"] = "session=" & session & "; Path=/; Priority=High; sameSite=Strict; Secure; HttpOnly; Expires=" & date.format("ddd") & ", " & date.format("dd MMM hh:mm:ss") & " GMT"
-
-  # If there is no need for redirection
-  # then just proceed, and render the "You have logged in!" page
-  if not req.isValidQueryParam("return_to"):
-    renderSuccess("Successful login!")
-
-  # User has requested to return to some place.
-  let loc = req.getQueryParam("return_to")
-
-  # If the return_to starts with javascript: or data:
-  # then it might be some form of XSS attack and its best to not
-  # continue redirecting.
-  if loc.startsWith("javascript:") or loc.startsWith("data:"):
-    renderError("There might be some form of XSS attack going on, we'll end the request just to be safe. But your login was successful!")
-
-  headers["Location"] = loc
-  renderSuccess("Successful login, redirecting...", code = 303)
-
-proc logoutSession*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
-
-  # Remove session cookie from user's browser.
-  if req.hasSessionCookie():
-    headers["Set-Cookie"] = deleteSessionCookie()
-    # Check if it actaully exists in the db before removing.
-    # In theory this shouldn't matter but its a good thing to do anyway
-    dbPool.withConnection db:
-      let id = req.fetchSessionCookie()
-      if db.sessionExists(id):
-        db.deleteSession(id)
-
-  # Just render homepage with a successful-esque message,
-  # Since we dont have a dedicated page for this kinda thing.
-  req.respond(
-    200, headers,
-    templateify(getAsset("signin.html"), {"message_type": "success", "message": "Successfully logged out!"}.toTable)
-  )
-
-proc serveCSS*(req: Request) = 
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/css"
-  req.respond(200, headers, getAsset("style.css"))
-
-proc serveHome*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
-  req.respond(200, headers, getAsset("home.html"))
+proc hasValidStrKey*(j: JsonNode, k: string): bool =
+  ## Checks if a key in a json node object is a valid string.
+  ## It primarily checks for existence, kind, and emptyness.
+  try: return j.hasKey(k) and j[k].kind == JString and not j[k].getStr().isEmptyOrWhitespace()
+  except: return false
 
 
-const urlRoutes* = @[
-  ("/static/style.css", "GET", serveCSS),
-  ("/auth/sign_in", "GET", signInGet),
-  ("/auth/sign_in", "POST", signInPost),
-  ("/auth/logout", "GET", logoutSession)
-]
+proc fetchSessionCookie*(req: Request): string = 
+  ## Fetches the session cookie (if it exists) from a request.
+  var flag = false
+  for val in req.headers["Cookie"].smartSplit('='):
+    if flag:
+      return val
+    if val == "session":  
+      flag = true
+
+proc getContentType*(req: Request): string =
+  ## Returns the content-type of a request.
+  ## 
+  ## This also does some extra checks for if the content-type
+  ## has other info (like MIME boundary info) and strips it out
+  result = "application/x-www-form-urlencoded"
+  if req.headers.contains("Content-Type"):
+    result = req.headers["Content-Type"]
+  
+  # Some clients such as tuba send their content-type as
+  # multipart/form-data; boundary=...
+  # And so, we will return everything before
+  # the first semicolon 
+  if ';' in result:
+    result = result.split(';')[0]
+
+proc authHeaderExists*(req: Request): bool =
+  ## Checks if the auth header exists, which is required for some API routes.
+  return req.headers.contains("Authorization") and not isEmptyOrWhitespace(req.headers["Authorization"])
+
+proc getAuthHeader*(req: Request): string =
+  ## Gets the auth from a request header if it exists
+  let split = req.headers["Authorization"].split("Bearer")
+
+  if len(split) > 1: return split[high(split)].cleanString()
+  else: return split[0].cleanString()
+
+proc verifyAccess*(req: Request, db: DbConn, scope: string) =
+  ## A simple helper proc for verifying access to API routes.
+  ## 
+  ## Heres how to use verifyAccess to ensure a client
+  ## is authenticated with the scope "read:statuses"
+  runnableExamples:
+    try:
+      req.verifyAccess(db, "read:statuses")
+    except CatchableError as err:
+      respJsonError(err.msg, 401)
+
+  # Let's do authentication first...
+  if not req.authHeaderExists():
+    raise newException(CatchableError, "The access token is invalid (No auth header present)")
+    
+  let token = req.getAuthHeader()
+
+  # Check if the token exists in the db
+  if not db.tokenExists(token):
+    raise newException(CatchableError, "The access token is invalid (token not found in db)")
+        
+  # Check if the token has a user attached
+  if not db.tokenUsesCode(token):
+    raise newException(CatchableError, "The access token is invalid (token isn't using an auth code)")
+        
+  # Double-check the auth code used.
+  if not db.authCodeValid(db.getTokenCode(token)):
+    raise newException(CatchableError, "The access token is invalid (auth code used by token isn't valid)")
+    
+  # Check if the client registered to the token
+  # has a public oauth scope.
+  if not db.hasScope(db.getTokenApp(token), scope):
+    raise newException(CatchableError, "The access token is invalid (missing scope) ")

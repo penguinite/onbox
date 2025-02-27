@@ -15,32 +15,22 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # conf.nim:
-## This module wraps configuration file parsers, it also has some essential functions
-## Such as getConfigFilename()
-## Currently, this module serves as a wrapper over the iniplus config parser.
+## This module stores the ConfigPool object (which is used heavily in the API layer)
+## and it also stores some procedures related to configuration.
+import std/os, iniplus
 
-# From standard library
-import std/[os]
+proc getConfigFilename*(c = "pothole.conf"): string =
+  ## Returns the filename for the pothole config
+  runnableExamples:
+    ## pothole
+    let config = parseFile(getConfigFilename())
 
-# From elsewhere
-import iniplus
-export iniplus
-
-proc setup*(filename: string): ConfigTable =
-  return parseString(readFile(filename))
-
-proc getConfigFilename*(): string =
-  ## Returns the filename for the 
-  result = "pothole.conf"
+    ## potholectl
+    proc example_command(config = "pothole.conf"): int =
+      let conf = parseFile(getConfigFilename(config))
+      return 0
   if existsEnv("POTHOLE_CONFIG"):
     result = getEnv("POTHOLE_CONFIG")
-  return result
-
-proc getEnvOrDefault*(env: string, default: string): string =
-  {.deprecated: "Deprecated to reduce Pothole's API, do not use.".}
-  if not existsEnv(env):
-    return default
-  return getEnv(env)
 
 ## This is a config file pool.
 ## Mummy is a multi-threaded database server, and so using global variables is a bad idea.
@@ -70,7 +60,7 @@ type ConfigPool* = Pool[ConfigTable]
 proc newConfigPool*(size: int, filename: string = getConfigFilename()): ConfigPool =
   ## Creates a new configuration pool.
   result = newPool[ConfigTable]()
-  for _ in 0 ..< size: result.recycle(setup(filename))
+  for _ in 0 ..< size: result.recycle(parseString(readFile(filename)))
 
 template withConnection*(pool: ConfigPool, config, body) =
   ## Syntactic sugar for automagically borrowing and returning a config table from a pool.

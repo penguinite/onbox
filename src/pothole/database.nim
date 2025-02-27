@@ -1,3 +1,4 @@
+# Copyright © penguinite 2024-2025 <penguinite@tuta.io>
 # Copyright © Leo Gavilieau 2022-2023 <xmoo@privacyrequired.com>
 #
 # This file is part of Pothole.
@@ -15,71 +16,52 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 #
 # database.nim:
-## Some small functions for working with the database. (Fetch env vars, or data from the config in one go.)
+## Some small functions for working with the database. (Open connections, fetch env info and so on.)
 ## 
-## Keep in mind, you will still need to import quark/[WHATEVER FEATURES YOU WANT HERE]
-
-# From somewhere in Pothole
-import conf
+## Keep in mind, you will still need to import the actual database logic from the db/ folder
 
 # From somewhere in the standard library
 import std/os
 
-import waterpark/postgres
-export postgres
+# Third party libraries
+import waterpark/postgres, db_connector/db_postgres, iniplus
 
-proc hasDbHost*(config: ConfigTable): bool =
-  if config.exists("db","host") or existsEnv("PHDB_HOST"):
-    return true
-  return false
+## In the past, we used an archaic and sorta messed up system for making
+## the tables, these have been replaced with a plain old SQL script that gets read
+## at compile-time.
+##
+## Unlike Pleroma, Pothole's config is entirely stored in the config file.
+## There is no way to configure Pothole from the database alone.
+## So we do not need a tool to generate SQL for a specific instance.
+
+proc setup*(name, user, host, password: string,schemaCheck: bool = true): DbConn =
+  ## setup() is called whenever you want to initialize a database schema.
+  ## It does not merely launch a database connection, it also makes sure that every table needed is there.
+  result = open(host, user, password, name)
+  result.exec(sql(staticRead("assets/setup.sql")))
+
+proc purge*(db: DbConn) =
+  ## Purges all of the data, tables and whatnot from the database.
+  ## 
+  ## Obviously a destructive procedure, don't run carelessly...
+  db.exec(sql(staticRead("assets/purge.sql")))
 
 proc getDbHost*(config: ConfigTable): string =
-  ## This procedure returns a string containing the name of the database we want to use.
-  ## It has a default value of "127.0.0.1:5432" but overrides it based on the config or environment variables (In that order)
-  result = config.getStringOrDefault("db","host","127.0.0.1:5432")
-  if existsEnv("PHDB_HOST"):
-    result = getEnv("PHDB_HOST")
-
-  return result
-
-proc hasDbName*(config: ConfigTable): bool =
-  if config.exists("db","name") or existsEnv("PHDB_NAME"):
-    return true
-  return false
+  if existsEnv("POTHOLE_DBHOST"):
+    return getEnv("POTHOLE_DBHOST")
+  return config.getStringOrDefault("db", "host", "127.0.0.1:5432")
 
 proc getDbName*(config: ConfigTable): string =
-  ## This procedure returns a string containing the name of the database we want to use.
-  ## It has a default value of "pothole" but overrides it based on the config or environment variables (In that order)
-  result = config.getStringOrDefault("db","name","pothole")
-  if existsEnv("PHDB_NAME"):
-    result = getEnv("PHDB_NAME")
-  
-  return result
-
-proc hasDbUser*(config: ConfigTable): bool =
-  if config.exists("db","user") or existsEnv("PHDB_USER"):
-    return true
-  return false
+  if existsEnv("POTHOLE_DBNAME"):
+    return getEnv("POTHOLE_DBNAME")
+  return config.getStringOrDefault("db", "name", "pothole")
 
 proc getDbUser*(config: ConfigTable): string =
-  ## This procedure returns a string containing the name of the database we want to use.
-  ## It has a default value of "pothole" but overrides it based on the config or environment variables (In that order)
-  result = config.getStringOrDefault("db","user","pothole")
-  if existsEnv("PHDB_USER"):
-    result = getEnv("PHDB_USER")
-  
-  return result
-
-proc hasDbPass*(config: ConfigTable): bool =
-  if config.exists("db","password") or existsEnv("PHDB_PASS"):
-    return true
-  return false
+  if existsEnv("POTHOLE_DBUSER"):
+    return getEnv("POTHOLE_DBUSER")
+  return config.getStringOrDefault("db", "user", "pothole")
 
 proc getDbPass*(config: ConfigTable): string =
-  ## This procedure returns a string containing the name of the database we want to use.
-  ## It has no default value but overrides it based on the config or environment variables (In that order)
-  ## 
-  result = config.getStringOrDefault("db","password","")
-  if existsEnv("PHDB_PASS"):
-    result = getEnv("PHDB_PASS")
-  return result
+  if existsEnv("POTHOLE_DBPASS"):
+    return getEnv("POTHOLE_DBPASS")
+  return config.getString("db", "pass")

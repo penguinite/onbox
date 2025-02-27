@@ -14,22 +14,17 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
-
-# From somewhere in Quark
-import quark/[db]
-
-# From somewhere in Pothole
-import pothole/[routes, lib, conf, database, api, routeutils]
+import pothole/[shared, conf, routes, database, web]
 
 # From standard library
-from std/strutils import join
+import std/[strutils, os]
 
-# From nimble
-import mummy, mummy/routers
+# From third-parties
+import mummy, mummy/routers, iniplus
 
-echo "Pothole version ", lib.phVersion
-log "Copyright © penguinite <penguinite@tuta.io> 2024-2025"
+log "Pothole version ", phVersion
 log "Copyright © Leo Gavilieau <xmoo@privacyrequired.com> 2022-2023"
+log "Copyright © penguinite <penguinite@tuta.io> 2024-2025"
 log "Licensed under the GNU Affero General Public License version 3 or later"
 
 when not defined(useMalloc):
@@ -44,21 +39,25 @@ setControlCHook(exit)
 
 log "Using ", getConfigFilename(), " as config file"
 
-let config = setup(getConfigFilename())
+let config = parseFile(getConfigFilename())
+
 var port = 3500
 if config.exists("web","port"):
   port = config.getInt("web","port")
 
-if not hasDbHost(config):
+# Provide useful hints on when default values are used...
+# Erroring out if a password for the database does not exist.
+
+if not (config.exists("db","host") or existsEnv("POTHOLE_DBHOST")):
   log "Couldn't retrieve database host. Using \"127.0.0.1:5432\" as default"
 
-if not hasDbName(config):
+if not (config.exists("db","name") or existsEnv("POTHOLE_DBNAME")):
   log "Couldn't retrieve database name. Using \"pothole\" as default"
 
-if not hasDbUser(config):
+if not (config.exists("db","user") or existsEnv("POTHOLE_DBUSER")):
   log "Couldn't retrieve database user login. Using \"pothole\" as default"
   
-if not hasDbPass(config):
+if not (config.exists("db","password") or existsEnv("POTHOLE_DBPASS")):
   log "Couldn't find database user password from the config file or environment, did you configure pothole correctly?"
   error "Database user password couldn't be found."
 
@@ -76,16 +75,11 @@ except CatchableError as err:
   error "Couldn't initalize the database: ", err.msg
 
 var router: Router
-# Add API routes
-for route in apiRoutes:
+
+# Add API & web routes
+for route in mummyRoutes:
   router.addRoute(route[1], route[0], route[2])
   router.addRoute(route[1], route[0] & "/", route[2]) # Trailing slash fix.
-
-# Add URL routes
-for route in urlRoutes:
-  router.addRoute(route[1], route[0], route[2])
-  router.addRoute(route[1], route[0] & "/", route[2]) # Trailing slash fix.
-
 router.get("/", serveHome)
 
 log "Serving on http://localhost:" & $port

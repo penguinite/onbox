@@ -63,13 +63,8 @@ dbcon.addUser(u2)
 
 suite "User-related tests":
   test "getAdmins":
-    # This boolean will get flipped it sees our handmade admin user.
-    var adminFlag = false
-    for handle in dbcon.getAdmins():
-      if handle == adminuser.handle:
-        adminFlag = true
-        break
-    assert adminFlag == true
+    # Our homemade administrator user should be here
+    assert adminuser.id in dbcon.getAdmins()
   
   test "getTotalLocalUsers":
     assert dbcon.getTotalLocalUsers() > 0
@@ -97,23 +92,18 @@ suite "User-related tests":
     assert dbcon.getHandleFromId("johnadminson") == "johnadminson"
   
   test "updateUserByHandle":
-    # Make the admin user no longer an admin.
-    dbcon.updateUserByHandle("johnadminson", "admin", "false")
-    var adminFlag = true
-    for admin in dbcon.getAdmins():
-      if admin == "johnadminson":
-        adminFlag = false
-        break
-    assert adminFlag == true
+    # Make the admin user no longer discoverable
+    dbcon.updateUserByHandle("johnadminson", "discoverable", "false")
+    assert getUserByHandle("johnadminson").discoverable == false
+    dbcon.updateUserByHandle("johnadminson", "discoverable", "true")
+    assert getUserByHandle("johnadminson").discoverable == true
+    
   
   test "updateUserById":
-    dbcon.updateUserById("johnadminson", "admin", "true")
-    var adminFlag = false
-    for admin in dbcon.getAdmins():
-      if admin == "johnadminson":
-        adminFlag = true
-        break
-    assert adminFlag == true
+    dbcon.updateUserById("johnadminson", "discoverable", "false")
+    assert getUserById("johnadminson").discoverable == false
+    dbcon.updateUserById("johnadminson", "discoverable", "true")
+    assert getUserById("johnadminson").discoverable == true
   
   test "sanitizeHandle":
     for test in @[
