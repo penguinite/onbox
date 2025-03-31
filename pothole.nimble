@@ -7,7 +7,7 @@ license       = "AGPL-3.0-or-later"
 srcDir        = "src"
 binDir        = "build"
 bin           = @["pothole","potholectl"]
-backend       = "c"
+backend       = "cpp"
 
 ## The following options are required
 when not defined(phEmbedded):

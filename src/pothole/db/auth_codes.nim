@@ -104,7 +104,7 @@ proc authCodeValid*(db: DbConn, id: string): bool =
   # If all our checks succeed then it has to be a valid auth code.
   return true
 
-proc cleanupCodes*(db: DbConn) =
+proc cleanAuthCodes*(db: DbConn) =
   ## Purge any invalid authentication codes
   for row in db.getAllRows(sql"SELECT id,date FROM auth_codes;"):
     if not db.authCodeValid(row[0]):

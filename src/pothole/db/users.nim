@@ -92,11 +92,11 @@ proc userIdExists*(db: DbConn, id:string): bool =
     sql"SELECT EXISTS(SELECT 0 FROM users WHERE id = ?);", id
   )[0] == "t"
 
-proc userHandleExists*(db: DbConn, handle:string): bool =
+proc userHandleExists*(db: DbConn, handle:string, domain = ""): bool =
   ## A procedure to check if a user exists by handle
   ## This procedure does sanitize and escape handles by default
   db.getRow(
-    sql"SELECT EXISTS(SELECT 0 FROM users WHERE handle = ?);", handle
+    sql"SELECT EXISTS(SELECT 0 FROM users WHERE handle = ? AND domain = ?);", handle, domain
   )[0] == "t"
 
 proc userEmailExists*(db: DbConn, email: string): bool =
@@ -206,10 +206,10 @@ proc updateUserById*(db: DbConn, id, column, value: string) =
   ## A procedure to update any user (The user is identified by their ID)
   db.exec(sql("UPDATE users SET " & column & " = ? WHERE id = ?;"), value, id)
 
-proc getIdFromHandle*(db: DbConn, handle: string): string =
+proc getIdFromHandle*(db: DbConn, handle: string, domain = ""): string =
   ## A function to convert a user handle to an id.
   ## This procedure expects a regular handle, it will sanitize and escape it by default.
-  db.getRow(sql"SELECT id FROM users WHERE handle = ?;", handle)[0]
+  db.getRow(sql"SELECT id FROM users WHERE handle = ? and domain = ?;", handle, domain)[0]
 
 proc getHandleFromId*(db: DbConn, id: string): string =
   ## A function to convert a  id to a handle.

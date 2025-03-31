@@ -20,11 +20,11 @@
 ## It can be used to create new users, delete posts, add new MRF policies, setup database containers and more!
 ## Generally, this command aims to be a Pothole instance administrator's best friend.
 # From Pothole:
-import pothole/db/[users, posts, auth_codes]
+import pothole/db/[users, posts, auth_codes, sessions, email_codes]
 import pothole/[database, shared, strextra, conf]
 
 # Standard library
-import std/[osproc, os, times, strformat, strutils]
+import std/[osproc, times, strformat, strutils]
 
 # Third-party libraries
 import cligen, rng, iniplus, db_connector/db_postgres
@@ -56,7 +56,7 @@ proc getDb(c: ConfigTable): DbConn =
 
 ## Then the commands themselves!!
 
-proc user_new*(args: seq[string], admin = false, moderator = false, require_approval = false, display = "Default Name", bio = "", config = "pothole.conf"): int =
+proc user_new*(args: seq[string], admin = false, moderator = false, approved = false, display = "Default Name", bio = "", config = "pothole.conf"): int =
   ## This command creates a new user and adds it to the database.
   ## It uses the following format: NAME PASSWORD
   ## 
@@ -86,12 +86,10 @@ proc user_new*(args: seq[string], admin = false, moderator = false, require_appr
   user.email = ""
   user.name = display
   user.bio = bio
-  user.admin = admin
-  user.moderator = moderator
 
-  user.is_approved = false
-  if cnf.getBoolOrDefault("user", "require_approval", false) or require_approval:
-    user.is_approved = true
+  if admin: user.roles.add(3)
+  if moderator: user.roles.add(2)
+  if approved: user.roles.add(1)
     
   try:
     db.addUser(user)
@@ -99,60 +97,45 @@ proc user_new*(args: seq[string], admin = false, moderator = false, require_appr
     error "Failed to insert user: ", err.msg
   
   log "Successfully inserted user"
-  echo "Login details:"
-  echo "name: ", user.handle
+  echo "username: ", user.handle
   echo "password: ", args[1]
 
-proc user_delete*(args: string, purge = false, config = "pothole.conf"): int =
+proc user_delete*(handle: string, purge = false, config = "pothole.conf"): int =
   ## This command deletes a user from the database, you must supply a handle.
-  if len(args) != 1:
-    error "No handle given"
-  
-  if args[0].isEmptyOrWhitespace():
-    error "Handle given is mostly empty"
-
   let db = getConfig(config).getDb()
     
-  if not db.userHandleExists(thing):
-    error "User doesn't exist"
+  var domain = ""
+  # Figure out the domain (if it has one)
+  if '@' in handle:
+    domain = handle.split('@')[1]
+
+  if not db.userHandleExists(handle, domain):
+    error "User \"", handle, "\" doesn't exist, thus, can't delete."
 
   # Try to convert the thing we received into an ID.
   # So it's easier to handle
-  var id = db.getIdFromHandle(thing)
+  var id = db.getIdFromHandle(handle, domain)
     
   # The `null` user is important.
   # We simply cannot delete it otherwise we will be in database hell.
-  if id == "null":
+  if id == "null" or handle == "null":
     error "Deleting the null user is not allowed."
 
-  for pid in db.getPostsByUser(id):
-    try:
-      # If it's ok to put extra strain on the db
-      # and actually delete the posts made by this user
-      # Then we'll do it! Otherwise, we'll just reset the sender to "null"
-      # (Which marks it as deleted internally but
-      # doesnt do anything particularly intense.)
-      if purge:
-        echo "Deleting post \"", pid, "\""
-        db.deletePost(pid)
-      else:
-        echo "Marking post \"", pid, "\" as deleted"
-        db.updatePostSender(pid, "null")
-    except CatchableError as err:
-      error "Failed to process user posts: ", err.msg
-    
-  # Delete the user
+  # Now! Delete the user
   try:
     db.deleteUser(id)
   except CatchableError as err:
     error "Failed to delete user: ", err.msg
-    
-  echo "If you're seeing this then there's a high chance your command succeeded."
+
+  # If it's ok to put extra strain on the db
+  # and actually delete the posts made by this user
+  # Then we'll do it! Otherwise, we'll just reset the sender to "null"
+  if purge:
+    for post in db.getPostsByUser(id):
+      db.deletePost(post)
 
 # I hate this just as much as you do but it's whatever.
-{.warning[ImplicitDefaultValue]: off.}
-proc user_info*(args: seq[string], id,handle,display,moderator,admin,request,frozen,email,bio,password,salt,kind,quiet = false, config = "pothole.conf"): int = 
-
+proc user_info*(args: seq[string], id = false, handle = false, display = false, moderator = false, admin = false, request = false, frozen = false, email = false, bio = false, password = false, salt = false, quiet = false, config = "pothole.conf"): int = 
   ## This command retrieves information about users.
   ## By default it will display all information!
   ## You can also choose to see specific bits with the command flags
@@ -189,15 +172,14 @@ proc user_info*(args: seq[string], id,handle,display,moderator,admin,request,fro
   if id: print "ID", user.id
   if handle: print "Handle", user.handle
   if display: print "Display name", user.name
-  if admin: print "Admin status", $(user.admin)
-  if moderator: print "Moderator status", $(user.admin)
-  if request: print "Approval status:", $(user.is_approved)
-  if frozen: print "Frozen status:", $(user.is_frozen)
+  if admin: print "Admin status", $(3 in user.roles)
+  if moderator: print "Moderator status", $(2 in user.roles)
+  if request: print "Approval status", $(1 in user.roles)
+  if frozen: print "Frozen status", $(-1 in user.roles)
   if email: print "Email", user.email
   if bio: print "Bio", user.bio
   if password: print "Password (hashed)", user.password
   if salt: print "Salt", user.salt
-  if kind: print "User type": $(user.kind)
 
   if output == "": echo $user
   else: echo output
@@ -218,7 +200,7 @@ proc user_info*(args: seq[string], id,handle,display,moderator,admin,request,fro
 #   post_get: Returns the most recent posts of a single user
 #   post_delete: Deletes a post
 #   post_purge: Deletes old posts made by the null (deleted) user.
-#    (This could maybe be added to the db vaccuum command? as an option)
+#    (This could maybe be added to the db_clean command? as an option)
 
 proc db_setup(config = "pothole.conf", location = ""): int =
   ## Returns a postgresql script that fully prepares the database,
@@ -236,22 +218,20 @@ CREATE DATABASE {name} WITH OWNER {user};
 GRANT ALL PRIVILEGES ON DATABASE {name} TO {user};
 \c {name};
 GRANT ALL ON SCHEMA public TO {user};
-"""
 
-  output.add(staticRead("assets/setup.sql"))
+""" & staticRead("assets/setup.sql")
   
   # Allow user to specify location where we can save file.
   # Instead of outputting it directly.
   if location != "":
     writeFile(location, output)
-  else:
-    echo output
+  else: echo output
 
 proc db_purge(config = "pothole.conf"): int =
   ## This command purges the entire database, it removes all tables and all the data within them.
   ## It's quite obvious but this command will erase any data you have, so be careful.
   log "Cleaning everything in database"
-  getConfig(config).getDb().exec(staticRead("assets/purge.sql"))
+  getConfig(config).getDb().exec(sql(staticRead("assets/purge.sql")))
 
 proc db_docker(config = "pothole.conf", name = "potholeDb", allow_weak_password = false, expose_externally = false, ipv6 = false): int =
   ## This command is mostly used by the Pothole developers, it's nothing but a simple wrapper over the docker command.
@@ -294,22 +274,29 @@ proc db_docker(config = "pothole.conf", name = "potholeDb", allow_weak_password 
 
 proc db_clean*(config = "pothole.conf"): int =
   ## This command runs some cleanup procedures.
-  let
-    cnf = getConfig(config)
-    db = getDb(cnf)
-
+  let db = getConfig(config).getDb()
   log "Cleaning up old sessions"
-  for session in db.cleanSessionsVerbose():
-    log "Cleaned up session belonging to \"", db.getHandleFromId(session[1]), "\""
+  db.cleanSessions()
   log "Cleaning up expired authentication codes"
-  db.cleanupCodes()
+  db.cleanAuthCodes()
+  log "Cleaning up expired email codes"
+  db.cleanEmailCodes()
+  log "Deleting followers and followings involving nonexistent users"
+  db.exec(sql"DELETE FROM user_follows WHERE follower = 'null';")
+  db.exec(sql"DELETE FROM user_follows WHERE following = 'null';")
+  log "Deleting reactions from nonexistent users"
+  db.exec(sql"DELETE FROM reactions WHERE uid = 'null';")
+  log "Deleting boosts from nonexistent users"
+  db.exec(sql"DELETE FROM boosts WHERE uid = 'null';")
+  log "Deleting bookmarks from nonexistent users"
+  db.exec(sql"DELETE FROM bookmarks WHERE uid = 'null';")
 
 dispatchMulti(
   [user_new,
     help = {
-      "admin": "Makes the user an administrator",
-      "moderator": "Makes the user a moderator",
-      "require-approval": "Turns user into an unapproved user",
+      "admin": "Make the user an administrator",
+      "moderator": "Make the user a moderator",
+      "approved": "Approve the user",
       "display": "Specifies the display name for the user",
       "bio": "Specifies the bio for the user",
       "config": "Location to config file"
@@ -317,8 +304,6 @@ dispatchMulti(
 
   [user_delete,
     help = {
-      "id": "Specifies whether or not the thing provided is an ID",
-      "handle": "Specifies whether or not the thing provided is an handle",
       "purge": "Whether or not to delete all the user's posts and other data",
       "config": "Location to config file"
     }],
@@ -337,7 +322,6 @@ dispatchMulti(
       "bio":"Print user's biography",
       "password": "Print user's password (hashed)",
       "salt": "Print user's salt",
-      "kind": "Print the user's type/kind",
       "config": "Location to config file"
     }],
 

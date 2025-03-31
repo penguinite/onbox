@@ -61,6 +61,12 @@ if not (config.exists("db","password") or existsEnv("POTHOLE_DBPASS")):
   log "Couldn't find database user password from the config file or environment, did you configure pothole correctly?"
   error "Database user password couldn't be found."
 
+# Warn the administrator if users are required to verify emails
+# and the email hasn't been configured.
+if config.getBoolOrDefault("user", "require_verification",false) and config.getBoolOrDefault("email","enabled",false):
+  log "Users are required to verify their emails but no email server has been configured."
+  log "Please set email to \"true\" or set require_verification to \"false\" to hide this warning."
+
 log "Opening database at ", config.getDbHost()
 
 # Initialize database

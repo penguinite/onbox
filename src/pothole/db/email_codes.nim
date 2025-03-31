@@ -63,7 +63,7 @@ proc createEmailCode*(db: DbConn, user: string): string =
 
   db.exec(sql"INSERT INTO email_codes VALUES (?,?);", result, user)
 
-proc cleanupCodes*(db: DbConn) =
+proc cleanEmailCodes*(db: DbConn) =
   for row in db.getAllRows(sql"SELECT id,uid,date FROM email_codes;"):
     if now().utc - toDate(row[2]) == initDuration(days = 1):
       db.deleteEmailCode(row[0])
