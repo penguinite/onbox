@@ -15,14 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
-# From somewhere in Quark
-import quark/[users, posts, sessions, crypto]
-
 # From somewhere in Pothole
-import pothole/[conf, assets, database, lib]
-
-# Helper procs!
-import pothole/helpers/[req, routes]
+import pothole/db/[users, posts, sessions]
+import pothole/[conf, assets, routes, database, crypto, shared]
 
 # API routes!
 import pothole/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_tags, timelines, statuses]
@@ -31,76 +26,40 @@ import pothole/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_t
 import std/[tables, strutils, times]
 
 # From nimble/other sources
-import mummy, temple
+import mummy, temple, waterpark, waterpark/postgres, iniplus
 
 proc signInGet*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
+  var headers = createHeaders("text/html")
 
-  # Remove session cookie from user's browser.
-  if req.hasSessionCookie():
-    headers["Set-Cookie"] = "session=\"\"; path=/; Max-Age=0"
-    # Check if it actually exists in the db before removing.
-    #
-    # We don't *need* to check, since it's a DELETE FROM statement
-    # and those don't usually error out when nothing is found.
-    # But it's a good idea to do anyway.
-    let id = req.fetchSessionCookie()
-    var user = ""
-    dbPool.withConnection db:
-      if db.sessionValid(id):
-        headers["Set-Cookie"] = ""
-        user = db.getSessionUserHandle(id)
+  var login = ""
+  if req.hasSessionCookie(): login = "true"
 
-    req.respond(
-      200, headers,
-      templateify(
-        getAsset("signin.html"), {"login": user}.toTable
-      )
-    )
-  else:
-    req.respond(
-      200, headers,
-      templateify(getAsset("signin.html"), {"login": ""}.toTable)
-    )
-
+  req.respond(
+    200, headers,
+    templateify(getBuiltinAsset("signin.html"), {"login": login}.toTable)
+  )
 
 proc signInPost*(req: Request) =
   var
+    headers = createHeaders("text/html")
     fm: FormEntries
-    headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
-  
-  template renderError(err: string, code = 400) =
-    req.respond(
-      code, headers,
-      templateify(
-        getAsset("signin.html"),
-        {"message_type": "error", "message": err}.toTable
-      )
-    )
+
+  template renderError(err: string) =
+    req.respond(400, headers, templateWithAsset("signin.html", {"message_type": "error", "message": err}))
     return
 
   template renderSuccess(msg: string, code = 200) =
-    req.respond(
-      code, headers,
-      templateify(
-        getAsset("signin.html"),
-        {"message_type": "success", "message": msg}.toTable
-      )
-    )
+    req.respond(code, headers, templateWithAsset("signin.html", {"message_type": "success", "message": msg}))
     return
 
-  # Check if the user is already logged in.
   if req.hasSessionCookie():
     renderError("You are already logged in.")
 
-  # Unroll form submission data.
   try:
     fm = req.unrollForm()
   except CatchableError as err:
     log "Couldn't process request: ", err.msg
-    renderError("Couldn't process requests!")
+    renderError("Couldn't process request, unknown error when unrolling form.")
 
   # Check first if user and password exist.
   if not fm.formParamExists("user") or not fm.formParamExists("pass"):
@@ -126,16 +85,17 @@ proc signInPost*(req: Request) =
 
   dbPool.withConnection db:
     if db.userFrozen(id):
-      renderError("Your account has been frozen. Contact an administrator.", 403)
+      renderError("Your account has been frozen. Contact an administrator.")
 
     if not db.userApproved(id):
-      renderError("Your account hasn't been approved yet, please wait or contact an administrator.", 403)
-      
+      renderError("Your account hasn't been approved yet, please wait or contact an administrator.")
+
     configPool.withConnection config:
       if not db.userVerified(id) and config.getBoolOrDefault("user", "require_verification", false):
         ## TODO: Send a code if there hasn't been one yet
         ## TODO: Allow for re-sending codes, say, if a user logins 10 mins after their previous code and still isn't verified.
-        renderError("Your account hasn't been verified yet. Check your email for a verification link.", 403)
+        renderError("Your account hasn't been verified yet. Check your email for a verification link.")
+
     salt = db.getUserSalt(id)
     kdf = db.getUserKDF(id)
     hash = db.getUserPass(id)
@@ -148,14 +108,12 @@ proc signInPost*(req: Request) =
   # Since we have the password in memory
   if kdf != crypto.latestKdf:
     log "Updating password hash from KDF:", $kdf, " to KDF:", crypto.latestKdf, " for user \"", id, "\""
-    var newhash = crypto.hash(
-      fm["pass"],
-      salt, crypto.latestKdf
-    )
-
     dbPool.withConnection db:
       db.updateUserById(
-        id, "password", newhash
+        id, "password",
+        crypto.hash(
+          fm["pass"], salt, crypto.latestKdf
+        )
       )
 
   if fm.formParamExists("rememberme"):
@@ -178,7 +136,7 @@ proc signInPost*(req: Request) =
   # then it might be some form of XSS attack and its best to not
   # continue redirecting.
   if loc.startsWith("javascript:") or loc.startsWith("data:"):
-    renderError("There might be some form of XSS attack going on, we'll end the request just to be safe. But your login was successful!")
+    renderSuccess("Your login *was* successful but we detected a sort-of XSS attack going on, so we didn't redirect you to your final destination.")
 
   headers["Location"] = loc
   renderSuccess("Successful login, redirecting...", code = 303)
@@ -197,22 +155,19 @@ proc logoutSession*(req: Request) =
       if db.sessionExists(id):
         db.deleteSession(id)
 
-  # Just render homepage with a successful-esque message,
+  # Just render the homepage
   # Since we dont have a dedicated page for this kinda thing.
-  req.respond(
-    200, headers,
-    templateify(getAsset("signin.html"), {"message_type": "success", "message": "Successfully logged out!"}.toTable)
-  )
+  req.respond(200, headers,getBuiltinAsset("home.html"))
 
 proc serveCSS*(req: Request) = 
   var headers: HttpHeaders
   headers["Content-Type"] = "text/css"
-  req.respond(200, headers, getAsset("style.css"))
+  req.respond(200, headers, getBuiltinAsset("style.css"))
 
 proc serveHome*(req: Request) =
   var headers: HttpHeaders
   headers["Content-Type"] = "text/html"
-  req.respond(200, headers, getAsset("home.html"))
+  req.respond(200, headers, getBuiltinAsset("home.html"))
 
 
 const mummyRoutes* =  @[

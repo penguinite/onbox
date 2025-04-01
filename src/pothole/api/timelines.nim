@@ -136,7 +136,7 @@ proc timelinesHashtag*(req: Request) =
     respJsonError("Limit cannot be over 40", 401)
 
   configPool.withConnection config:
-    if config.getBoolOrDefault("web", "whitelist_mode", false):
+    if config.getBoolOrDefault("web", "lockdown_mode", false):
       dbPool.withConnection db:
         try:
           req.verifyAccess(db, "read:statuses")

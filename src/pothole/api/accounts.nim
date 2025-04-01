@@ -79,9 +79,9 @@ proc accountsGet*(req: Request) =
     respJsonError("Invalid account id.")
   
   configPool.withConnection config:
-    # If the instance has whitelist mode
+    # If the instance is in lockdown mode
     # Then check the oauth token.
-    if config.getBoolOrDefault("web", "whitelist_mode", false):
+    if config.getBoolOrDefault("web", "lockdown_mode", false):
       if not req.authHeaderExists():
         respJsonError("This API requires an authenticated user", 401)
       
@@ -131,9 +131,9 @@ proc accountsGetMultiple*(req: Request) =
       ids.add(query[1])
       
   configPool.withConnection config:
-    # If the instance has whitelist mode
+    # If the instance is in lockdown mode
     # Then check the oauth token.
-    if config.getBoolOrDefault("web", "whitelist_mode", false):
+    if config.getBoolOrDefault("web", "lockdown_mode", false):
       if not req.authHeaderExists():
         respJsonError("This API requires an authenticated user", 401)
       

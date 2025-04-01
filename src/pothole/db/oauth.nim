@@ -18,7 +18,7 @@
 ## This module contains all database logic for handling oauth tokens.
 
 # From Pothole
-import ../strextra
+import ../strextra, apps
 
 # From third-party libraries
 import rng, db_connector/db_postgres
@@ -54,6 +54,15 @@ proc getTokenScopes*(db: DbConn, id: string): seq[string] =
 proc deleteOAuthToken*(db: DbConn, id: string) =
   ## Deletes an oauth token from the db. Forcing the app to regenerate it.
   db.exec(sql"DELETE FROM oauth_tokens WHERE id = ?;", id)
+
+proc tokenHasScope*(db: DbConn, id:string, scope: string): bool =
+  ## Checks if an app has a scope (or its parent scope)
+  let start = scope.returnStartOrScope()
+
+  for tokenScope in db.getTokenScopes(id):
+    if tokenScope == scope or tokenScope == start:
+      result = true
+      break
 
 # TODO: Consider implement a "last_used" attribute
 # to clean up old oauth tokens.

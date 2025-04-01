@@ -27,7 +27,7 @@ import std/[strutils, tables]
 # From elsewhere
 import rng, db_connector/db_postgres
 
-# Whitelist set of characters.
+# Permitted character set.
 # this filters anything that doesn't make a valid email.
 const safeHandleChars*: set[char] = {
   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',

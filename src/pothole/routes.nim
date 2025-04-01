@@ -15,16 +15,13 @@
 # along with Pothole. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Pothole
-import pothole/[database, conf]
-import pothole/db/[strextra, apps, oauth, auth_codes]
+import pothole/[database, conf, strextra]
 
 # From the standard library
-import std/[mimetypes, os, macros, tables, json]
-import std/strutils except isEmptyOrWhitespace, parseBool
+import std/[mimetypes, os, macros, tables, json, strutils]
 
 # From elsewhere
-import waterpark/postgres, db_connector/db_postgres, mummy, mummy/multipart
-export postgres
+import waterpark/postgres, mummy, mummy/multipart, iniplus
 
 const mimedb*: MimeDB = newMimetypes()
 
@@ -32,8 +29,12 @@ var
   configPool*: ConfigPool
   dbPool*: PostgresPool
 
+type
+  MultipartEntries* = Table[string, string]
+  FormEntries* = Table[string, string]
+
 proc realURL*(config: ConfigTable): string =
-  return "http://" & config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/")
+  return config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/")
 
 proc initEverythingForRoutes*() =
   var size = 75
@@ -50,13 +51,9 @@ proc initEverythingForRoutes*() =
       config.getdbName()
     )
 
-proc createHeaders*(a: string): HttpHeaders =
-  result["Content-Type"] = a
-  return
-
+proc createHeaders*(a: string): HttpHeaders = result["Content-Type"] = a
 macro respJsonError*(msg: string, code = 400, headers = createHeaders("application/json")) =
   var req = ident"req"
-
   result = quote do:
     `req`.respond(
       `code`, `headers`, $(%*{"error": `msg`})
@@ -65,7 +62,6 @@ macro respJsonError*(msg: string, code = 400, headers = createHeaders("applicati
 
 macro respJson*(msg: string, code = 200, headers = createHeaders("application/json")) =
   var req = ident"req"
-
   result = quote do:
     `req`.respond(
       `code`, `headers`, `msg`
@@ -80,10 +76,6 @@ proc pathParamExists*(req: Request, path: string): bool =
   ## Checks if a path parameter such as /users/{user} is valid and not empty
   return not req.pathParams[path].isEmptyOrWhitespace()
 
-type
-  MultipartEntries* = Table[string, string]
-  FormEntries* = Table[string, string]
-
 proc unrollMultipart*(req: Request): MultipartEntries =
   ## Unrolls a Mummy multipart data thing into a table of strings.
   ## which is way easier to handle.
@@ -91,7 +83,6 @@ proc unrollMultipart*(req: Request): MultipartEntries =
   for entry in req.decodeMultipart():
     if entry.data.isNone():
       continue
-    
     let
       (start, last) = entry.data.get()
       val = req.body[start .. last]
@@ -164,7 +155,6 @@ proc hasValidStrKey*(j: JsonNode, k: string): bool =
   try: return j.hasKey(k) and j[k].kind == JString and not j[k].getStr().isEmptyOrWhitespace()
   except: return false
 
-
 proc fetchSessionCookie*(req: Request): string = 
   ## Fetches the session cookie (if it exists) from a request.
   var flag = false
@@ -196,41 +186,6 @@ proc authHeaderExists*(req: Request): bool =
 
 proc getAuthHeader*(req: Request): string =
   ## Gets the auth from a request header if it exists
-  let split = req.headers["Authorization"].split("Bearer")
-
-  if len(split) > 1: return split[high(split)].cleanString()
-  else: return split[0].cleanString()
-
-proc verifyAccess*(req: Request, db: DbConn, scope: string) =
-  ## A simple helper proc for verifying access to API routes.
-  ## 
-  ## Heres how to use verifyAccess to ensure a client
-  ## is authenticated with the scope "read:statuses"
-  runnableExamples:
-    try:
-      req.verifyAccess(db, "read:statuses")
-    except CatchableError as err:
-      respJsonError(err.msg, 401)
-
-  # Let's do authentication first...
-  if not req.authHeaderExists():
-    raise newException(CatchableError, "The access token is invalid (No auth header present)")
-    
-  let token = req.getAuthHeader()
-
-  # Check if the token exists in the db
-  if not db.tokenExists(token):
-    raise newException(CatchableError, "The access token is invalid (token not found in db)")
-        
-  # Check if the token has a user attached
-  if not db.tokenUsesCode(token):
-    raise newException(CatchableError, "The access token is invalid (token isn't using an auth code)")
-        
-  # Double-check the auth code used.
-  if not db.authCodeValid(db.getTokenCode(token)):
-    raise newException(CatchableError, "The access token is invalid (auth code used by token isn't valid)")
-    
-  # Check if the client registered to the token
-  # has a public oauth scope.
-  if not db.hasScope(db.getTokenApp(token), scope):
-    raise newException(CatchableError, "The access token is invalid (missing scope) ")
+  result = req.headers["Authorization"].strip()
+  if result.startsWith("Bearer "):
+    result = result[7..^1]

@@ -16,8 +16,9 @@
 #
 # assets.nim:
 ## This module basically acts as the assets store
-import std/tables, iniplus, routes
-proc getAsset*(fn: string): string =
+import std/tables, iniplus, routes, temple
+
+proc getBuiltinAsset*(fn: string): string =
   # Get static asset
   const table = {
     "oauth.html": staticRead("../assets/oauth.html"),
@@ -60,7 +61,7 @@ proc getAvatar*(config: ConfigTable, user_id: string): string =
       CatchableError,
       "Unknown media storage type: " & config.getString("storage", "type")
     )
-  
+
 proc getHeader*(config: ConfigTable, user_id: string): string =
   ## When given a user's ID, return a URL to their avatar.
   case config.getString("storage", "type"):
@@ -93,3 +94,9 @@ proc getHeader*(config: ConfigTable, user_id: string): string =
       CatchableError,
       "Unknown media storage type: " & config.getString("storage", "type")
     )
+
+proc templateWithAsset*(asset: string, strtab: openArray[(string, string)]): string =
+  templateify(
+    getBuiltinAsset("signin.html"),
+    strtab.toTable
+  )
