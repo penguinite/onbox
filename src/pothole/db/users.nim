@@ -115,17 +115,29 @@ proc getUserSalt*(db: DbConn, user_id: string): string =
 proc getUserPass*(db: DbConn, user_id: string): string = 
   db.getRow(sql"SELECT password FROM users WHERE id = ?;", user_id)[0]
 
-proc isAdmin*(db: DbConn, user_id: string): bool =
+proc userHasRole*(db: DbConn, user_id: string, role: int): bool =
   db.getRow(
-    sql"SELECT EXISTS(SELECT 0 FROM users WHERE roles @> '{3}' AND id = ?);",
-    user_id
+    sql"SELECT EXISTS(SELECT 0 FROM users WHERE roles @> ? AND id = ?);",
+    !$[role], user_id
   )[0] == "t"
+
+proc isAdmin*(db: DbConn, user_id: string): bool
+  {.deprecated: "Use userHasRole and roles.txt in docs/".} =
+  db.userHasRole(user_id, 3)
   
-proc isModerator*(db: DbConn, user_id: string): bool =
-  db.getRow(
-    sql"SELECT EXISTS(SELECT 0 FROM users WHERE roles @> '{2}' AND id = ?);",
-    user_id
-  )[0] == "t"
+proc isModerator*(db: DbConn, user_id: string): bool 
+  {.deprecated: "Use userHasRole and roles.txt in docs/".} =
+  db.userHasRole(user_id, 2)
+
+proc userFrozen*(db: DbConn, user_id: string): bool
+  {.deprecated: "Use userHasRole and roles.txt in docs/".} =
+  ## Returns whether or not a user is frozen. ID must be a user id.
+  db.userHasRole(user_id, -1)
+
+proc userApproved*(db: DbConn, user_id: string): bool
+  {.deprecated: "Use userHasRole and roles.txt in docs/".} =
+  ## Returns whether or not a user is approved. ID must be a user id.
+  db.userHasRole(user_id, 1)
   
 proc getUserKDF*(db: DbConn, user_id: string): KDF =
   toKDF(db.getRow(sql"SELECT kdf FROM users WHERE id = ?;", user_id)[0])
@@ -156,23 +168,9 @@ proc constructUserFromRow*(row: Row): User =
     when result.get(key) is KDF:
       result.get(key) = toKdf(row[i])
 
-proc userFrozen*(db: DbConn, user_id: string): bool =
-  ## Returns whether or not a user is frozen. ID must be a user id.
-  db.getRow(
-    sql"SELECT EXISTS(SELECT 0 FROM users WHERE roles @> '{-1}' AND id = ?);",
-    user_id
-  )[0] == "t"
-
 proc userVerified*(db: DbConn, user_id: string): bool =
   ## Returns whether or not a user has a verifd email address. ID must be a user id.
   db.getRow(sql"SELECT email_verified FROM users WHERE id = ?;", user_id)[0] == "t"
-
-proc userApproved*(db: DbConn, user_id: string): bool =
-  ## Returns whether or not a user is approved. ID must be a user id.
-  db.getRow(
-    sql"SELECT EXISTS(SELECT 0 FROM users WHERE roles @> '{1}' AND id = ?);",
-    user_id
-  )[0] == "t"
 
 proc getFirstAdmin*(db: DbConn): string =
   db.getRow(sql"SELECT id FROM users WHERE roles @> '{3}' LIMIT 1;")[0]

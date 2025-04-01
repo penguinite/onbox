@@ -36,14 +36,14 @@ proc getReactions*(db: DbConn, post: string): Table[string, seq[string]] =
 proc getNumOfReactions*(db: DbConn, post: string): int =
   len(db.getAllRows(sql"SELECT 0 FROM reactions WHERE pid = ?;", post))
 
-proc hasReaction*(db: DbConn, user, post, reaction: string): bool =
+proc userReactedWith*(db: DbConn, user, post, reaction: string): bool =
   ## Checks if a post has a reaction. Everything must match.
   db.getRow(
     sql"SELECT EXISTS(SELECT 0 FROM reactions WHERE pid = ? AND uid = ? AND reaction = ?);",
     post, user, reaction
   )[0] == "t"
 
-proc hasAnyReaction*(db: DbConn, user, post: string): bool =
+proc userReacted*(db: DbConn, user, post: string): bool =
   db.getRow(
     sql"SELECT EXISTS(SELECT 0 FROM reactions WHERE pid = ? AND uid = ?);", post, user
   )[0] == "t"

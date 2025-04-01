@@ -211,7 +211,7 @@ proc db_setup(config = "pothole.conf", location = ""): int =
     user = cnf.getDbUser()
     name = cnf.getDbName()
     password = cnf.getDbPass()
-  
+  const setupSql = staticRead("assets/setup.sql")
   var output = fmt"""
 CREATE USER {user} WITH PASSWORD '{password}';
 CREATE DATABASE {name} WITH OWNER {user};
@@ -219,8 +219,8 @@ GRANT ALL PRIVILEGES ON DATABASE {name} TO {user};
 \c {name};
 GRANT ALL ON SCHEMA public TO {user};
 
-""" & staticRead("assets/setup.sql")
-  
+""" & setupSql
+
   # Allow user to specify location where we can save file.
   # Instead of outputting it directly.
   if location != "":
@@ -231,7 +231,8 @@ proc db_purge(config = "pothole.conf"): int =
   ## This command purges the entire database, it removes all tables and all the data within them.
   ## It's quite obvious but this command will erase any data you have, so be careful.
   log "Cleaning everything in database"
-  getConfig(config).getDb().exec(sql(staticRead("assets/purge.sql")))
+  const purgeSql = staticRead("assets/purge.sql")
+  getConfig(config).getDb().exec(sql(purgeSql))
 
 proc db_docker(config = "pothole.conf", name = "potholeDb", allow_weak_password = false, expose_externally = false, ipv6 = false): int =
   ## This command is mostly used by the Pothole developers, it's nothing but a simple wrapper over the docker command.

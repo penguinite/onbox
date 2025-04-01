@@ -19,7 +19,8 @@
 ## And it needs refactoring pretty badly.
 
 # From somewhere in Pothole
-import pothole/[conf, shared, strextra, routes, assets], pothole/db/[users, posts, fields, follows, reactions, boosts, bookmarks, tag]
+import pothole/db/[users, posts, fields, follows, reactions, boosts, bookmarks, tag]
+import pothole/[shared, routes, assets]
 
 # From somewhere in the standard library
 import std/[json, times]
@@ -42,17 +43,18 @@ proc formatDate(date: DateTime): string =
 proc fields*(db: DbConn, user_id: string): JsonNode =
   ## Initialize profile fields
   result = newJArray()
-  for key, value, verified, verified_date in db.getFields(user_id).items:
-    var jason = %* {
-      "name": key,
-      "value": value,
-    }
-
-    if verified:
-      jason["verified_at"] = newJString(verified_date.format("yyyy-mm-dd") & "T" & verified_date.format("hh:mm:ss"))
+  for field in db.getFields(user_id).items:
+    if field.verified:
+      result.add(%* {
+        "name": field.key,
+        "value": field.val,
+        "verified_at":  formatDate(field.verified_at)
+      })
     else:
-      jason["verified_at"] = newJNull()
-    result.add(jason)
+      result.add(%* {
+        "name": field.key,
+        "value": field.val,
+      })
 
 proc tagHistory(db: DbConn, tag: string): seq[JsonNode] =
   var
@@ -71,19 +73,14 @@ proc tagHistory(db: DbConn, tag: string): seq[JsonNode] =
     )
 
 proc tag*(db: DbConn, tag: string, user = ""): JsonNode =
-  var
-    url = ""
-    following = false
-
-  url = db.getTagUrl(tag)
+  result = newJObject()
   if user != "":
-    following = db.userFollowsTag(tag, user)
+    result["following"] = newJBool(db.userFollowsTag(tag, user))
 
   return %* {
     "name": tag,
-    "url": url,
+    "url": db.getTagUrl(tag),
     "history": db.tagHistory(tag),
-    "following": following
   }
 
 proc account*(db: DbConn, config: ConfigTable, user_id: string): JsonNode =
@@ -95,38 +92,28 @@ proc account*(db: DbConn, config: ConfigTable, user_id: string): JsonNode =
   if user_id == "":
     return newJNull()
 
-  var
-    user: User
-    avatar, header: string
-    followers, following, totalPosts: int
-
-  user = db.getUserById(user_id)
-  followers = db.getFollowersCount(user_id)
-  following = db.getFollowingCount(user_id)
-  totalPosts = db.getNumPostsByUser(user_id)
-  avatar = config.getAvatar(user_id)
-  header = config.getHeader(user_id)
+  var user = db.getUserById(user_id)
 
   return %* {
     "id": user_id,
     "username": user.handle,
     "acct": user.handle,
     "display_name": user.name,
-    "locked": user.is_frozen,
-    "bot": user.kind == Application,
-    "group": user.kind == Group,
+    "locked": db.userHasRole(user_id,-1),
+    "bot": db.userHasRole(user_id,4),
+    "group": db.userHasRole(user_id,5),
     "discoverable": user.discoverable,
     "created_at": "", # TODO: Implement
     "note": user.bio,
     "url": "",
-    "avatar": avatar, # TODO for these 4 media related options: Separate static and animated media.
-    "avatar_static": avatar,
-    "header": header, 
-    "header_static": header,
-    "followers_count": followers,
-    "following_count": following,
-    "statuses_count": totalPosts,
-    "last_status_at": "", # Tell me, who the hell is using this?!? WHAT FOR?!?
+    "avatar": config.getAvatar(user_id), # TODO for these 4 media related options: Separate static and animated media.
+    "avatar_static": config.getAvatar(user_id),
+    "header": config.getHeader(user_id), 
+    "header_static": config.getHeader(user_id),
+    "followers_count": db.getFollowersCount(user_id),
+    "following_count": db.getFollowingCount(user_id),
+    "statuses_count": db.getNumPostsByUser(user_id),
+    "last_status_at": "", # TODO: Tell me, who the hell is using this?!? WHAT FOR?!?
     "emojis": [], # TODO: I am not sure what this is supposed to be
     "fields": db.fields(user_id)
   }
@@ -134,7 +121,7 @@ proc account*(db: DbConn, config: ConfigTable, user_id: string): JsonNode =
 proc role*(db: DbConn, user_id: string): JsonNode =
   ## Returns a role entity belonging to a user.
   # TODO: Implement more dynamic roles rather than just is_admin and is_moderator
-  if db.isAdmin(user_id):
+  if db.userHasRole(user_id, 3):
     return %* {
       "id": "0",
       "name": "Admin",
@@ -143,7 +130,7 @@ proc role*(db: DbConn, user_id: string): JsonNode =
       "highlighted": true
     }
     
-  if db.isModerator(user_id):
+  if db.userHasRole(user_id, 2):
     return %* {
       "id": "1",
       "name": "Moderator",
@@ -151,7 +138,6 @@ proc role*(db: DbConn, user_id: string): JsonNode =
       "permissions": "1048575",
       "highlighted": true
     }
-  
   
   
 proc credentialAccount*(db: DbConn, config: ConfigTable, user_id: string): JsonNode =
@@ -348,10 +334,6 @@ proc status*(db: DbConn, config: ConfigTable, id: string, user_id = ""): JsonNod
   # We could re-write this to avoid declaring an extra variable
   # But then we would have to suffer the overheads of newJString() and getStr()
   # And it's probably best to just keep it this way.
-  var tmp = ""
-  for content in db.getPostContents(post.id):
-    tmp = tmp & contentToHtml(content) & "\n"
-
   result = %*{
     "id": post.id,
     "uri": realurl & "notice/" & post.id,
@@ -359,7 +341,8 @@ proc status*(db: DbConn, config: ConfigTable, id: string, user_id = ""): JsonNod
     "created_at": formatDate(post.written),
     "replies_count": db.getNumOfReplies(post.id),
     "reblogs_count": db.getNumOfBoosts(post.id),
-    "content": tmp,
+    # TODO: This only displays Text type.
+    "content": contentToHtml(db.getPostText(post.id)), 
     "favourites_count": db.getNumOfReactions(post.id),
     "account": db.account(config, post.sender),
     "visibility": levelToStr(post.level),
@@ -379,8 +362,8 @@ proc status*(db: DbConn, config: ConfigTable, id: string, user_id = ""): JsonNod
     result["in_reply_to_account_id"] = newJNull()
 
   if user_id != "":
-    result["favourited"] = newJBool(db.hasAnyReaction(post.id, user_id))
-    result["reblogged"] = newJBool(db.hasAnyBoost(post.id, user_id))
+    result["favourited"] = newJBool(db.userReacted(post.id, user_id))
+    result["reblogged"] = newJBool(db.userBoosted(post.id, user_id))
     result["bookmarked"] = newJBool(db.bookmarkExists(user_id, post.id))
     ## TODO: If we have implemented mutes and blocks, then add the muted attribute.
     ## TODO: If we have implemented pinned posts, then add the pinned attribute.

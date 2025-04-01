@@ -17,22 +17,21 @@
 ## This module contains all the routes for the accounts method in the mastodon api.
 
 # From Pothole
-import ../db/[oauth, apps, users, auth_codes], ../[strextra, shared, database, conf, routes]
+import ../db/[oauth, apps, users, auth_codes], ../[strextra, shared, database, conf, routes, entities]
 
 # From somewhere in the standard library
 import std/json
 
 # From nimble/other sources
-import mummy, iniplus, db_connector/db_postgres
+import mummy, iniplus, db_connector/db_postgres, waterpark, waterpark/postgres
 
 proc accountsVerifyCredentials*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
+  var headers = createHeaders("application/json")
 
   if not req.authHeaderExists():
     respJsonError("The access token is invalid")
   
-  let token = req.getAuthHeader()
+  let token = req.getAuthHeader() # Hi
   var user = ""
 
   dbPool.withConnection db:
@@ -40,8 +39,8 @@ proc accountsVerifyCredentials*(req: Request) =
     if not db.tokenExists(token):
       respJsonError("The access token is invalid")
     
-    # Check if token is assigned to a user
-    if not db.tokenUsesCode(token):
+    # Check if the app is actually allowed to access this.
+    if not db.tokenHasScope(token, "read:account") and not db.hasScope(token, "profile"):
       respJsonError("This method requires an authenticated user", 422)
 
     user = db.getTokenUser(token)
@@ -59,12 +58,6 @@ proc accountsVerifyCredentials*(req: Request) =
     # Check if the user's account is pending verification
     if not db.userApproved(user):
       respJsonError("Your login is currently pending approval", 403)
-
-    # Check if the app is actually allowed to access this.
-    # We are just checking to see if 
-    let app = db.getTokenApp(token)
-    if not db.hasScope(app, "read:account") and not db.hasScope(app, "profile"):
-      respJsonError("This method requires an authenticated user", 422)
 
   req.respond(200, headers, $(credentialAccount(user)))
 
@@ -153,12 +146,12 @@ proc accountsGetMultiple*(req: Request) =
         
         # Check if the client registered to the token
         # has a public oauth scope.
-        if not db.hasScope(db.getTokenApp(token), "read:accounts"):
+        if not db.tokenHasScope(token, "read:accounts"):
           respJsonError("This API requires an authenticated user", 401)
 
   var result: JsonNode = newJArray()
-  for id in ids:
-    dbPool.withConnection db:
+  dbPool.withConnection db:
+    for id in ids:
       if not db.userIdExists(id):
         continue
       var tmp = account(id)
