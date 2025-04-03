@@ -1,6 +1,6 @@
 # Disable MRF on non-POSIX builds.
 when defined(posix):
-  import std/[posix, dynlib], pothole/mrf
+  import std/[posix, dynlib], onbox/mrf
 
 ## A helper module for when you need to create custom MRF policies.
 when defined(posix):
@@ -34,37 +34,37 @@ when defined(posix):
     return cast[ActivityFilterProc](lib.symAddr("filterOutgoingActivity"))
   ]#
 else:
-  {.warning: "You're building Pothole on a non-POSIX system, therefore, MRF will be disabled.".}
+  {.warning: "You're building Onbox on a non-POSIX system, therefore, MRF will be disabled.".}
 
 proc ids*(): int =
   ## Educational material about IDs
   echo  """
-Pothole abstract nearly every single thing into some object with an "id"
+Onbox abstract nearly every single thing into some object with an "id"
 Users have IDs and posts have IDs.
 So do activities, media attachments, reactions, boosts and so on.
 
-Internally, pothole translates any human-readable data (such as a handle, see `potholectl handles`)
+Internally, onbox translates any human-readable data (such as a handle, see `onboxctl handles`)
 into an id that it can use for manipulation, data retrieval and so on.
 
-This slightly complicates everything but potholectl will try to make an educated guess.
-If you do know whether something is an ID or not, then you can use the -i flag to tell potholectl not to double check.
+This slightly complicates everything but onboxctl will try to make an educated guess.
+If you do know whether something is an ID or not, then you can use the -i flag to tell onboxctl not to double check.
 Of course, this differs with every command but it should be possible."""
   return 0
 
 proc handles*(): int =
   ## Educational material about handles
   echo """
-A handle is basically what pothole calls the "username"
+A handle is basically what Onbox calls the "username"
 A handle can be as simple as "john" or "john@example.com"
 A handle is not the same thing as an email address.
-In pothole, the handle is used as a login name and also as a user finding mechanism (for federation)"""
+In Onbox, the handle is used as a login name and also as a user finding mechanism (for federation)"""
   return 0
 
 proc dates*(): int =
-  ## Educational material about date handling in Pothole.
+  ## Educational material about date handling in Onbox.
   echo """
-This is not exactly a subsystem but a help entry for people confused by dates in potholectl.
-Dates in potholectl are formatted like so: yyyy-MM-dd HH:mm:ss
+This is not exactly a subsystem but a help entry for people confused by dates in onboxctl.
+Dates in onboxctl are formatted like so: yyyy-MM-dd HH:mm:ss
 This means the following:
   1. 4 numbers for the year, and then a hyphen/dash (-)
   2. 2 numbers for the month, and then a hyphen/dash (-)

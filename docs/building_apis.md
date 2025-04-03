@@ -1,8 +1,8 @@
-# Writing API procs in Pothole
+# Writing API procs in Onbox
 
-This file provides a tutorial on how to create an API route in Pothole's codebase. It'll cover everything from validation to authentication and provide a template you can copy and adjust however you need.
+This file provides a tutorial on how to create an API route in Onbox's codebase. It'll cover everything from validation to authentication and provide a template you can copy and adjust however you need.
 
-The one unfortunate thing with Pothole's codebase is the heavy boilerplate associated with every API route, we might be able to fix this with metaprogramming magic but I have decided that it's important to keep the base of Pothole lightweight, which means fewer helper utilities and more boilerplate.
+The one unfortunate thing with Onbox's codebase is the heavy boilerplate associated with every API route, we might be able to fix this with metaprogramming magic but I have decided that it's important to keep the base of Onbox lightweight, which means fewer helper utilities and more boilerplate.
 
 Start off by writing a Mummy request handler procedure, you can give it any name you'd like but usually we call the `Request` parameter for `req` as tradition.
 ```nim
@@ -14,10 +14,10 @@ proc x(req: Request) =
 
 ## Authentication
 
-Sometimes you want an API route to only accept properly authenticated clients because you might be writing an API route that returns user data or an API route that is computationally expensive and so you'd want Pothole to limit access to it.
+Sometimes you want an API route to only accept properly authenticated clients because you might be writing an API route that returns user data or an API route that is computationally expensive and so you'd want Onbox to limit access to it.
 
 Proper authentication relies on the `Authentication` HTTP header, if a client does not supply it then there's no way we can verify who they are.
-So the first step is usually to check for it with the `authHeaderExists()` from `pothole/routes`
+So the first step is usually to check for it with the `authHeaderExists()` from `onbox/routes`
 
 ```nim
 proc x(req: Request) =
@@ -63,14 +63,14 @@ proc x(req: Request) =
   req.respond(200, headers, "{\"test\": \"Hello World!\"}")
 ```
 
-At this stage, Pothole will verify that a client has an actual token in the database, so now, it's somewhat protected.
+At this stage, Onbox will verify that a client has an actual token in the database, so now, it's somewhat protected.
 But sometimes you wanna verify that the client caling this has *permission* to do something.
 
 Some API routes require specific access levels in the form of *scopes*, for example, a client can specify that it wants the `read` scope at creation, which gives it access to read pretty much everything except for administrator settings but it can't do anything else, so it can't write new posts, follow others or like others posts.
 
 Enforcing these sets of permissions is crucial for good security, a well-designed application will only use what it requires, and so if that token ever gets leaked then the potential damage of broad permissions will be minimized.
 
-For this, we have `tokenHasScope()` from `pothole/db/oauth`, when given a token and a scope, it will check if that token has access to that scope in the database. Or, in layman's terms: it will check if the client has permission to do something.
+For this, we have `tokenHasScope()` from `onbox/db/oauth`, when given a token and a scope, it will check if that token has access to that scope in the database. Or, in layman's terms: it will check if the client has permission to do something.
 
 Let's say our example API route needs the `read` scope, if  an application doesn't have that then too bad!
 
@@ -108,7 +108,7 @@ proc x(req: Request) =
 
 API routes are sometimes personalized for each user, one obvious example is the [home timeline API route](https://docs.joinmastodon.org/methods/timelines/#home). Some applications are user-authenticated which means that a user had to login with their own username and password, and that user will be *connected* or *associated* with the application.
 
-And of course! We have a way to get the user we need! `getTokenUser()` from `pothole/db/oauth` is exactly what we need in this case!
+And of course! We have a way to get the user we need! `getTokenUser()` from `onbox/db/oauth` is exactly what we need in this case!
 This procedure will return the ID of the user that the token has signed up with, if it is empty then it means that this token has *no user associated*
 
 In our case, we will personalize the response of our API based on if there is a user associated or not. If your API requires user authentication then you have to throw an error when the string returned by `getTokenUser()` is empty.
@@ -160,7 +160,7 @@ proc x(req: Request) =
 
 ### Lockdown Mode
 
-By default, Pothole has some API routes that are open to any client, with no authentication required whatsoever. And some users dislike this, since it makes it easier to mine the data of any particular instance (along with its users) and it also makes it easier for potential DDOS attacks where clients continously call an expensive endpoint and bring down a server.
+By default, Onbox has some API routes that are open to any client, with no authentication required whatsoever. And some users dislike this, since it makes it easier to mine the data of any particular instance (along with its users) and it also makes it easier for potential DDOS attacks where clients continously call an expensive endpoint and bring down a server.
 
 For this reason, we have a config setting which will lock down access to most open APIs when set to true, this option is called `lockdown_mode` (in the `web` section). If you're writing an open API route then it's expected that you also respect this configuration option, by requiring a valid token along with a valid appropriate scope.
 

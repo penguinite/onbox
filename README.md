@@ -12,16 +12,6 @@ A social media website (such as Tumblr, Twitter and so on) usually consists of t
 
 The main goal with Onbox was to create a simple, lightweight server that is as efficient as possible. When you set it up, it immediately starts processing messages, without any troubles. A backend server is useless by itself so Onbox also has Mastodon API compatability, which means you can install just about any [Mastodon client](https://joinmastodon.org/apps) and it should work out of the box with ease!
 
-### What's with the name?
-
-This project was formerly called "Pothole"; which is a terrible name for three reasons:
-
-1. It doesn't describe a positive thing, it's usually a negative thing
-2. The name doesn't describe anything about this project
-3. It could make up for the above reasons by being a clever pun or something, but it isn't which makes everything about it much more infuriating.
-
-Onbox was chosen as the new name, it is a portmanteau of "Online" and "box", which I feel describes some aspects about it way better than the old name, it's basically a small box you open to make your communications go online. Also, there is a sort-of clever pun in the pronounciation, "Onbox" is pronounced the way as "unbox": to use Onbox, you'd have to unbox it.
-
 ## Does it work? Should I use it?
 
 Sadly, This project is still incomplete and it is way too low-level to use comfortably. You are better off using [Pleroma](https://pleroma.social/) or [GoToSocial](https://gotosocial.org/) which are way more mature and offer nearly everything you'd want.

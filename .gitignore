@@ -14,6 +14,7 @@ templates/
 .db_pid
 pothole_envs
 potholectl
-!potholectl/
+onbox_envs
+onboxctl
 .sass-cache
 .testGuard*

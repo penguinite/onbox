@@ -1,7 +1,7 @@
 
 # Database logic should not have checks or excessive queries.
 
-The procedures in `src/pothole/db` should do *one thing only* without **any** checks.
+The procedures in `src/onbox/db` should do *one thing only* without **any** checks.
 
 These procedures are meant to be a simple abstraction over the raw database,
 we don't want procedures to excessively call other procedures because then

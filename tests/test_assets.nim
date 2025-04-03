@@ -1,4 +1,4 @@
-import src/pothole/assets, iniplus
+import onbox/assets, iniplus
 
 # Flat storage with no upload_uri
 var flatConfA = parseString("""

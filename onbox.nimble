@@ -20,15 +20,12 @@ after clean:
     if dirExists(dir): rmDir(dir)
 
 task all, "Builds everything with versioning embedded.":
-  exec "nimble -d:oxVersion=\"" & version & " - " & gorgeEx("git rev-parse HEAD^")[0] & "\" -d:release build pothole"
+  exec "nimble -d:oxVersion=\"" & version & " - " & gorgeEx("git rev-parse HEAD^")[0] & "\" -d:release build"
 
 from std/os import commandLineParams
 task ctl, "Shorthand for nimble run onboxctl":
   proc cleanArgs(): seq[string] =
-    ## commandLineParams() returns the command line params for the whole nimble commands.
-    ## Which can fuck up the more advanced commands. (user new, post new and so on)
-    ## So this command strips everything after the task name, which works well!
-    return commandLineParams()[commandLineParams().find("ctl") + 1..^1]
+    commandLineParams()[commandLineParams().find("ctl") + 1..^1]
 
   if dirExists(binDir) and fileExists(binDir & "/onboxctl"):
     exec binDir & "/onboxctl " & cleanArgs().join(" ")

@@ -1,6 +1,5 @@
-import quark/[users, debug, db, crypto], quark/private/macros
-import pothole/[database, conf]
-import std/[unittest]
+import onbox/db/[users, debug, db, crypto], onbox/[database, conf]
+import std/[unittest], iniplus, db_connector/db_postgres
 
 #testGuard("quark", "users")
 
