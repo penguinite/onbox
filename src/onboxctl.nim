@@ -21,7 +21,7 @@
 ## Generally, this command aims to be a Onbox instance administrator's best friend.
 # From Onbox:
 import onbox/db/[users, posts, auth_codes, sessions, email_codes]
-import onbox/[database, shared, strextra, conf]
+import onbox/[database, shared, conf]
 
 # Standard library
 import std/[osproc, times, strformat, strutils]

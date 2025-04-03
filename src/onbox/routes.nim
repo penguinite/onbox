@@ -16,7 +16,7 @@
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Onbox
-import onbox/[database, conf, strextra]
+import onbox/[conf, strextra], onbox/db/[oauth, users]
 
 # From the standard library
 import std/[mimetypes, os, macros, tables, json, strutils]
@@ -36,21 +36,6 @@ type
 
 proc realURL*(config: ConfigTable): string =
   return config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/")
-
-proc initEverythingForRoutes*() =
-  var size = 75
-  if existsEnv("ONBOX_CONFIG_SIZE"):
-    size = parseInt(getEnv("ONBOX_CONFIG_SIZE"))
-  configPool = newConfigPool(size)
-
-  configPool.withConnection config:
-    dbPool = newPostgresPool(
-      config.getIntOrDefault("db", "pool_size", 10),
-      config.getdbHost(),
-      config.getdbUser(),
-      config.getdbPass(),
-      config.getdbName()
-    )
 
 proc createHeaders*(a: string): HttpHeaders = result["Content-Type"] = a
 macro respJsonError*(msg: string, code = 400, headers = createHeaders("application/json")) =
@@ -125,6 +110,14 @@ proc formParamExists*(fe: FormEntries, param: string): bool =
   ## Returns a parameter submitted via a HTML form
   return fe.hasKey(param) and not fe[param].isEmptyOrWhitespace()
 
+proc fetchSessionCookie*(req: Request): string = 
+  ## Fetches the session cookie (if it exists) from a request.
+  let data = req.headers["Cookie"].smartSplit('=')
+  var i = 0
+  for x in data:
+    case x:
+    of "session": return data[i]
+    else: inc i
 
 proc hasSessionCookie*(req: Request): bool =
   ## Checks if the request has a Session cookie for authorization.
@@ -134,36 +127,13 @@ proc hasSessionCookie*(req: Request): bool =
   # The header looks like so: Name=Value; Name=Value
   if not req.headers.contains("Cookie"):
     return false
-
-  var
-    val = ""
-    flag = false
-  for item in req.headers["Cookie"].smartSplit('='):
-    case flag:
-    of false:
-      if item == "session":
-        flag = true
-        continue
-    of true:
-      val = item
-      break
-  
-  return not (val.isEmptyOrWhitespace() and val != "null")
+  return not fetchSessionCookie(req).isEmptyOrWhitespace()
 
 proc hasValidStrKey*(j: JsonNode, k: string): bool =
   ## Checks if a key in a json node object is a valid string.
   ## It primarily checks for existence, kind, and emptyness.
   try: return j.hasKey(k) and j[k].kind == JString and not j[k].getStr().isEmptyOrWhitespace()
   except: return false
-
-proc fetchSessionCookie*(req: Request): string = 
-  ## Fetches the session cookie (if it exists) from a request.
-  var flag = false
-  for val in req.headers["Cookie"].smartSplit('='):
-    if flag:
-      return val
-    if val == "session":  
-      flag = true
 
 proc getContentType*(req: Request): string =
   ## Returns the content-type of a request.
@@ -190,3 +160,70 @@ proc getAuthHeader*(req: Request): string =
   result = req.headers["Authorization"].strip()
   if result.startsWith("Bearer "):
     result = result[7..^1]
+
+proc verifyClientExists*(req: Request): string =
+  ## Verifies that the API client is calling with a token that exists in the database.
+  ## Returns the token provided by the client for convenience.
+  runnableExamples:
+    try:
+      req.verifyClientExists()
+    except: return
+
+  if not req.authHeaderExists():
+    req.respond(400, createHeaders("application/json"), "{\"error\": \"Client hasn't provided an auth header\"}")
+    raise newException(CatchableError, "")
+
+  result = req.getAuthHeader()
+
+  dbPool.withConnection db:
+    if not db.tokenExists(result):
+      req.respond(401, createHeaders("application/json"), "{\"error\": \"Client's auth header is invalid\"}")
+      raise newException(CatchableError, "")
+
+proc verifyClientScope*(req: Request, token, scope: string) =
+  ## Verifies that the client calling this has a scope.
+  runnableExamples:
+    var token = ""
+    try:
+      token = req.verifyClientExists()
+      req.verifyClientScope(token, "read:account")
+    except: return
+
+  dbPool.withConnection db:
+    if not db.tokenHasScope(token, "read"):
+      req.respond(401, createHeaders("application/json"), "{\"error\": \"Insufficient permissions on token.\"}")
+      raise newException(CatchableError, "")
+
+proc verifyClientUser*(req: Request, token: string): string =
+  ## Verifies that the client calling this has a user connected.
+  ## Returns the user ID for convenience
+  runnableExamples:
+    var token, user = ""
+    try:
+      token = req.verifyClientExists()
+      req.verifyClientScope(token, "read:account")
+      user = req.verifyClientUser(token)
+    except: return
+  
+  dbPool.withConnection db:
+    result = db.getTokenUser(token)
+    if result == "":
+      req.respond(401, createHeaders("application/json"), "{\"error\": \"No user associated with token\"}")
+      raise newException(CatchableError, "")
+  
+    # Frozen/Suspension check
+    if db.userHasRole(result, -1):
+      req.respond(403, createHeaders("application/json"), "{\"error\": \"Your login is currently disabled\"}")
+      raise newException(CatchableError, "")
+    
+    # Check if the user's email has been verified.
+    # But only if user.require_verification is true
+    configPool.withConnection config:
+      if config.getBoolOrDefault("user", "require_verification", false) and not db.userVerified(result):
+        req.respond(403, createHeaders("application/json"), "{\"error\": \"Your login is missing a confirmed e-mail address\"}")
+        raise newException(CatchableError, "")
+    
+    # Check if the user's account is pending verification
+    if not db.userHasRole(result, 1):
+      req.respond(403, createHeaders("application/json"), "{\"error\": \"Your login is currently pending approval\"}")
+      raise newException(CatchableError, "")

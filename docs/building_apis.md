@@ -12,6 +12,18 @@ proc x(req: Request) =
   req.respond(200, headers, "{\"test\": \"Hello World!\"}")
 ```
 
+## Authentication: The slightly better way.
+
+If you wanna know what this is about then read the "Authentication" section fully but skip the code examples. This section attempts to do everything the old section did but in a more readable manner.
+
+With the new name, Onbox has gained a couple of new procedures in its codebase. There are only three we are interested in so far.
+
+* `onbox/routes.nim:verifyClientExists(req: Request): string`
+* `onbox/routes.nim:verifyClientScope(req: Request, scope: string): string`
+* `onbox/routes.nim:verifyClientUser(req: Request): string`
+
+This is the most ergonomic way to do authentication on the Onbox codebase yet, please migrate to this if you can!
+
 ## Authentication
 
 Sometimes you want an API route to only accept properly authenticated clients because you might be writing an API route that returns user data or an API route that is computationally expensive and so you'd want Onbox to limit access to it.

@@ -89,5 +89,18 @@ for route in mummyRoutes:
 router.get("/", serveHome)
 
 log "Serving on http://localhost:" & $port
-initEverythingForRoutes()
+
+var size = 50
+if existsEnv("ONBOX_CONFIG_SIZE"):
+  size = parseInt(getEnv("ONBOX_CONFIG_SIZE"))
+
+configPool = newConfigPool(size)
+dbPool = newPostgresPool(
+  config.getIntOrDefault("misc", "db_pool_size", 10),
+  config.getdbHost(),
+  config.getdbUser(),
+  config.getdbPass(),
+  config.getdbName()
+)
+
 newServer(router).serve(Port(port))

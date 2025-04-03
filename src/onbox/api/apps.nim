@@ -1,4 +1,4 @@
-# Copyright © penguinite 2024 <penguinite@tuta.io>
+# Copyright © penguinite 2024-2025 <penguinite@tuta.io>
 #
 # This file is part of Onbox.
 # 
@@ -13,28 +13,20 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
-# api/apps.nim:
+# onbox/api/apps.nim:
 ## This module contains all the routes for the apps method in the mastodon api
 
 # From somewhere in Quark
-import quark/[apps, oauth]
-
-# From somewhere in Onbox
-import onbox/[database]
-
-# Helper procs
-import onbox/helpers/[req, resp, routes]
+import onbox/db/[apps, oauth], onbox/[routes]
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy
+import mummy, waterpark/postgres, iniplus
 
 proc v1Apps*(req: Request) =
   # This is a big, complex API route as it needs to handle 3 different data form submission methods.
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
 
   # Check if the request matches anything we support.
   # What we do support is the following:
@@ -131,8 +123,8 @@ proc v1Apps*(req: Request) =
     client_id = db.createClient(
       client_name,
       website,
-      scopes,
-      redirect_uris
+      @[scopes], # TODO: Implement support for multiple scopes and redirect_uris
+      @[redirect_uris]
     )
     client_secret = db.getClientSecret(client_id)
   
@@ -146,29 +138,16 @@ proc v1Apps*(req: Request) =
     "scopes": scopes.split(" ") # Non-standard: Undocumented.
   }
 
-  req.respond(200, headers, $(result))
+  req.respond(200, createHeaders("application/json"), $(result))
 
   
 proc v1AppsVerify*(req: Request) = 
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-
-  if not req.authHeaderExists():
-    respJsonError("The access token is invalid")
-  
-  let token = req.getAuthHeader()
-  var name, website = ""
+  var token = ""
+  try: token = req.verifyClientExists()
+  except: return
 
   dbPool.withConnection db:
-    if not db.tokenExists(token):
-      respJsonError("The access token is invalid")
-    
     let id = db.getTokenApp(token)
-    name = db.getClientName(id)
-    website = db.getClientLink(id)
-
-  var result = %* {
-    "name": name,
-    "website": website,
-  }
-  req.respond(200, headers, $(result))
+    req.respond(200, createHeaders("application/json"),
+      $(%* {"name": db.getClientName(id), "website": db.getClientLink(id)})
+    )

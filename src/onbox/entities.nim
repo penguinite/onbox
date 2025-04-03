@@ -99,9 +99,10 @@ proc account*(db: DbConn, config: ConfigTable, user_id: string): JsonNode =
     "username": user.handle,
     "acct": user.handle,
     "display_name": user.name,
-    "locked": db.userHasRole(user_id,-1),
+    "suspended": db.userHasRole(user_id,-1),
     "bot": db.userHasRole(user_id,4),
     "group": db.userHasRole(user_id,5),
+    "locked": db.userHasRole(user_id,6),
     "discoverable": user.discoverable,
     "created_at": "", # TODO: Implement
     "note": user.bio,
@@ -311,7 +312,7 @@ proc levelToStr(l: PostPrivacyLevel): string =
   of Limited: return "limited"
   of Private: return "direct"
 
-proc strToLevel(s: string): PostPrivacyLevel =
+proc strToLevel*(s: string): PostPrivacyLevel =
   # Our "Private" is the MastoAPI's "direct"
   # Our "FollowersOnly" is the MastoAPI's "private"
   case s:

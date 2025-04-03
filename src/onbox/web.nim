@@ -30,19 +30,12 @@ import mummy, temple, waterpark, waterpark/postgres, iniplus
 
 proc signInGet*(req: Request) =
   var headers = createHeaders("text/html")
-
   var login = ""
   if req.hasSessionCookie(): login = "true"
-
-  req.respond(
-    200, headers,
-    templateify(getBuiltinAsset("signin.html"), {"login": login}.toTable)
-  )
+  req.respond(200, headers,templateify(getBuiltinAsset("signin.html"), {"login": login}.toTable))
 
 proc signInPost*(req: Request) =
-  var
-    headers = createHeaders("text/html")
-    fm: FormEntries
+  var headers = createHeaders("text/html")
 
   template renderError(err: string) =
     req.respond(400, headers, templateWithAsset("signin.html", {"message_type": "error", "message": err}))
@@ -55,11 +48,7 @@ proc signInPost*(req: Request) =
   if req.hasSessionCookie():
     renderError("You are already logged in.")
 
-  try:
-    fm = req.unrollForm()
-  except CatchableError as err:
-    log "Couldn't process request: ", err.msg
-    renderError("Couldn't process request, unknown error when unrolling form.")
+  var fm = req.unrollForm()
 
   # Check first if user and password exist.
   if not fm.formParamExists("user") or not fm.formParamExists("pass"):
@@ -111,9 +100,7 @@ proc signInPost*(req: Request) =
     dbPool.withConnection db:
       db.updateUserById(
         id, "password",
-        crypto.hash(
-          fm["pass"], salt, crypto.latestKdf
-        )
+        crypto.hash(fm["pass"], salt, crypto.latestKdf)
       )
 
   if fm.formParamExists("rememberme"):
@@ -142,33 +129,24 @@ proc signInPost*(req: Request) =
   renderSuccess("Successful login, redirecting...", code = 303)
 
 proc logoutSession*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
+  var headers = createHeaders("text/html")
+  headers["Set-Cookie"] = "session=\"\"; path=/; Max-Age=0"
 
   # Remove session cookie from user's browser.
   if req.hasSessionCookie():
-    headers["Set-Cookie"] = "session=\"\"; path=/; Max-Age=0"
-    # Check if it actaully exists in the db before removing.
-    # In theory this shouldn't matter but its a good thing to do anyway
     dbPool.withConnection db:
       let id = req.fetchSessionCookie()
-      if db.sessionExists(id):
-        db.deleteSession(id)
+      db.deleteSession(id)
 
   # Just render the homepage
   # Since we dont have a dedicated page for this kinda thing.
   req.respond(200, headers,getBuiltinAsset("home.html"))
 
 proc serveCSS*(req: Request) = 
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/css"
-  req.respond(200, headers, getBuiltinAsset("style.css"))
+  req.respond(200, createHeaders("text/css"), getBuiltinAsset("style.css"))
 
 proc serveHome*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
-  req.respond(200, headers, getBuiltinAsset("home.html"))
-
+  req.respond(200, createHeaders("text/html"), getBuiltinAsset("home.html"))
 
 const mummyRoutes* =  @[
   # (URLRoute, HttpMethod, RouteProcedure)

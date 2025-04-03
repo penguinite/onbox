@@ -1,4 +1,4 @@
-# Copyright © penguinite 2024 <penguinite@tuta.io>
+# Copyright © penguinite 2024-2025 <penguinite@tuta.io>
 #
 # This file is part of Onbox.
 # 
@@ -13,61 +13,38 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
-# api/bookmarks.nim:
+# onbox/api/bookmarks.nim:
 ## This module contains all the routes for the bookmarks method in the mastodon api.
 
 # From somewhere in Onbox
-import onbox/db/[apps, oauth, auth_codes, bookmarks]
-import onbox/[database, conf]
-import onbox/helpers/[entities, req, resp, routes]
-from std/strutils import parseInt
+import onbox/db/bookmarks, onbox/[conf, entities, routes]
 
 # From somewhere in the standard library
-import std/json
+import std/[json, strutils]
 
 # From nimble/other sources
-import mummy
+import mummy, waterpark/postgres
 
 proc bookmarksGet*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  if not req.authHeaderExists():
-    respJsonError("This API requires an authenticated user", 401)
-      
-  let token = req.getAuthHeader()
-  var user = ""
-  dbPool.withConnection db:
-    # Check if the token exists in the db
-    if not db.tokenExists(token):
-      respJsonError("This API requires an authenticated user", 401)
-        
-    # Check if the token has a user attached
-    if not db.tokenUsesCode(token):
-      respJsonError("This API requires an authenticated user", 401)
-        
-    # Double-check the auth code used.
-    if not db.authCodeValid(db.getTokenCode(token)):
-      respJsonError("This API requires an authenticated user", 401)
-    
-    # Check if the client registered to the token
-    # has a public oauth scope.
-    if not db.hasScope(db.getTokenApp(token), "read:bookmarks"):
-      respJsonError("This API requires an authenticated user", 401)
-
-    user = db.getTokenUser(token)
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
+    req.verifyClientScope(token, "read:bookmarks")
+    user = req.verifyClientUser(token)
+  except: return
 
   var
     limit = 20
     result: JsonNode = newJArray()
   
   if req.queryParams.contains("limit"):
-    try:
-      limit = parseInt(req.queryParams["limit"])
-    except:
-      limit = 20
+    try: limit = parseInt(req.queryParams["limit"])
+    except: limit = 20
 
   ## TODO: Implement pagination with min_id, max_id and since_id
   dbPool.withConnection db:
-    for id in db.getBookmarks(user, limit):
-      result.elems.add(status(id))
-  req.respond(200, headers, $(result))
+    configPool.withConnection config:
+      for id in db.getBookmarks(user, limit):
+        result.elems.add(status(db, config, id))
+
+  req.respond(200, createHeaders("application/json"), $(result))

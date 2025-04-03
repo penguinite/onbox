@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>.
-# api/email.nim:
+# onbox/api/email.nim:
 ## This module contains all the email-related API routes.
 
 # From somewhere in Onbox
@@ -27,27 +27,60 @@ import std/json
 import mummy
 
 proc emailConfirmation*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  if not req.authHeaderExists():
-    respJsonError("This API requires an authenticated user", 401)
-      
-  let token = req.getAuthHeader()
-  var user = ""
-  dbPool.withConnection db:
-    # Check if the token exists in the db
-    if not db.tokenExists(token):
-      respJsonError("This API requires an authenticated user", 401)
-        
-    # Check if the token has a user attached
-    if not db.tokenUsesCode(token):
-      respJsonError("This API requires an authenticated user", 401)
-        
-    # Double-check the auth code used.
-    if not db.authCodeValid(db.getTokenCode(token)):
-      respJsonError("This API requires an authenticated user", 401)
-    
-    
-    
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
 
-    user = db.getTokenUser(token)
+    # We can't use verifyClientUser()
+    # Because we can't ignore email unverified users.
+    dbPool.withConnection db:
+      user = db.getTokenUser(token)
+      if user == "":
+        respJsonError("No user associated with token")
+      
+      # Frozen/Suspension check
+      if db.userHasRole(result, -1):
+        respJsonError("Your login is currently disabled")
+      
+      # Check if the user's account is pending verification
+      if not db.userHasRole(result, 1):
+        respJsonError("Your login is currently pending approval")
+  except: return
+
+  # Get email from client
+  var email = ""
+  case req.getContentType():
+  of "application/x-www-form-urlencoded":
+    let fm = req.unrollForm()
+    if fm.formParamExists("email"):
+      email = fm["email"]
+  of "multipart/form-data":
+    let mp = req.unrollMultipart()
+    if mp.multipartParamExists("email"):
+      email = mp["email"]
+  of "application/json":
+    var json: JsonNode = newJNull()
+    try: json = parseJSON(req.body)
+    except: respJsonError("Invalid JSON.")
+
+    if json.hasValidStrKey("email"):
+      email = json["email"].getStr()
+  else:
+    respJsonError("Unknown Content-Type.")
+  
+  dbPool.withConnection db:
+    # If the user has verified their email then leave
+    if db.userVerified(user):
+      respJsonError("This method is only available while the e-mail is awaiting confirmation")
+
+    # Delete old email codes.
+    db.deleteEmailCodeByUser(user)
+
+    # Change email before sending new code
+    if email != "":
+      db.updateUserById(user, "email", email)
+
+    configPool.withConnection config:
+      config.sendEmailCode(db.createEmailCode(user), db.getUserEmail(user))
+      
+    req.respond(200, createHeaders("application/json"), "{}")

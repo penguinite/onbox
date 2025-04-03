@@ -28,7 +28,7 @@
 import onbox/shared
 
 # From the standard library
-import std/times
+import std/[times, strutils]
 
 func basicEscape(s: string): string =
   ## Used by seq[string]'s !$() proc

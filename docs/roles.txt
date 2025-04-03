@@ -16,3 +16,4 @@ Format: ID NAME DESCRIPTION
 3,Administrator,An administrator who has the ability to purge users and their posts
 4,Bot,Roles with no permissions used mostly for differentiating different kinds of users.
 5,Group,Roles with no permissions used mostly for differentiating different kinds of users.
+6,Manual follower approval, Whether or this user manually approves followers.

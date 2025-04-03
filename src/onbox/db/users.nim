@@ -105,6 +105,10 @@ proc userEmailExists*(db: DbConn, email: string): bool =
     sql"SELECT EXISTS(SELECT 0 FROM users WHERE email = ?);", email
   )[0] == "t"
 
+proc getUserEmail*(db: DbConn, id: string): string =
+  ## Retrieves the email of a user (given with ID)
+  db.getRow(sql"SELECT email FROM users WHERE id = ?;", id)[0]
+
 proc getUserIdByEmail*(db: DbConn, email: string): string =
   ## Retrieves the user id by using the email associated with the user
   db.getRow(sql"SELECT id FROM users WHERE email = ?;", email)[0]

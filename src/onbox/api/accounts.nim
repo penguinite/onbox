@@ -1,4 +1,4 @@
-# Copyright © penguinite 2024 <penguinite@tuta.io>
+# Copyright © penguinite 2024-2025 <penguinite@tuta.io>
 #
 # This file is part of Onbox.
 # 
@@ -13,108 +13,62 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
-# api/accounts.nim:
+# onbox/api/accounts.nim:
 ## This module contains all the routes for the accounts method in the mastodon api.
 
 # From Onbox
-import ../db/[oauth, apps, users, auth_codes], ../[strextra, shared, database, conf, routes, entities]
+import ../db/[oauth, apps, users], ../[conf, routes, entities]
 
 # From somewhere in the standard library
-import std/json
+import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, iniplus, db_connector/db_postgres, waterpark, waterpark/postgres
+import mummy, iniplus, waterpark, waterpark/postgres
 
 proc accountsVerifyCredentials*(req: Request) =
-  var headers = createHeaders("application/json")
-
-  if not req.authHeaderExists():
-    respJsonError("The access token is invalid")
-  
-  let token = req.getAuthHeader() # Hi
-  var user = ""
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
+    user = req.verifyClientUser(token)
+  except: return
 
   dbPool.withConnection db:
-    # Check if token actually exists
-    if not db.tokenExists(token):
-      respJsonError("The access token is invalid")
-    
-    # Check if the app is actually allowed to access this.
+    # We need to run our own scope checks since our
+    # situation is more complex than just a single scope
     if not db.tokenHasScope(token, "read:account") and not db.hasScope(token, "profile"):
       respJsonError("This method requires an authenticated user", 422)
-
-    user = db.getTokenUser(token)
-
-    # Check if that user's account is frozen (suspended).
-    if db.userFrozen(user):
-      respJsonError("Your login is currently disabled", 403)
-    
-    # Check if the user's email has been verified.
-    # But only if user.require_verification is true
+  
+  dbPool.withConnection db:
     configPool.withConnection config:
-      if config.getBoolOrDefault("user", "require_verification", false) and not db.userVerified(user):
-        respJsonError("Your login is missing a confirmed e-mail address", 403)
-    
-    # Check if the user's account is pending verification
-    if not db.userApproved(user):
-      respJsonError("Your login is currently pending approval", 403)
-
-  req.respond(200, headers, $(credentialAccount(user)))
+      req.respond(200, createHeaders("application/json"), $(credentialAccount(db, config, user)))
 
 proc accountsGet*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-
-  if not req.pathParams.contains("id"):
-    respJsonError("Missing ID parameter")
-  
-  if req.pathParams["id"].isEmptyOrWhitespace():
-    respJsonError("Invalid account id.")
+  # Run some basic input checks first.
+  if not req.pathParams.contains("id") or req.pathParams["id"].isEmptyOrWhitespace():
+    respJsonError("Invalid ID parameter")
   
   configPool.withConnection config:
     # If the instance is in lockdown mode
     # Then check the oauth token.
     if config.getBoolOrDefault("web", "lockdown_mode", false):
-      if not req.authHeaderExists():
-        respJsonError("This API requires an authenticated user", 401)
-      
-      let token = req.getAuthHeader()
-      dbPool.withConnection db:
-        # Check if the token exists in the db
-        if not db.tokenExists(token):
-          respJsonError("This API requires an authenticated user", 401)
-        
-        # Check if the token has a user attached
-        if not db.tokenUsesCode(token):
-          respJsonError("This API requires an authenticated user", 401)
-        
-        # Double-check the auth code used.
-        if not db.authCodeValid(db.getTokenCode(token)):
-          respJsonError("This API requires an authenticated user", 401)
-        
-        # Check if the client registered to the token
-        # has a public oauth scope.
-        if not db.hasScope(db.getTokenApp(token), "read:accounts"):
-          respJsonError("This API requires an authenticated user", 401)
+      try:
+        var token = req.verifyClientExists()
+        # Check that the client has an authenticated user bound to it.
+        discard req.verifyClientUser(token)
+      except: return
 
-  var result: JsonNode  
   dbPool.withConnection db:
     if not db.userIdExists(req.pathParams["id"]):
       respJsonError("Record not found", 404)
-    result = account(req.pathParams["id"])
-
+    
     # TODO: When support for ActivityPub is added...
     # Hopefully... then implement support for remote users.
     # See the Mastodon API docs.
-
-    if db.userFrozen(req.pathParams["id"]):
-      result["suspended"] = newJBool(true)
+    configPool.withConnection config:
+      req.respond(200, createHeaders("application/json"), $(account(db, config, req.pathParams["id"])))
     
-  req.respond(200, headers, $(result))
 
 proc accountsGetMultiple*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
   if not req.queryParams.contains("id[]"):
     respJsonError("Missing account ID query parameter.")
 
@@ -127,40 +81,20 @@ proc accountsGetMultiple*(req: Request) =
     # If the instance is in lockdown mode
     # Then check the oauth token.
     if config.getBoolOrDefault("web", "lockdown_mode", false):
-      if not req.authHeaderExists():
-        respJsonError("This API requires an authenticated user", 401)
-      
-      let token = req.getAuthHeader()
-      dbPool.withConnection db:
-        # Check if the token exists in the db
-        if not db.tokenExists(token):
-          respJsonError("This API requires an authenticated user", 401)
-        
-        # Check if the token has a user attached
-        if not db.tokenUsesCode(token):
-          respJsonError("This API requires an authenticated user", 401)
-        
-        # Double-check the auth code used.
-        if not db.authCodeValid(db.getTokenCode(token)):
-          respJsonError("This API requires an authenticated user", 401)
-        
-        # Check if the client registered to the token
-        # has a public oauth scope.
-        if not db.tokenHasScope(token, "read:accounts"):
-          respJsonError("This API requires an authenticated user", 401)
+      try:
+        var token = req.verifyClientExists()
+        # Check that the client has an authenticated user bound to it.
+        discard req.verifyClientUser(token)
+      except: return
 
-  var result: JsonNode = newJArray()
-  dbPool.withConnection db:
-    for id in ids:
-      if not db.userIdExists(id):
-        continue
-      var tmp = account(id)
+  var result = newJArray()
 
-      # TODO: When support for ActivityPub is added...
-      # Hopefully... then implement support for remote users.
-      # See the Mastodon API docs.
-
-      if db.userFrozen(id):
-        tmp["suspended"] = newJBool(true)
-      result.elems.add(tmp)
-  req.respond(200, headers, $(result))
+  configPool.withConnection config:
+    dbPool.withConnection db:
+      for id in ids:
+        # TODO: When support for ActivityPub is added...
+        # Hopefully... then implement support for remote users.
+        # See the Mastodon API docs.
+        if db.userIdExists(id):
+          result.elems.add(account(db, config, id))
+  req.respond(200, createHeaders("application/json"), $(result))
