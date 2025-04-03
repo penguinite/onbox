@@ -6,7 +6,7 @@ SET client_encoding = 'UTF8';
 -- TODO: Fix this in the db_connector library so that everyone can enjoy injection-free data operations.
 SET standard_conforming_strings = on;
 
--- The meta table is used to store metadata about the pothole database itself.
+-- The meta table is used to store metadata about the database itself.
 -- It may be used to track schema versions.
 CREATE TABLE IF NOT EXISTS meta (k TEXT UNIQUE NOT NULL, v TEXT);
 
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS post_embeds (
 -- A reaction acts as a sort of like
 -- (or favorite if you're into mastodon parlance.)
 --
--- In pothole however, these are more general so they can
+-- In this program however, these are more general so they can
 -- store all sorts of things.
 CREATE TABLE IF NOT EXISTS reactions (
     pid UUID NOT NULL, -- Stands for Post ID
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS fields (
 -- TODO: Introduce a third column that can be named by a user.
 -- So that they can have different "bookmark categories"
 -- (Only if you want to)
-CREATE TABLE bookmarks (
+CREATE TABLE IF NOT EXISTS bookmarks (
     pid UUID NOT NULL, -- Stands for post ID
     uid UUID NOT NULL, -- Stands for user ID
     foreign key (uid) references users(id),
@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS auth_codes (
     scopes TEXT[] DEFAULT '{read}',
     -- Auth codes are to be deleted after a day, no matter what.
     -- Alternatively, we could encourage users to setup a daily cron job
-    -- with harmless db cleaning commands in potholectl.
+    -- with harmless db cleaning commands in the control command.
     date TIMESTAMP DEFAULT NOW(),
     foreign key (cid) references apps(id),
     foreign key (uid) references users(id)
