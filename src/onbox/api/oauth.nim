@@ -13,32 +13,26 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
-# api/oauth.nim:
+# onbox/api/oauth.nim:
 ## This module contains all the routes for the oauth method in the api
 
+# TODO: This module's migration to the new db layer wasn't so smooth
+# Also I hear that there are new changes, so we must update.
+
 # From somewhere in Onbox
-import onbox/db/[strextra, apps, oauth, sessions, auth_codes]
-import onbox/[database, conf, assets, routes]
+import onbox/db/[apps, oauth, sessions, users, auth_codes], onbox/[conf, assets, routes, strextra]
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, temple
+import mummy, temple, iniplus, waterpark/postgres
 
 proc success(msg: string): Table[string, string] =
   ## Returns a table suitable for further processing in templateify()
   return {
     "title": "Success!",
     "message_type": "success",
-    "message": msg
-  }.toTable
-
-proc error(msg: string): Table[string, string] =
-  ## Returns a table suitable for further processing in templateify()
-  return {
-    "title": "Error!",
-    "message_type": "error",
     "message": msg
   }.toTable
 
@@ -70,12 +64,12 @@ proc renderAuthForm(req: Request, scopes: seq[string], client_id, redirect_uri: 
   var appname, login = ""
   dbPool.withConnection db:
     appname = db.getClientName(client_id)
-    login = db.getSessionUserHandle(session)
+    login = db.getHandleFromId(db.getSessionUser(session))
 
   req.respond(
     200, headers,
     templateify(
-      getAsset("oauth.html"),
+      getBuiltinAsset("oauth.html"),
       {
         "human_scope": human_scopes,
         "scope": scopes.join(" "),
@@ -96,11 +90,7 @@ proc redirectToLogin*(req: Request, client, redirect_uri: string, scopes: seq[st
   configPool.withConnection config:
     let url = realURL(config)
     headers["Location"] = url & "auth/sign_in/?return_to=" & encodeQueryComponent("$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [url, client, redirect_uri, scopes.join(" ")])
-
-  req.respond(
-    303, headers, ""
-  )
-  return
+  req.respond(303, headers, "")
 
 proc oauthAuthorizeGET*(req: Request) =
   # If response_type exists
@@ -128,7 +118,7 @@ proc oauthAuthorizeGET*(req: Request) =
 
   # Check if redirect_uri matches the redirect_uri for the app
   dbPool.withConnection db:
-    if redirect_uri != db.getClientRedirectUri(client_id):
+    if redirect_uri notin db.getClientUris(client_id):
       respJsonError("The redirect_uri used doesn't match the one provided during app registration")
 
   var
@@ -202,7 +192,7 @@ proc oauthAuthorizePOST*(req: Request) =
 
   # Check if redirect_uri matches the redirect_uri for the app
   dbPool.withConnection db:
-    if redirect_uri != db.getClientRedirectUri(client_id):
+    if redirect_uri notin db.getClientUris(client_id):
       respJsonError("The redirect_uri used doesn't match the one provided during app registration")
 
   var
@@ -261,7 +251,7 @@ proc oauthAuthorizePOST*(req: Request) =
     var code = ""
 
     dbPool.withConnection db:
-      code = db.createAuthCode(user, client_id, scopes.join(" "))
+      code = db.createAuthCode(user, client_id, scopes)
     
     if redirect_uri == "urn:ietf:wg:oauth:2.0:oob":
       ## Show code to user
@@ -270,7 +260,7 @@ proc oauthAuthorizePOST*(req: Request) =
       req.respond(
         200, headers,
         templateify(
-          getAsset("generic.html"),
+          getBuiltinAsset("generic.html"),
           success("Authorization code: " & code)
         )
       )
@@ -291,7 +281,7 @@ proc oauthAuthorizePOST*(req: Request) =
     req.respond(
       200, headers,
       templateify(
-        getAsset("generic.html"),
+        getBuiltinAsset("generic.html"),
         success("Authorization request has been rejected!")
       )
     )
@@ -374,7 +364,7 @@ proc oauthToken*(req: Request) =
     if db.getClientSecret(client_id) != client_secret:
       respJsonError("Client secret doesn't match client id")
     
-    if db.getClientRedirectUri(client_id) != redirect_uri:
+    if redirect_uri notin db.getClientUris(client_id):
       respJsonError("Redirect_uri not specified during app creation")
     
     if not db.hasScopes(client_id, scopes):
@@ -384,15 +374,12 @@ proc oauthToken*(req: Request) =
       if not db.authCodeValid(code):
         respJsonError("Invalid code")
       
-      scopes = db.getScopesFromCode(code)
-      
+      scopes = db.getCodeScopes(code)
       if not db.codeHasScopes(code, scopes):
         respJsonError("An attached scope wasn't specified during oauth authorization.")
     
-      if db.getTokenFromCode(code) != "":
-        respJsonError("Token aleady registered for this auth code.")
-
-    token = db.createToken(client_id, code)
+    token = db.createToken(client_id, db.getUserFromAuthCode(code), scopes)
+    db.deleteAuthCode(code) # Delete auth code after we are done
   
   req.respond(
     200, headers,
@@ -405,9 +392,6 @@ proc oauthToken*(req: Request) =
   )
   
 proc oauthRevoke*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-
   ## We gotta check for both url-form-encoded or whatever
   ## And for JSON body requests.
   var client_id, client_secret, token = ""
@@ -453,7 +437,7 @@ proc oauthRevoke*(req: Request) =
     if not db.tokenExists(token):
       respJsonError("Token doesn't exist.", 403)
 
-    if not db.tokenMatchesClient(token, client_id):
+    if db.getTokenApp(token) != client_id:
       respJsonError("Client doesn't own this token", 403)
 
     if db.getClientSecret(client_id) != client_secret:
@@ -461,6 +445,7 @@ proc oauthRevoke*(req: Request) =
 
     # Finally, delete the OAuth token.
     db.deleteOAuthToken(token)
+
   # And respond with nothing
   respJson($(%*{}))
 
@@ -470,7 +455,7 @@ proc oauthRevoke*(req: Request) =
   # or they don't check for the existence of the token before deleting it.
   # Anyway, this API is not idempotent because thats stupid and there's NO REASON for it to be idempotent in the first place!
   #
-  # In our case, if we delete a non-existent OAuth token, then we will get a database error
+  # In our case, if we delete a non-existent OAuth token, then nothing happens!
   
 proc oauthInfo*(req: Request) =
   var url = ""

@@ -13,25 +13,19 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
-# api/oauth.nim:
+# onbox/api/oauth.nim:
 ## This module contains all the routes for the oauth method in the api
 
 # From somewhere in Onbox
-import onbox/db/[tag, apps, oauth, auth_codes]
-import onbox/[database,routes,entities]
+import onbox/db/tag, onbox/[routes,entities]
 
 # From somewhere in the standard library
-import std/[json]
-import std/strutils except isEmptyOrWhitespace, parseBool
+import std/[json, strutils]
 
 # From nimble/other sources
-import mummy
+import mummy, waterpark/postgres
 
 proc followedTags*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  
-  
   # TODO: Implement pagination *properly*
   # If any of these are present, then just error out.
   for i in @["max_id", "since_id", "min_id"]:
@@ -41,33 +35,13 @@ proc followedTags*(req: Request) =
   # Same thing for the Link http header
   if req.headers.contains("Link"):
     respJson("You're using a pagination feature and I honest to goodness WILL NOT IMPLEMENT IT NOW", 500)
-
-  # Now we can begin actually implementing the API
-
-  if not req.authHeaderExists():
-    respJsonError("The access token is invalid (No auth header present)", 401)
-      
-  let token = req.getAuthHeader()
-  var user = ""
-  dbPool.withConnection db:
-    # Check if the token exists in the db
-    if not db.tokenExists(token):
-      respJsonError("The access token is invalid (token not found in db)", 401)
-        
-    # Check if the token has a user attached
-    if not db.tokenUsesCode(token):
-      respJsonError("The access token is invalid (token isn't using an auth code)", 401)
-        
-    # Double-check the auth code used.
-    if not db.authCodeValid(db.getTokenCode(token)):
-      respJsonError("The access token is invalid (auth code used by token isn't valid)", 401)
     
-    # Check if the client registered to the token
-    # has a public oauth scope.
-    if not db.hasScope(db.getTokenApp(token), "read:follows"):
-      respJsonError("The access token is invalid (scope read or read:follows is missing) ", 401)
-
-    user = db.getTokenUser(token)
+  var token, user =""
+  try:
+    token = req.verifyClientExists()
+    req.verifyClientScope(token, "read:follows")
+    user = req.verifyClientUser(token)
+  except: return
 
   var result = newJArray()
   
@@ -76,10 +50,8 @@ proc followedTags*(req: Request) =
   var limit = 100
 
   if req.queryParams.contains("limit"):
-    try:
-      limit = parseInt(req.queryParams["limit"])
-    except:
-      limit = 100
+    try: limit = parseInt(req.queryParams["limit"])
+    except: limit = 100
   
   if limit > 200:
     # MastoAPI docs sets a limit of 200.
@@ -88,5 +60,5 @@ proc followedTags*(req: Request) =
 
   dbPool.withConnection db:
     for tag in db.getTagsFollowedByUser(user, limit):
-      result.elems.add(tag(tag))
-  req.respond(200, headers, $(result))
+      result.elems.add(tag(db, tag, user))
+  req.respond(200, createHeaders("application/json"), $(result))

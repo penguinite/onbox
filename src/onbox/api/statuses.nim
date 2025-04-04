@@ -16,8 +16,7 @@
 # api/statuses.nim:
 ## This module contains all the routes for the statuses method in the API.
 
-
-# From somewhere in Quark
+# From somewhere in Onbox
 import onbox/db/[posts, apps, oauth, auth_codes, boosts, bookmarks]
 import onbox/[database, conf, entities, routes, strextra]
 
@@ -25,7 +24,7 @@ import onbox/[database, conf, entities, routes, strextra]
 import std/json
 
 # From nimble/other sources
-import mummy
+import mummy, waterpark/postgres, iniplus, db_connector/db_postgres
 
 
 proc boostStatus*(req: Request) =
@@ -44,6 +43,13 @@ proc boostStatus*(req: Request) =
   #
   # Still, for API compatability reasons, we need to return 2 status entities...
   # Fuck this mastodon API seriously, it's the stupidest, most inefficient bullshit ever!
+
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
+    req.verifyClientScope(token, "write:statuses")
+    user = req.verifyClientUser(token)
+  except: return
 
   # Let's do authentication first...  
   if not req.authHeaderExists():
@@ -111,10 +117,13 @@ proc boostStatus*(req: Request) =
       respJsonError("Record not found", 404)
     db.addBoost(id, user, level)
 
+  dbPool.withConnection db:
+    result = db.status(id)
+
   # Here comes the wasteful part.
   # Fuck you MastoAPI.
-  result = status(id)
-  result["reblog"] = status(id)
+  # Piece of shit design.
+  result["reblog"] = deepCopy(result)
 
   req.respond(200, headers, $(result))
 

@@ -13,37 +13,35 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
-# api/instance.nim:
+# onbox/api/instance.nim:
 ## This module contains all the routes for the instance method in the api
 
 # From somewhere in Onbox
-import onbox/entities
+import onbox/[entities, routes, conf]
 
 # From somewhere in the standard library
 import std/[json]
 
 # From nimble/other sources
-import mummy
+import mummy, waterpark/postgres
 
 proc v1InstanceView*(req: Request) = 
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  req.respond(200, headers, $(v1Instance()))
+  configPool.withConnection config:
+    dbPool.withConnection db:
+      req.respond(200, createHeaders("application/json"), $(v1Instance(db, config)))
 
 proc v2InstanceView*(req: Request) = 
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  req.respond(200, headers, $(v2Instance()))
+  configPool.withConnection config:
+    dbPool.withConnection db:
+      req.respond(200, createHeaders("application/json"), $(v2Instance(db, config)))
 
 proc v1InstanceExtendedDescription*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  req.respond(200, headers, $(extendedDescription()))
+  configPool.withConnection config:
+    req.respond(200, createHeaders("application/json"), $(extendedDescription(config)))
 
 proc v1InstanceRules*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  req.respond(200, headers, $(rules()))
+  configPool.withConnection config:
+    req.respond(200, createHeaders("application/json"), $(rules(config)))
 
 # MISSING: [
 # /api/v1/instance/translation_languages
