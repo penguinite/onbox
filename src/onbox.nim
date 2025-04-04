@@ -20,9 +20,9 @@ import onbox/[shared, conf, routes, database, web]
 import std/[strutils, os]
 
 # From third-parties
-import mummy, mummy/routers, iniplus
+import mummy, mummy/routers, iniplus, waterpark/postgres
 
-log "Onbox version ", oxVersion
+log "Onbox version ", version
 log "Copyright © Leo Gavilieau <xmoo@privacyrequired.com> 2022-2023"
 log "Copyright © penguinite <penguinite@tuta.io> 2024-2025"
 log "Licensed under the GNU Affero General Public License version 3 or later"

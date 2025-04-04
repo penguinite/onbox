@@ -18,7 +18,7 @@
 # debug.nim:
 ## Procedures used in the test-suite (includes fake data)
 import db/[users, posts], shared
-import rng, iniplus
+import rng, std/times
 
 const userData* = @[
   ("scout", "Jeremy", "All the ladies love me!"),
@@ -123,13 +123,17 @@ const fakeStatuses* = @[
 proc genFakePosts*(): seq[Post] =
   ## Creates a couple of fake posts.
   for txt in fakeStatuses:
-    result.add(
-      newPost(
-        sender = sample(userData)[0],
-        content = @[text(txt)]
+    var post = newPost()
+    post.sender = sample(userData)[0]
+    post.content = @[
+      PostContent(
+        kind: Text,
+        txt_published: now().utc,
+        txt_format: 0, # Plain
+        text: txt
       )
-    )
-  return result
+    ]
+    result.add(post)
 
 proc genFakeUsers*(): seq[User] =
   ## Generates a couple of fake users
@@ -138,7 +142,6 @@ proc genFakeUsers*(): seq[User] =
     user.id = userData[0]
     user.name = userData[1]
     user.bio = userData[2]
-    user.is_frozen = true
+    user.roles = @[-1]
     user.password = "DISABLED_FOREVER"
     result.add(user)
-  return result

@@ -3,6 +3,7 @@ switch("stackTrace","on") # For better debugging
 switch("d", "useMalloc") # Required for fixing memory leak.
 switch("mm", "orc") # Required by mummy
 switch("threads","on") # Required by mummy
+switch("deepcopy","on") # Required by that one deepCopy() call in onbox/api/statuses.nim
 
 # Based on https://scripter.co/nim-deploying-static-binaries
 # Thank you Kaushal

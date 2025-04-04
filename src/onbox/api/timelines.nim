@@ -17,19 +17,16 @@
 ## This module contains all the routes for the oauth method in the api
 
 # From somewhere in Quark
-import onbox/db/[follows, apps, oauth, auth_codes]
-import onbox/[database, conf, routes, entities, strextra]
+import onbox/db/timelines
+import onbox/[conf, routes, entities]
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy
+import mummy, waterpark/postgres, iniplus
 
 proc timelinesHome*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  
   # TODO: Implement pagination *properly*
   # If any of these are present, then just error out.
   for i in @["max_id", "since_id", "min_id"]:
@@ -50,44 +47,23 @@ proc timelinesHome*(req: Request) =
     # So we will throw an error if it is over 40
     respJsonError("Limit cannot be over 40", 401)
 
-  if not req.authHeaderExists():
-    respJsonError("The access token is invalid (No auth header present)", 401)
-      
-  let token = req.getAuthHeader()
-  var user = ""
-  dbPool.withConnection db:
-    # Check if the token exists in the db
-    if not db.tokenExists(token):
-      respJsonError("The access token is invalid (token not found in db)", 401)
-        
-    # Check if the token has a user attached
-    if not db.tokenUsesCode(token):
-      respJsonError("The access token is invalid (token isn't using an auth code)", 401)
-        
-    # Double-check the auth code used.
-    if not db.authCodeValid(db.getTokenCode(token)):
-      respJsonError("The access token is invalid (auth code used by token isn't valid)", 401)
-    
-    # Check if the client registered to the token
-    # has a public oauth scope.
-    if not db.hasScope(db.getTokenApp(token), "read:statuses"):
-      respJsonError("The access token is invalid (scope read or read:statuses is missing) ", 401)
-
-    user = db.getTokenUser(token)
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
+    req.verifyClientScope(token, "read:statuses")
+    user = req.verifyClientUser(token)
+  except: return
 
   var result = newJArray()
-
   dbPool.withConnection db:
-    for postId in db.getHomeTimeline(user, limit):
-      result.elems.add(status(postId))
-  req.respond(200, headers, $(result))
+    configPool.withConnection config:
+      for postId in db.getHomeTimeline(user, limit):
+        result.elems.add(status(db, config, postId))
+  req.respond(200, createHeaders("application/json"), $(result))
 
 
 
 proc timelinesHashtag*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  
   # TODO: Implement pagination *properly* and tag searching
   # If any of these are present, then just error out.
 
@@ -113,32 +89,28 @@ proc timelinesHashtag*(req: Request) =
     remote = parseBool(req.queryParams["remote"])
     local = not parseBool(req.queryParams["remote"])
   
-  var onlyMedia = false
   # TODO: Implement the "only_media" query parameter for this API endpoint.
   # We dont have media handling yet and so we can't test it.
+  #var onlyMedia = false
 
   # If ?limit isn't present then default to 20 posts
   var limit = 20
-
   if req.queryParamExists("limit"):
     limit = parseInt(req.queryParams["limit"])
 
+  # MastoAPI docs sets a limit of 40.
+  # So we will throw an error if it is over 40
   if limit > 40:
-    # MastoAPI docs sets a limit of 40.
-    # So we will throw an error if it is over 40
     respJsonError("Limit cannot be over 40", 401)
 
+  var result = newJArray()
   configPool.withConnection config:
     if config.getBoolOrDefault("web", "lockdown_mode", false):
-      dbPool.withConnection db:
-        try:
-          req.verifyAccess(db, "read:statuses")
-        except CatchableError as err:
-          respJsonError(err.msg, 401)
+      try:
+        req.verifyClientScope(req.verifyClientExists(), "read:statuses")
+      except: return
 
-  var result = newJArray()
-
-  dbPool.withConnection db:
-    for postId in db.getTagTimeline(req.pathParams["tag"], limit, local, remote):
-      result.elems.add(status(postId))
-  req.respond(200, headers, $(result))
+    dbPool.withConnection db:
+        for postId in db.getTagTimeline(req.pathParams["tag"], limit, local, remote):
+          result.elems.add(status(db, config, postId))
+  req.respond(200, createHeaders("application/json"), $(result))

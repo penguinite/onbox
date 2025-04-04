@@ -17,14 +17,14 @@
 ## This module contains all the email-related API routes.
 
 # From somewhere in Onbox
-import onbox/db/[oauth, auth_codes]
-import onbox/[database,routes]
+import onbox/db/[oauth, email_codes, users]
+import onbox/[routes,conf,email]
 
 # From somewhere in the standard library
-import std/json
+import std/[json, tables]
 
 # From nimble/other sources
-import mummy
+import mummy, waterpark/postgres, iniplus
 
 proc emailConfirmation*(req: Request) =
   var token, user = ""
@@ -39,11 +39,11 @@ proc emailConfirmation*(req: Request) =
         respJsonError("No user associated with token")
       
       # Frozen/Suspension check
-      if db.userHasRole(result, -1):
+      if db.userHasRole(user, -1):
         respJsonError("Your login is currently disabled")
       
       # Check if the user's account is pending verification
-      if not db.userHasRole(result, 1):
+      if not db.userHasRole(user, 1):
         respJsonError("Your login is currently pending approval")
   except: return
 

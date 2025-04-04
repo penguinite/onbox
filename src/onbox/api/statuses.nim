@@ -17,19 +17,17 @@
 ## This module contains all the routes for the statuses method in the API.
 
 # From somewhere in Onbox
-import onbox/db/[posts, apps, oauth, auth_codes, boosts, bookmarks]
-import onbox/[database, conf, entities, routes, strextra]
+import onbox/db/[posts, oauth, boosts, bookmarks]
+import onbox/[conf, entities, routes, shared]
 
 # From somewhere in the standard library
-import std/json
+import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, waterpark/postgres, iniplus, db_connector/db_postgres
+import mummy, waterpark/postgres, iniplus
 
 
 proc boostStatus*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
   # NONSTANDARD: As far as I am aware, boosts have an ID in Mastodon internally.
   # Like in the database itself, an ID for a boost is made...
   # And the API expects us to return a status entity whose ID is the boost ID.
@@ -50,32 +48,6 @@ proc boostStatus*(req: Request) =
     req.verifyClientScope(token, "write:statuses")
     user = req.verifyClientUser(token)
   except: return
-
-  # Let's do authentication first...  
-  if not req.authHeaderExists():
-    respJsonError("The access token is invalid (No auth header present)", 401)
-      
-  let token = req.getAuthHeader()
-  var user = ""
-  dbPool.withConnection db:
-    # Check if the token exists in the db
-    if not db.tokenExists(token):
-      respJsonError("The access token is invalid (token not found in db)", 401)
-        
-    # Check if the token has a user attached
-    if not db.tokenUsesCode(token):
-      respJsonError("The access token is invalid (token isn't using an auth code)", 401)
-        
-    # Double-check the auth code used.
-    if not db.authCodeValid(db.getTokenCode(token)):
-      respJsonError("The access token is invalid (auth code used by token isn't valid)", 401)
-    
-    # Check if the client registered to the token
-    # has a public oauth scope.
-    if not db.hasScope(db.getTokenApp(token), "write:statuses"):
-      respJsonError("The access token is invalid (scope write or write:statuses is missing) ", 401)
-
-    user = db.getTokenUser(token)
 
   # Check if the client has provided a visibility
   var level = Public
@@ -105,7 +77,6 @@ proc boostStatus*(req: Request) =
   if level == Limited or level == Private:
     respJsonError("Visibility can't be \"direct\" or \"limited\"", 400)
 
-
   # Check if the post id is valid.
   var id = req.pathParams["id"]
   if id.isEmptyOrWhitespace():
@@ -113,51 +84,28 @@ proc boostStatus*(req: Request) =
 
   var result = newJObject()
   dbPool.withConnection db:
-    if not db.postIdExists(id) or not db.isBoostable(id, user):
+    if not db.postIdExists(id) or not db.isBoostable(id):
       respJsonError("Record not found", 404)
     db.addBoost(id, user, level)
-
-  dbPool.withConnection db:
-    result = db.status(id)
+    configPool.withConnection config:
+      result = status(db, config, id)
 
   # Here comes the wasteful part.
   # Fuck you MastoAPI.
   # Piece of shit design.
   result["reblog"] = deepCopy(result)
-
-  req.respond(200, headers, $(result))
+  
+  req.respond(200, createHeaders("application/json"), $(result))
 
 
 
 proc unboostStatus*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-
-  # Let's do authentication first...  
-  if not req.authHeaderExists():
-    respJsonError("The access token is invalid (No auth header present)", 401)
-      
-  let token = req.getAuthHeader()
-  var user = ""
-  dbPool.withConnection db:
-    # Check if the token exists in the db
-    if not db.tokenExists(token):
-      respJsonError("The access token is invalid (token not found in db)", 401)
-        
-    # Check if the token has a user attached
-    if not db.tokenUsesCode(token):
-      respJsonError("The access token is invalid (token isn't using an auth code)", 401)
-        
-    # Double-check the auth code used.
-    if not db.authCodeValid(db.getTokenCode(token)):
-      respJsonError("The access token is invalid (auth code used by token isn't valid)", 401)
-    
-    # Check if the client registered to the token
-    # has a public oauth scope.
-    if not db.hasScope(db.getTokenApp(token), "write:statuses"):
-      respJsonError("The access token is invalid (scope write or write:statuses is missing) ", 401)
-
-    user = db.getTokenUser(token)
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
+    req.verifyClientScope(token, "write:statuses")
+    user = req.verifyClientUser(token)
+  except: return
 
   # Check if the post id is valid.
   var id = req.pathParams["id"]
@@ -165,43 +113,21 @@ proc unboostStatus*(req: Request) =
     respJsonError("Invalid post id!", 400)
 
   dbPool.withConnection db:
-    if not db.postIdExists(id) or not db.isBoostable(id, user):
+    if not db.postIdExists(id):
       respJsonError("Record not found", 404)
     db.removeBoost(id, user)
+    configPool.withConnection config:
+      req.respond(200, createHeaders("application/json"), $(status(db, config, id)))
   
-  req.respond(200, headers, $(status(id)))
-
 
 
 proc bookmarkStatus*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-
-  # Let's do authentication first...  
-  if not req.authHeaderExists():
-    respJsonError("The access token is invalid (No auth header present)", 401)
-      
-  let token = req.getAuthHeader()
-  var user = ""
-  dbPool.withConnection db:
-    # Check if the token exists in the db
-    if not db.tokenExists(token):
-      respJsonError("The access token is invalid (token not found in db)", 401)
-        
-    # Check if the token has a user attached
-    if not db.tokenUsesCode(token):
-      respJsonError("The access token is invalid (token isn't using an auth code)", 401)
-        
-    # Double-check the auth code used.
-    if not db.authCodeValid(db.getTokenCode(token)):
-      respJsonError("The access token is invalid (auth code used by token isn't valid)", 401)
-    
-    # Check if the client registered to the token
-    # has a public oauth scope.
-    if not db.hasScope(db.getTokenApp(token), "write:bookmarks"):
-      respJsonError("The access token is invalid (scope write or write:bookmarks is missing) ", 401)
-
-    user = db.getTokenUser(token)
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
+    req.verifyClientScope(token, "write:bookmarks")
+    user = req.verifyClientUser(token)
+  except: return
 
   # Check if the post id is valid.
   var id = req.pathParams["id"]
@@ -213,39 +139,18 @@ proc bookmarkStatus*(req: Request) =
       respJsonError("Record not found", 404)
     db.bookmarkPost(user, id)
 
-  req.respond(200, headers, $(status(id)))
+    configPool.withConnection config:
+      req.respond(200, createHeaders("application/json"), $(status(db, config, id)))
 
 
 
 proc unbookmarkStatus*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-
-  # Let's do authentication first...  
-  if not req.authHeaderExists():
-    respJsonError("The access token is invalid (No auth header present)", 401)
-      
-  let token = req.getAuthHeader()
-  var user = ""
-  dbPool.withConnection db:
-    # Check if the token exists in the db
-    if not db.tokenExists(token):
-      respJsonError("The access token is invalid (token not found in db)", 401)
-        
-    # Check if the token has a user attached
-    if not db.tokenUsesCode(token):
-      respJsonError("The access token is invalid (token isn't using an auth code)", 401)
-        
-    # Double-check the auth code used.
-    if not db.authCodeValid(db.getTokenCode(token)):
-      respJsonError("The access token is invalid (auth code used by token isn't valid)", 401)
-    
-    # Check if the client registered to the token
-    # has a public oauth scope.
-    if not db.hasScope(db.getTokenApp(token), "write:bookmarks"):
-      respJsonError("The access token is invalid (scope write or write:bookmarks is missing) ", 401)
-
-    user = db.getTokenUser(token)
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
+    req.verifyClientScope(token, "write:bookmarks")
+    user = req.verifyClientUser(token)
+  except: return
 
   # Check if the post id is valid.
   var id = req.pathParams["id"]
@@ -256,13 +161,14 @@ proc unbookmarkStatus*(req: Request) =
     if not db.postIdExists(id):
       respJsonError("Record not found", 404)
     db.unbookmarkPost(id, user)
-  req.respond(200, headers, $(status(id)))
+    configPool.withConnection config:
+      req.respond(200, createHeaders("application/json"), $(status(db, config, id)))
 
 
 proc viewStatus*(req: Request) =
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-  
+  # TODO: This implementation is seriously deranged...
+  # Fix it!
+
   # Here's what we want to do:
   # First check if the post exists, failing if it doesn't.
   #
@@ -286,13 +192,14 @@ proc viewStatus*(req: Request) =
     if not db.canSeePost(db.getTokenUser(req.getAuthHeader()), id, level):
       respJsonError("Record not found", 404)
   
-  configPool.withConnection config:
-    # Check if the instance is in lockdown mode.
-    if config.getBoolOrDefault(Hi"web", "lockdown_mode", false) or level notin {Public, Unlisted}:
-      dbPool.withConnection db:
+    configPool.withConnection config:
+      # Check if the instance is in lockdown mode.
+      if config.getBoolOrDefault("web", "lockdown_mode", false) or level notin {Public, Unlisted}:
+        var token = ""
         try:
-          req.verifyAccess(db, "read:statuses")
-        except CatchableError as err:
-          respJsonError(err.msg, 401)
-
-  req.respond(200, headers, $(status(id)))
+          token = req.verifyClientExists()
+          req.verifyClientScope(token, "write:bookmarks")
+          discard req.verifyClientUser(token)
+        except: return
+    
+      req.respond(200, createHeaders("application/json"), $(status(db, config, id)))

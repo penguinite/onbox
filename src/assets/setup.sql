@@ -237,3 +237,6 @@ INSERT INTO users VALUES ('null', 'Person', 'null', '', 'Deleted User', TRUE, ''
 
 -- Create an index on the post table to speed up post by user searches.
 --CREATE INDEX IF NOT EXISTS snd_idx ON posts USING btree (sender);
+
+-- Set database version
+INSERT INTO meta VALUES ('db_version', 'wip') ON CONFLICT DO NOTHING;

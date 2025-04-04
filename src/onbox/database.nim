@@ -38,13 +38,15 @@ proc setup*(name, user, host, password: string,schemaCheck: bool = true): DbConn
   ## setup() is called whenever you want to initialize a database schema.
   ## It does not merely launch a database connection, it also makes sure that every table needed is there.
   result = open(host, user, password, name)
-  result.exec(sql(staticRead("assets/setup.sql")))
+  const setupSql = staticRead("assets/setup.sql")
+  result.exec(sql(setupSql))
 
 proc purge*(db: DbConn) =
   ## Purges all of the data, tables and whatnot from the database.
   ## 
   ## Obviously a destructive procedure, don't run carelessly...
-  db.exec(sql(staticRead("assets/purge.sql")))
+  const purgeSql = staticRead("assets/purge.sql")
+  db.exec(sql(purgeSql))
 
 proc getDbHost*(config: ConfigTable): string =
   if existsEnv("ONBOX_DBHOST"):

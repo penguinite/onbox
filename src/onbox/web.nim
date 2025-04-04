@@ -16,8 +16,8 @@
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Onbox
-import onbox/db/[users, posts, sessions]
-import onbox/[conf, assets, routes, database, crypto, shared]
+import onbox/db/[users, sessions]
+import onbox/[conf, assets, routes, crypto, shared]
 
 # API routes!
 import onbox/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_tags, timelines, statuses]
@@ -73,10 +73,10 @@ proc signInPost*(req: Request) =
     kdf: KDF
 
   dbPool.withConnection db:
-    if db.userFrozen(id):
+    if db.userHasRole(id, -1):
       renderError("Your account has been frozen. Contact an administrator.")
 
-    if not db.userApproved(id):
+    if not db.userHasRole(id, 1):
       renderError("Your account hasn't been approved yet, please wait or contact an administrator.")
 
     configPool.withConnection config:
