@@ -229,12 +229,23 @@ proc user_info*(args: seq[string], id = false, handle = false, display = false, 
 #   post_purge: Deletes old posts made by the null (deleted) user.
 #    (This could maybe be added to the db_clean command? as an option)
 
-proc db_setup(config = "onbox.conf", location = ""): int =
+proc db_setup(config = "onbox.conf", noscript = false, location = ""): int =
   ## Returns a postgresql script that fully prepares the database,
   ## including setting the right permissions and setting up the user.
   ## This is the recommended way to setup your database server for Onbox.
+  let cnf = getConfig(config)
+
+  # Sometimes, a user might want us to connect to the database.
+  # and run the setup script there.
+  # We'll do that! Through the noscript flag.
+  if noscript:
+    log "Connecting to db to run setup SQL script"
+    var db = getDb(cnf)
+    for cmd in parseSqlFile(setupSql):
+      db.exec(sql(cmd))
+    return 0
+  
   let
-    cnf = getConfig(config)
     user = cnf.getDbUser()
     name = cnf.getDbName()
     password = cnf.getDbPass()
@@ -367,6 +378,7 @@ dispatchMulti(
   [db_setup,
     help = {
       "config": "Location to config file",
-      "location": "If specified, onboxctl will save the script to this location instead of echoing it"
+      "location": "If provided, onboxctl will save the script to this location instead of echoing it",
+      "noscript": "If provided, onboxctl will run the setup script through a database connection. *This requires a database and user account*"
     }]
 )
