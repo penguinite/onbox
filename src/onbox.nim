@@ -33,7 +33,8 @@ when not defined(useMalloc):
   log "This build of Onbox was built without -d:useMalloc, and is thus suspectible to a memory leak"
 
 proc exit() {.noconv.} =
-  error "Interrupted by Ctrl+C"
+  quit(0)
+
 # Catch Ctrl+C so we can exit our way.
 setControlCHook(exit)
 
