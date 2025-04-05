@@ -29,7 +29,34 @@ import std/[osproc, times, strformat, strutils]
 # Third-party libraries
 import cligen, rng, iniplus, db_connector/db_postgres
 
-## Utility procs first!
+## Utility stuff first!
+const
+  setupSql = staticRead("assets/setup.sql")
+  purgeSql = staticRead("assets/purge.sql")
+
+proc parseSqlFile(input: string): seq[string] =
+  ## This implements the weird SQL script convention mentioned
+  ## at the top of the `setup.sql` file.
+  ## The main reason being that db.exec() only accepts one
+  ## command at a time.
+  runnableExamples:
+    var db: DbConn # Pretend this is a connection
+    var input = "" # Pretend this is a SQL script
+    for cmd in parseSqlFile(input):
+      db.exec(sql(cmd))
+  var cmd = ""
+  for line in input.splitLines:
+    if line.startsWith("--"):
+      continue
+    if line.isEmptyOrWhitespace() and not cmd.isEmptyOrWhitespace():
+      result.add(cmd)
+      cmd = ""
+      continue
+    cmd.add(line & "\n")
+  
+  # One last check to make sure we're not missing data
+  if cmd != "": 
+    result.add(cmd)
 
 proc exec(cmd: string): string {.discardable.} =
   try:
