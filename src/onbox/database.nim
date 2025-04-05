@@ -66,4 +66,4 @@ proc getDbUser*(config: ConfigTable): string =
 proc getDbPass*(config: ConfigTable): string =
   if existsEnv("ONBOX_DBPASS"):
     return getEnv("ONBOX_DBPASS")
-  return config.getString("db", "pass")
+  return config.getString("db", "password")
