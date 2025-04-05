@@ -1,3 +1,10 @@
+-- This script cannot be passed as-is to db.exec()
+-- We must parse this script, to split every command unto its own.
+-- An empty line signals the end of one command and the beginning of another
+-- For piping to psql however, I don't think this matters.
+-- BUT PLEASE KEEP THE CONVENTION!
+-- ONE COMMAND, FOLLOWED BY AN EMPTY LINE.
+
 -- UTF-8 is best.
 SET client_encoding = 'UTF8';
 
