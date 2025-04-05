@@ -144,7 +144,7 @@ proc getPostText*(db: DbConn, id: string): PostContent =
 proc getNumTotalPosts*(db: DbConn, local = true): int =
   ## A procedure to get the total number of posts. You can choose where or not they should be local-only with the local parameter.
   case local:
-  of true: return len(db.getAllRows(sql("SELECT 0 FROM posts WHERE local = true;")))
+  of true: return len(db.getAllRows(sql("SELECT 0 FROM posts WHERE is_local = true;")))
   of false: return len(db.getAllRows(sql("SELECT 0 FROM posts;")))
 
 proc deletePost*(db: DbConn, id: string) = 
@@ -171,7 +171,7 @@ proc getLocalPosts*(db: DbConn, limit: int = 15): seq[string] =
   ## 
   ## This returns seq[Row], so you might want to pass it on to a constructPost() like proc.
   
-  var sqlStatement = "SELECT id FROM posts WHERE local = TRUE"
+  var sqlStatement = "SELECT id FROM posts WHERE is_local = TRUE"
   if limit != 0:
     sqlStatement.add(" LIMIT " & $limit)
   
