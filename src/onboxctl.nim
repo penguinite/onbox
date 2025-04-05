@@ -238,7 +238,6 @@ proc db_setup(config = "onbox.conf", location = ""): int =
     user = cnf.getDbUser()
     name = cnf.getDbName()
     password = cnf.getDbPass()
-  const setupSql = staticRead("assets/setup.sql")
   var output = fmt"""
 CREATE USER {user} WITH PASSWORD '{password}';
 CREATE DATABASE {name} WITH OWNER {user};
@@ -258,8 +257,9 @@ proc db_purge(config = "onbox.conf"): int =
   ## This command purges the entire database, it removes all tables and all the data within them.
   ## It's quite obvious but this command will erase any data you have, so be careful.
   log "Cleaning everything in database"
-  const purgeSql = staticRead("assets/purge.sql")
-  getConfig(config).getDb().exec(sql(purgeSql))
+  var db = getConfig(config).getDb()
+  for cmd in parseSqlFile(purgeSql):
+    db.exec(sql(cmd))
 
 proc db_docker(config = "onbox.conf", name = "onboxDb", allow_weak_password = false, expose_externally = false, ipv6 = false): int =
   ## This command is mostly used by the Onbox developers, it's nothing but a simple wrapper over the docker command.
