@@ -84,7 +84,7 @@ proc getDomains*(db: DbConn): CountTable[string] =
     result.inc(handle[0])
 
 proc getTotalDomains*(db: DbConn): int =
-  len(db.getAllRows(sql"SELECT DISTINCT ON (domain) FROM users WHERE domain != '';"))
+  len(db.getAllRows(sql"SELECT DISTINCT ON (domain) 0 FROM users WHERE domain != '';"))
 
 proc userIdExists*(db: DbConn, id:string): bool =
   ## A procedure to check if a user exists by id
