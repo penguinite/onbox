@@ -13,17 +13,17 @@ CREATE TABLE IF NOT EXISTS meta (k TEXT UNIQUE NOT NULL, v TEXT);
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     kdf smallint NOT NULL DEFAULT 0, -- See KDF file in docs/db/ folder
-    roles smallint[] NOT NULL DEFAULT 0, -- See Roles file in docs/db/ folder
+    roles smallint[] NOT NULL DEFAULT '{0}', -- See Roles file in docs/db/ folder
     discoverable BOOLEAN NOT NULL DEFAULT false, -- Whether user should be listed publicly or not.
     email_verified BOOLEAN NOT NULL DEFAULT false,
-    handle TEXT UNIQUE NOT NULL, -- The "username"
+    handle TEXT NOT NULL, -- The "username"
     domain TEXT, -- Domain name of a remote user, null for local users
     display TEXT DEFAULT 'New User', -- Display name
     email TEXT,
     bio TEXT, -- Plain-text only
     pass TEXT, -- Password hash
     -- This is a base64 string consisting of 20 chars
-    salt TEXT, 
+    salt TEXT
 );
 
 -- An app is sort of like a session, but for programs.
@@ -102,9 +102,9 @@ CREATE TABLE IF NOT EXISTS boosts (
 CREATE TABLE IF NOT EXISTS tag (
     -- Is tag allowed to show up on trending tab
     trendable BOOLEAN DEFAULT true, 
-    -- Can this tag automatically be linked in a post?
+    -- Can this tag automatically be linked in a post
     usable BOOLEAN DEFAULT true, 
-    -- Does this tag require a review by an admin?
+    -- Does this tag require a review by an admin
     requires_review BOOLEAN DEFAULT false,
     -- Whether a user is **required** to use this tag or other system tags on a post.
     -- This is required for implementing "post categories"
@@ -166,7 +166,7 @@ CREATE TABLE IF NOT EXISTS logins (
 -- Auth codes are to be deleted after a day or as soon as an app is verified.
 CREATE TABLE IF NOT EXISTS auth_codes (
     -- Auth codes are generated same as session IDs
-    id TEXT PRIMARY UNIQUE KEY NOT NULL, -- The code itself
+    id TEXT PRIMARY KEY UNIQUE NOT NULL, -- The code itself
     uid UUID NOT NULL, -- Stands for user ID
     cid UUID NOT NULL, -- Stands for client ID
     scopes TEXT[] DEFAULT '{read}',
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS oauth_tokens (
     -- Yes, I understand that TEXT is not exactly the best datatype for a primary key.
     -- And UUIDv4 (which gen_random_uuid() generates) are completely random
     -- But I didn't want to sacrifice security, UUIDs seemed too limited for me.
-    id TEXT PRIMARY UNIQUE KEY NOT NULL, -- The token itself
+    id TEXT PRIMARY KEY UNIQUE NOT NULL, -- The token itself
     cid UUID,
     -- An app might not be associated with a user, 
     -- in which case, This column is null.
@@ -230,10 +230,21 @@ CREATE TABLE IF NOT EXISTS tag_follows (
 );
 
 -- Add a null user for when users are deleted and we need to re-assign their posts.
-INSERT INTO users VALUES ('null', 'Person', 'null', '', 'Deleted User', TRUE, '', '', '', '', 1000, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE) ON CONFLICT DO NOTHING;
+INSERT INTO users VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    -32768,
+    '{-1,6}', -- Frozen and no automatic followers
+    FALSE,
+    FALSE,
+    'null',
+    '', -- No domain, as the null user is local to every instance
+    'Deleted User',
+    -- No email, bio, password or salt.
+    '', '', '', ''
+) ON CONFLICT DO NOTHING;
 
 -- Make a null app client
--- INSERT INTO apps VALUES ('0', '0', 'read', '', '', '', '1970-01-01') ON CONFLICT DO NOTHING;
+--INSERT INTO apps VALUES ('0', '0', 'read', '', '', '', '1970-01-01') ON CONFLICT DO NOTHING;
 
 -- Create an index on the post table to speed up post by user searches.
 --CREATE INDEX IF NOT EXISTS snd_idx ON posts USING btree (sender);
