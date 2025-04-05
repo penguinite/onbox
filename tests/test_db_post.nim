@@ -4,11 +4,6 @@ import std/[unittest], rng
 # Let's get started!
 var dbcon = connectToDb()
 
-echo "Dropping everything already in db"
-dbcon.cleanDb()
-echo"Setting up db again"
-dbcon.setup()
-
 # Add the fake users.
 for user in genFakeUsers():
   dbcon.addUser(user)

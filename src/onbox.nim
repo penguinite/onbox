@@ -69,17 +69,6 @@ if config.getBoolOrDefault("user", "require_verification",false) and config.getB
 
 log "Opening database at ", config.getDbHost()
 
-# Initialize database
-try:
-  discard setup(
-    config.getDbName(),
-    config.getDbUser(),
-    config.getDbHost(),
-    config.getDbPass()
-  )
-except CatchableError as err:
-  error "Couldn't initalize the database: ", err.msg
-
 var router: Router
 
 # Add API & web routes

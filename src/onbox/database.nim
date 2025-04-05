@@ -24,7 +24,7 @@
 import std/os
 
 # Third party libraries
-import waterpark/postgres, db_connector/db_postgres, iniplus
+import iniplus
 
 ## In the past, we used an archaic and sorta messed up system for making
 ## the tables, these have been replaced with a plain old SQL script that gets read
@@ -33,20 +33,6 @@ import waterpark/postgres, db_connector/db_postgres, iniplus
 ## Unlike Pleroma, Onbox's config is entirely stored in the config file.
 ## There is no way to configure Onbox from the database alone.
 ## So we do not need a tool to generate SQL for a specific instance.
-
-proc setup*(name, user, host, password: string,schemaCheck: bool = true): DbConn =
-  ## setup() is called whenever you want to initialize a database schema.
-  ## It does not merely launch a database connection, it also makes sure that every table needed is there.
-  result = open(host, user, password, name)
-  const setupSql = staticRead("assets/setup.sql")
-  result.exec(sql(setupSql))
-
-proc purge*(db: DbConn) =
-  ## Purges all of the data, tables and whatnot from the database.
-  ## 
-  ## Obviously a destructive procedure, don't run carelessly...
-  const purgeSql = staticRead("assets/purge.sql")
-  db.exec(sql(purgeSql))
 
 proc getDbHost*(config: ConfigTable): string =
   if existsEnv("ONBOX_DBHOST"):

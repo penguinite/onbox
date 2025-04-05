@@ -6,10 +6,12 @@ import std/[unittest], iniplus, db_connector/db_postgres
 # Let's get started!
 var dbcon = connectToDb()
 
-echo "Dropping everything already in db"
-dbcon.cleanDb()
-echo"Setting up db again"
-dbcon.setup()
+# TODO: Rewrite the database tests so that
+# they do not need to delete and re-create
+# testing data...
+#
+# Or, in other words, make them work together.
+# They're a *test suite* not an individual test.
 
 proc findMismatch(u, u2: User) = 
   for fld, val in u.fieldPairs:
