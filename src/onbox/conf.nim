@@ -30,6 +30,7 @@ proc getConfigFilename*(c = "onbox.conf"): string =
     proc example_command(config = "onbox.conf"): int =
       let conf = parseFile(getConfigFilename(config))
       return 0
+  result = c
   if existsEnv("ONBOX_CONFIG"):
     result = getEnv("ONBOX_CONFIG")
 
