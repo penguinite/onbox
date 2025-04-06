@@ -83,7 +83,7 @@ proc getDb(c: ConfigTable): DbConn =
 
 ## Then the commands themselves!!
 
-proc user_new*(args: seq[string], admin = false, moderator = false, approved = false, display = "Default Name", bio = "", config = "onbox.conf"): int =
+proc user_new*(args: seq[string], admin = false, moderator = false, unapproved = false, display = "Default Name", bio = "", config = "onbox.conf"): int =
   ## This command creates a new user and adds it to the database.
   ## It uses the following format: NAME PASSWORD
   ## 
@@ -91,14 +91,13 @@ proc user_new*(args: seq[string], admin = false, moderator = false, approved = f
   ## 
   ## The users created by this command are approved by default.
   ## Although that can be changed with the require-approval parameter
-  if len(args) != 3:
+  if len(args) != 2:
     error "Invalid number of arguments, expected 3."
 
   # Then we check if our essential args is empty.
   # If it is, then we error out
-  for i in 0..1:
-    if args[i].isEmptyOrWhitespace():
-      error "Required argument is either empty or non-existent."
+  if isEmptyOrWhitespace(args[0]) or isEmptyOrWhitespace(args[1]):
+    error "Required argument is either empty or non-existent."
 
   let
     cnf = getConfig(config)
@@ -114,45 +113,49 @@ proc user_new*(args: seq[string], admin = false, moderator = false, approved = f
   user.name = display
   user.bio = bio
 
+  user.roles.add(0)
   if admin: user.roles.add(3)
   if moderator: user.roles.add(2)
-  if approved: user.roles.add(1)
+
+  # If the client has specified the user
+  # *must* be unapproved or the config 
+  # file requires that every user is approved
+  # then we don't give them the approved role.
+  #
+  # This means they are effectively frozen
+  # until the administrators approve them.
+  if not unapproved or not cnf.getBoolOrDefault("user", "require_approval", false):
+    user.roles.add(1)
     
-  try:
-    db.addUser(user)
-  except CatchableError as err:
-    error "Failed to insert user: ", err.msg
+  db.addUser(user)
   
   log "Successfully inserted user"
   echo "username: ", user.handle
   echo "password: ", args[1]
 
-proc user_delete*(handle: string, purge = false, config = "onbox.conf"): int =
+proc user_delete*(args: seq[string], purge = false, config = "onbox.conf"): int =
   ## This command deletes a user from the database, you must supply a handle.
   let db = getConfig(config).getDb()
     
   var domain = ""
   # Figure out the domain (if it has one)
-  if '@' in handle:
-    domain = handle.split('@')[1]
+  if '@' in args[0]:
+    domain = args[0].split('@')[1]
 
-  if not db.userHandleExists(handle, domain):
-    error "User \"", handle, "\" doesn't exist, thus, can't delete."
+  if not db.userHandleExists(args[0], domain):
+    error "User \"", args[0], "\" doesn't exist, thus, can't delete."
 
   # Try to convert the thing we received into an ID.
   # So it's easier to handle
-  var id = db.getIdFromHandle(handle, domain)
+  var id = db.getIdFromHandle(args[0], domain)
     
   # The `null` user is important.
   # We simply cannot delete it otherwise we will be in database hell.
-  if id == "null" or handle == "null":
+  if id == "null" or args[0] == "null":
     error "Deleting the null user is not allowed."
 
   # Now! Delete the user
-  try:
-    db.deleteUser(id)
-  except CatchableError as err:
-    error "Failed to delete user: ", err.msg
+  db.deleteUser(id)
 
   # If it's ok to put extra strain on the db
   # and actually delete the posts made by this user
@@ -335,7 +338,7 @@ dispatchMulti(
     help = {
       "admin": "Make the user an administrator",
       "moderator": "Make the user a moderator",
-      "approved": "Approve the user",
+      "unapproved": "Forces administrator to approve user first",
       "display": "Specifies the display name for the user",
       "bio": "Specifies the bio for the user",
       "config": "Location to config file"
