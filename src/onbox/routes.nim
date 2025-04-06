@@ -112,12 +112,10 @@ proc formParamExists*(fe: FormEntries, param: string): bool =
 
 proc fetchSessionCookie*(req: Request): string = 
   ## Fetches the session cookie (if it exists) from a request.
-  let data = req.headers["Cookie"].smartSplit('=')
-  var i = 0
-  for x in data:
-    case x:
-    of "session": return data[i]
-    else: inc i
+  var flag = false
+  for x in req.headers["Cookie"].smartSplit('='):
+    if flag: return x
+    if x == "session": flag = true
 
 proc hasSessionCookie*(req: Request): bool =
   ## Checks if the request has a Session cookie for authorization.
