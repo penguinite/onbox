@@ -26,27 +26,30 @@ import onbox/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_tag
 import std/[tables, strutils, times]
 
 # From nimble/other sources
-import mummy, temple, waterpark, waterpark/postgres, iniplus
+import mummy, waterpark, waterpark/postgres, iniplus
+
+template renderError(err: string) =
+  req.respond(400, headers, templateWithAsset("signin.html", {"message_type": "error", "message": err}.toTable))
+  return
+
+template renderSuccess(msg: string, code = 200) =
+  req.respond(code, headers, templateWithAsset("signin.html", {"message_type": "success", "message": msg}.toTable))
+  return
 
 proc signInGet*(req: Request) =
-  var headers = createHeaders("text/html")
   var login = ""
-  if req.hasSessionCookie(): login = "true"
-  req.respond(200, headers,templateify(getBuiltinAsset("signin.html"), {"login": login}.toTable))
+  if req.hasSessionCookie():
+    login = "true"
+  req.respond(200, createHeaders("text/html"), templateWithAsset("signin.html", {"login": login}.toTable))
 
 proc signInPost*(req: Request) =
   var headers = createHeaders("text/html")
 
-  template renderError(err: string) =
-    req.respond(400, headers, templateWithAsset("signin.html", {"message_type": "error", "message": err}))
-    return
-
-  template renderSuccess(msg: string, code = 200) =
-    req.respond(code, headers, templateWithAsset("signin.html", {"message_type": "success", "message": msg}))
-    return
-
   if req.hasSessionCookie():
-    renderError("You are already logged in.")
+    # Finish the request, as the user might be trying
+    # to trigger a redirect or something
+    # and they are already logged in.
+    renderError("Already logged in")
 
   var fm = req.unrollForm()
 

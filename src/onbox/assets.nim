@@ -96,8 +96,8 @@ proc getHeader*(config: ConfigTable, user_id: string): string =
       "Unknown media storage type: " & config.getString("storage", "type")
     )
 
-proc templateWithAsset*(asset: string, strtab: openArray[(string, string)]): string =
+proc templateWithAsset*(asset: string, data: Table[string, string] = initTable[string, string]()): string =
   templateify(
-    getBuiltinAsset("signin.html"),
-    strtab.toTable
+    getBuiltinAsset(asset),
+    data, @[] # No attributes...
   )
