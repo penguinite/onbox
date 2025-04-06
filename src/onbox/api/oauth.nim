@@ -81,8 +81,7 @@ proc renderAuthForm(req: Request, scopes: seq[string], client_id, redirect_uri: 
     )
   )
 
-proc redirectToLogin*(req: Request, client, redirect_uri: string, scopes: seq[string], force_login: bool) =
-  var headers: HttpHeaders
+template redirectToLogin*(req: Request, headers: var HttpHeaders, client, redirect_uri: string, scopes: seq[string], force_login: bool) =
   # If the client has requested force login then remove the session cookie.
   if force_login:
     headers["Set-Cookie"] = "session=\"\"; path=/; Max-Age=0"
@@ -91,8 +90,10 @@ proc redirectToLogin*(req: Request, client, redirect_uri: string, scopes: seq[st
     let url = realURL(config)
     headers["Location"] = url & "auth/sign_in/?return_to=" & encodeQueryComponent("$#oauth/authorize?response_type=code&client_id=$#&redirect_uri=$#&scope=$#&lang=en" % [url, client, redirect_uri, scopes.join(" ")])
   req.respond(303, headers, "")
+  return
 
 proc oauthAuthorizeGET*(req: Request) =
+  var headers = createHeaders("application/json")
   # If response_type exists
   if not req.queryParamExists("response_type"):
     respJsonError("Missing required field: response_type")
@@ -105,19 +106,18 @@ proc oauthAuthorizeGET*(req: Request) =
   if not req.queryParamExists("client_id"):
     respJsonError("Missing required field: response_type")
 
-  # Check if client_id is associated with a valid app
-  dbPool.withConnection db:
-    if not db.clientExists(req.queryParams["client_id"]):
-      respJsonError("Client_id isn't registered to a valid app.")
-  var client_id = req.queryParams["client_id"]
-  
   # If redirect_uri exists
   if not req.queryParamExists("redirect_uri"):
     respJsonError("Missing required field: redirect_uri")
   var redirect_uri = htmlEscape(req.queryParams["redirect_uri"])
 
-  # Check if redirect_uri matches the redirect_uri for the app
+  # Check if client_id is associated with a valid app
+  var client_id = req.queryParams["client_id"]
   dbPool.withConnection db:
+    if not db.clientExists(client_id):
+      respJsonError("Client_id isn't registered to a valid app.")
+
+    # Check if redirect_uri matches the redirect_uri for the app
     if redirect_uri notin db.getClientUris(client_id):
       respJsonError("The redirect_uri used doesn't match the one provided during app registration")
 
@@ -154,17 +154,16 @@ proc oauthAuthorizeGET*(req: Request) =
   # Check for authorization or "force_login" parameter
   # If auth isnt present or force_login is true then redirect user to the login page
   if not req.hasSessionCookie() or force_login:
-    req.redirectToLogin(client_id, redirect_uri, scopes, force_login)
-    return
+    req.redirectToLogin(headers, client_id, redirect_uri, scopes, force_login)
 
   dbPool.withConnection db:
     if not db.sessionExists(req.fetchSessionCookie()):
-      req.redirectToLogin(client_id, redirect_uri, scopes, force_login)
-      return
+      req.redirectToLogin(headers, client_id, redirect_uri, scopes, force_login)
 
   req.renderAuthForm(scopes, client_id, redirect_uri)
 
 proc oauthAuthorizePOST*(req: Request) =
+  var headers = createHeaders("application/json")
   let fm = req.unrollForm()
 
   # If response_type exists
@@ -226,13 +225,11 @@ proc oauthAuthorizePOST*(req: Request) =
   # Check for authorization or "force_login" parameter
   # If auth isnt present or force_login is true then redirect user to the login page
   if not req.hasSessionCookie() or force_login:
-    req.redirectToLogin(client_id, redirect_uri, scopes, force_login)
-    return
+    req.redirectToLogin(headers, client_id, redirect_uri, scopes, force_login)
   
   dbPool.withConnection db:
     if not db.sessionExists(req.fetchSessionCookie()):
-      req.redirectToLogin(client_id, redirect_uri, scopes, force_login)
-      return
+      req.redirectToLogin(headers, client_id, redirect_uri, scopes, force_login)
 
   if not fm.formParamExists("action"):
     req.renderAuthForm(scopes, client_id, redirect_uri)
