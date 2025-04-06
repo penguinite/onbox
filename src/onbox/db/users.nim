@@ -225,19 +225,19 @@ proc deleteUser*(db: DbConn, id: string) =
   # Delete stuff no one will ever see
   db.exec(sql"DELETE FROM auth_codes WHERE uid = ?;", id)
   db.exec(sql"DELETE FROM email_codes WHERE uid = ?;", id)
-  db.exec(sql"DELETE FROM oauth_tokens WHERE uid = ?;", id)
-  db.exec(sql"DELETE FROM tag_follows WHERE follower = ?;", id)
-  db.exec(sql"DELETE FROM logins WHERE uid = ?;", id)
   db.exec(sql"DELETE FROM fields WHERE uid = ?;", id)
+  db.exec(sql"DELETE FROM tag_follows WHERE follower = ?;", id)
+  db.exec(sql"DELETE FROM user_follows WHERE follower = ?;", id)
+  db.exec(sql"DELETE FROM user_follows WHERE following = ?;", id)
 
   # For the stuff we suspect to be heavy, we will just
   # mark the user's data as "null" and it'll all be deleted at some point later.
-  db.exec(sql"UPDATE user_follows SET follower = 'null' WHERE follower = ?;", id)
-  db.exec(sql"UPDATE user_follows SET following = 'null' WHERE following = ?;", id)
-  db.exec(sql"UPDATE reactions SET uid = 'null' WHERE uid = ?;", id)
-  db.exec(sql"UPDATE boosts SET uid = 'null' WHERE uid = ?;", id)
-  db.exec(sql"UPDATE bookmarks SET uid = 'null' WHERE uid = ?;", id)
-  db.exec(sql"UPDATE posts SET sender = 'null' WHERE sender = ?;", id)
+  db.exec(sql"UPDATE oauth_tokens SET uid = '00000000-0000-0000-0000-000000000000' WHERE uid = ?;", id)
+  db.exec(sql"UPDATE logins SET uid = '00000000-0000-0000-0000-000000000000' WHERE uid = ?;", id)
+  db.exec(sql"UPDATE reactions SET uid = '00000000-0000-0000-0000-000000000000' WHERE uid = ?;", id)
+  db.exec(sql"UPDATE boosts SET uid = '00000000-0000-0000-0000-000000000000' WHERE uid = ?;", id)
+  db.exec(sql"UPDATE bookmarks SET uid = '00000000-0000-0000-0000-000000000000' WHERE uid = ?;", id)
+  db.exec(sql"UPDATE posts SET sender = '00000000-0000-0000-0000-000000000000' WHERE sender = ?;", id)
 
-  # Finally delete the stuff we don't need
+  # Finally delete the user
   db.exec(sql"DELETE FROM users WHERE id = ?;", id)
