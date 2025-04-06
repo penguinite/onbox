@@ -20,23 +20,24 @@ after clean:
     if dirExists(dir): rmDir(dir)
 
 task all, "Builds everything with versioning embedded.":
-  exec "nimble -d:oxVersion=\"" & version & " - " & gorgeEx("git rev-parse HEAD^")[0] & "\" -d:release build"
+  exec "nimble -d:version=\"" & version & " - " & gorgeEx("git rev-parse HEAD^")[0] & "\" -d:release build"
 
 from std/os import commandLineParams
 task ctl, "Shorthand for nimble run onboxctl":
   proc cleanArgs(): seq[string] =
     commandLineParams()[commandLineParams().find("ctl") + 1..^1]
-
-  if dirExists(binDir) and fileExists(binDir & "/onboxctl"):
-    exec binDir & "/onboxctl " & cleanArgs().join(" ")
-    return
-    
-  if fileExists("onboxctl"):
-    exec "./onboxctl " & cleanArgs().join(" ")
-    return
-
-  exec("nimble -d:release build onboxctl")
+  exec("nimble build onboxctl")
   exec(binDir & "/onboxctl " & cleanArgs().join(" "))
+
+task dev, "For running the internal developer tool.":
+  proc cleanArgs(): seq[string] =
+    commandLineParams()[commandLineParams().find("dev") + 1..^1]
+  exec("nim c -o:$1/onboxdev $2/onboxdev" % [binDir, srcDir])
+  if not dirExists(binDir):
+    mkDir(binDir)
+  if fileExists(srcDir & "/onboxdev"):
+    mvFile(srcDir & "/onboxdev", binDir & "/onboxdev")
+  exec(binDir & "/onboxdev " & cleanArgs().join(" "))
 
 task musl, "A task to build a binary linked with musl rather than glibc":
   exec("nimble build -d:musl -d:release --opt:speed")

@@ -16,5 +16,8 @@ pothole_envs
 potholectl
 onbox_envs
 onboxctl
+onboxdev
+deploy.sh
+a.nim
 .sass-cache
 .testGuard*
