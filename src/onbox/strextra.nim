@@ -129,7 +129,14 @@ func `!$`*(s: openArray[string]): string =
   ## suitable for inserting into a database.
   for i in s:
     result.add('\"' & basicEscape(i) & "\",")
-  result = '{' & result[0..^2] & '}' 
+  
+  # Bug: Exception occurs when trying
+  # trim the last character of an empty string.
+  # Fix: Add a length check :-)
+  if len(result) != 0:
+    result = result[0..^2]
+
+  result = '{' & result & '}' 
 
 func toStrSeq*(s: string): seq[string] =
   ## Converts a postgres string array into a real sequence.
@@ -167,7 +174,14 @@ func `!$`*(s: openArray[int]): string =
   ## suitable for inserting into a database.
   for i in s:
     result.add($i & ",")
-  result = '{' & result[0..^2] & '}' 
+
+  # Bug: Exception occurs when trying
+  # trim the last character of an empty string.
+  # Fix: Add a length check :-)
+  if len(result) != 0:
+    result = result[0..^2]
+
+  result = '{' & result & '}' 
 
 func toIntSeq*(s: string): seq[int] =
   ## Converts a postgres integer array into a real sequence.
