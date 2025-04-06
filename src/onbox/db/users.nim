@@ -117,7 +117,7 @@ proc getUserSalt*(db: DbConn, user_id: string): string =
   db.getRow(sql"SELECT salt FROM users WHERE id = ?;", user_id)[0]
 
 proc getUserPass*(db: DbConn, user_id: string): string = 
-  db.getRow(sql"SELECT password FROM users WHERE id = ?;", user_id)[0]
+  db.getRow(sql"SELECT pass FROM users WHERE id = ?;", user_id)[0]
 
 proc userHasRole*(db: DbConn, user_id: string, role: int): bool =
   db.getRow(
