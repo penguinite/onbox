@@ -91,15 +91,14 @@ proc hasScope*(db: DbConn, id:string, scope: string): bool =
 
 proc hasScopes*(db: DbConn, id:string, scopes: seq[string]): bool =
   ## Checks if an app has a bunch of scopes,
-  ## a tiny bit more efficient than plain old hasScope() for bulk checking
-  result = false
+  ## a tiny bit more efficient database-wise than plain old hasScope() for bulk checking
+  result = true
   let appScopes = db.getClientScopes(id)
 
   for scope in scopes:
-    for appScope in appScopes:
-      if appScope == scope or appScope == scope.returnStartOrScope():
-        result = true
-        break
+    if scope notin appScopes and scope.returnStartOrScope() notin appScopes:
+      result = false
+      break
 
 proc verifyScope*(scope: string): bool =
   ## Just verifies if a scope is valid or not.
