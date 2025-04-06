@@ -111,19 +111,23 @@ proc v1Apps*(req: Request) =
     respJsonError("Unknown Content-Type.")
 
   # Parse scopes
-  var scopes = "read"
-  if req_scopes != scopes:
+  var scopes = @["read"]
+
+  # If the client has specified a set of scopes
+  # then, we will parse their list.
+  if req_scopes notin scopes:
+    scopes = @[]
     for scope in req_scopes.split(" "):
-      if not scope.verifyScope():
+      if not verifyScope(scope):
         respJsonError("Invalid scope: " & scope)
-    scopes = req_scopes
-  
+      scopes.add(scope)
+
   var client_id, client_secret: string
   dbPool.withConnection db:
     client_id = db.createClient(
       client_name,
       website,
-      @[scopes], # TODO: Implement support for multiple scopes and redirect_uris
+      scopes,
       @[redirect_uris]
     )
     client_secret = db.getClientSecret(client_id)
@@ -135,7 +139,7 @@ proc v1Apps*(req: Request) =
     "redirect_uri": redirect_uris,
     "client_id": client_id,
     "client_secret": client_secret,
-    "scopes": scopes.split(" ") # Non-standard: Undocumented.
+    "scopes": scopes # Non-standard: Undocumented.
   }
 
   req.respond(200, createHeaders("application/json"), $(result))
