@@ -2,18 +2,16 @@
 
 version       = "0.0.2"
 author        = "penguinite"
-description   = "A MastoAPI backend server and a general-purpose social media/microblogging library"
+description   = "A simple lightweight MastoAPI backend server"
 license       = "AGPL-3.0-or-later"
+bin           = @["onbox","onboxctl","onboxdev"]
 srcDir        = "src"
 binDir        = "build"
-bin           = @["onbox","onboxctl"]
 backend       = "cpp"
 
-## The following options are required
-switch("stackTrace","on") # For better debugging
-switch("mm", "orc") # Required by mummy
-switch("d", "useMalloc") # Required for fixing memory leak, git blame and see commit msg.
-switch("threads","on") # Required by mummy
+from std/os import commandLineParams
+proc cleanArgs(name = "ctl"): seq[string] =
+  commandLineParams()[commandLineParams().find(name) + 1..^1]
 
 after clean:
   for dir in ["static/", "uploads/", binDir]:
@@ -22,22 +20,11 @@ after clean:
 task all, "Builds everything with versioning embedded.":
   exec "nimble -d:version=\"" & version & " - " & gorgeEx("git rev-parse HEAD^")[0] & "\" -d:release build"
 
-from std/os import commandLineParams
 task ctl, "Shorthand for nimble run onboxctl":
-  proc cleanArgs(): seq[string] =
-    commandLineParams()[commandLineParams().find("ctl") + 1..^1]
-  exec("nimble build onboxctl")
-  exec(binDir & "/onboxctl " & cleanArgs().join(" "))
+  exec("nimble run onboxctl " & cleanArgs("ctl").join(" "))
 
 task dev, "For running the internal developer tool.":
-  proc cleanArgs(): seq[string] =
-    commandLineParams()[commandLineParams().find("dev") + 1..^1]
-  exec("nim c -o:$1/onboxdev $2/onboxdev" % [binDir, srcDir])
-  if not dirExists(binDir):
-    mkDir(binDir)
-  if fileExists(srcDir & "/onboxdev"):
-    mvFile(srcDir & "/onboxdev", binDir & "/onboxdev")
-  exec(binDir & "/onboxdev " & cleanArgs().join(" "))
+  exec("nimble run onboxctl " & cleanArgs("dev").join(" "))
 
 task musl, "A task to build a binary linked with musl rather than glibc":
   exec("nimble build -d:musl -d:release --opt:speed")

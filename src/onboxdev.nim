@@ -17,10 +17,10 @@
 # onboxdev:
 ## A developer-focused convenience tool.
 # From Onbox:
-import onbox/[database, shared, conf]
+import onbox/[database, shared, conf, debug], onbox/db/[users, posts]
 
 # Standard library
-import std/[strutils, osproc, rdstdin]
+import std/[strutils, osproc]
 
 # Third-party libraries
 import cligen, iniplus, db_connector/db_postgres
@@ -61,32 +61,20 @@ proc shell(name = "onboxDb", config = "onbox.conf"): int =
     cnf.getDbName()
   ]
 
-proc test_user(name = "onboxDb", config = "onbox.conf"): int =
-  ## Assuming a db_docker environment,
-  ## launch a psql shell in the database.
-  let
-    cnf = getConfig(config)
-    db = getDb(config)
+proc test_data(config = "onbox.conf"): int =
+  ## Populates a server with a bunch of testing data
+  let db = getConfig(config).getDb()
 
-  var user = newUser(
-    handle = "test",
-    local = true,
-    password = "pass"
-  )
-
-  user.email = ""
-  user.name = display
-  user.bio = bio
-  user.roles = @[0,1,2,3]
-    
-  db.addUser(user)
+  for user in genFakeUsers():
+    echo "Inserting user \"", user.handle, "\""
+    db.addUser(user)
   
-  echo "Created a test user!"
-  echo "Username: test"
-  echo "Password: pass"
-  echo "Beware: The user has full admin and mod control over the instance."
+  for post in genFakePosts():
+    echo "Inserting post with ID: ", post.id
+    db.addPost(post)
+  return 0
 
 dispatchMulti(
-  [shell, help = {"name": "Name of database container", "config" = "Location to config file"}],
-  [test_user, help = {"config" = "Location to config file"}]
+  [shell, help = {"name": "Name of database container", "config": "Location to config file"}],
+  [test_data, help = {"config": "Location to config file"}]
 )

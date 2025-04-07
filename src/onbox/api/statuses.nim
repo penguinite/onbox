@@ -26,6 +26,25 @@ import std/[json, strutils]
 # From nimble/other sources
 import mummy, waterpark/postgres, iniplus
 
+proc postStatus*(req: Request) =
+  var token, user = ""
+  try:
+    token = req.verifyClientExists()
+    req.verifyClientScope(token, "write:statuses")
+    user = req.verifyClientUser(token)
+  except: return
+
+  var post = newPost()
+  post.sender = user
+  
+  # Check for any unsupported features
+  # Error out if an unsupported feature is given.
+  case req.getContentType():
+  of "application/json", "application/x-www-form-urlencoded":
+    discard
+  else: discard
+
+  respJsonError("TODO: To Be Implemented")
 
 proc boostStatus*(req: Request) =
   # NONSTANDARD: As far as I am aware, boosts have an ID in Mastodon internally.
