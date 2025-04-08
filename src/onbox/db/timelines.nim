@@ -49,8 +49,8 @@ proc getHomeTimeline*(db: DbConn, user: string, limit: var int = 20): seq[string
     last_date = now().utc
     flag = false
   while len(result) < limit and flag == false:
-    for row in db.getAllRows(sql"SELECT id,sender,written FROM posts WHERE date(written) >= ? ORDER BY written ASC LIMIT ?", !$(last_date), $limit):
-      if row[1] in following:
+    for row in db.getAllRows(sql"SELECT id,sender,created FROM posts WHERE date(created) >= ? ORDER BY created ASC LIMIT ?", !$(last_date), $limit):
+      if row[1] in following or row[1] == user:
         result.add row[0]
         continue
       
