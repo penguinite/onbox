@@ -78,16 +78,15 @@ type
       media_id*: string
 
   Post* = object
-    modified*: bool # A boolean indicating whether the Post was edited or not.
-    local*:bool # A boolean indicating whether or not the post came from the local server or external servers
     id*: string # A unique id.
     sender*: string # Basically, the person sending the message (Or more specifically, their ID.)
     replyto*: string # Resource/Post person was replying to,  
     client*: string # A string containing the client id used for writing this post.
-    tags*: seq[string] # Set of hashtags used
-    recipients*: seq[string] # A sequence of recipient's handles.
-    level*: PostPrivacyLevel # The privacy level of the post
     written*: DateTime # A timestamp of when the Post was created
+    level*: PostPrivacyLevel # The privacy level of the post
+    local*:bool # A boolean indicating whether or not the post came from the local server or external servers
+    recipients*: seq[string] # A sequence of recipient's handles.
+    tags*: seq[string] # Set of hashtags used
     content*: seq[PostContent] # The actual content of the post
     reactions*: Table[string, seq[string]] # A sequence of reactions this post has.
     boosts*: Table[string, seq[string]] # A sequence of id's that have boosted this post. (Along with what level)
