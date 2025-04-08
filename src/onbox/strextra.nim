@@ -144,7 +144,7 @@ func toStrSeq*(s: string): seq[string] =
     tmp = ""
     backslash = false
     inString = false
-  for ch in s[1..^2]:
+  for ch in s:
     # We are dealing with: "a,",b
     if backslash:
       tmp.add(ch)
@@ -152,7 +152,6 @@ func toStrSeq*(s: string): seq[string] =
       continue
 
     if inString:
-
       case ch:
       of '"': inString = false
       of '\\': backslash = true
@@ -161,6 +160,7 @@ func toStrSeq*(s: string): seq[string] =
       case ch:
       of '"': inString = true
       of '\\': backslash = true
+      of '{','}': continue
       of ',':
         result.add tmp
         tmp = ""
@@ -186,10 +186,11 @@ func `!$`*(s: openArray[int]): string =
 func toIntSeq*(s: string): seq[int] =
   ## Converts a postgres integer array into a real sequence.
   var tmp = ""
-  for ch in s[1..^2]:
+  for ch in s:
     # We are dealing with: 1,2,3
     case ch:
     of ',': result.add parseInt(tmp)
+    of '{','}': continue
     else: tmp.add(ch)
 
   if tmp != "":
