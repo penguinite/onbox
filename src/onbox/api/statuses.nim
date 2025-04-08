@@ -35,6 +35,9 @@ proc postStatus*(req: Request) =
   #     - Polls
   #     - Sensitivity & Spoiler-text (aka. Content warnings)
   #     - Language
+  #
+  # And some parts of it could be more well-optimized but I think
+  # this works pretty well!
 
   var token, user = ""
   try:
