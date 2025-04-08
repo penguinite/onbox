@@ -46,16 +46,7 @@ proc postStatus*(req: Request) =
     user = req.verifyClientUser(token)
   except: return
 
-  # We could probably implement a basic type of idempotency
-  # without any extra database tables or overhead.
-  # Simply by checking if a post with the same content
-  # was made by the same user in the last hour.
-  if req.headers.contains("Idempotency-Key"):
-    respJson("Idempotency-Key is not supported yet")
-
-
   var post = newPost()
-  post.modified = false
   post.local = true
   post.sender = user
   post.written = now().utc
@@ -65,10 +56,6 @@ proc postStatus*(req: Request) =
   case req.getContentType():
   of "application/x-www-form-urlencoded":
     let fm = req.unrollForm()
-    for feature in ["media_ids[]", "poll[options][]", "poll[expires_in]", "poll[multiple]", "poll[hide_totals]", "sensitive", "spoiler_text", "language", "scheduled_at"]:
-      if fm.formParamExists(feature):
-        respJsonError("Unsupported feature: " & feature)
-    
     if fm.formParamExists("in_reply_to_id"):
       post.replyto = fm["in_reply_to_id"]
     
@@ -85,10 +72,6 @@ proc postStatus*(req: Request) =
   of "application/json":
     let json = parseJson(req.body)
 
-    for feature in ["media_ids", "poll", "sensitive", "spoiler_text", "scheduled_at", "language"]:
-      if json.hasKey(feature):
-        respJsonError("Unsupported feature: " & feature)
-    
     if json.hasValidStrKey("in_reply_to_id"):
       post.replyto = json["in_reply_to_id"].getStr()
     
@@ -118,12 +101,21 @@ proc postStatus*(req: Request) =
       # if this post is a reply to another
       # then check that the original exists
       if post.replyto != "" and not db.postIdExists(post.replyto):
-        respJsonError("Post in in_reply_to_id doens't exist")
+        respJsonError("Post in in_reply_to_id doesn't exist")
       
       post.tags = parseHashtags(post.content[0].text)
       for tag in post.tags:
         if not db.tagExists(tag):
           db.createTag(tag)
+
+      # If the client has requested an idempotency check then we'll perform one.
+      if req.headers.contains("Idempotency-Key"):
+        # We could probably implement a basic type of idempotency
+        # without any extra database tables or overhead.
+        # Simply by checking if a post with the same content
+        # was made by the same user in the last hour.
+        if db.idempotencyCheck(user, post.content[0].text):
+          respJsonError("Post was already made, failed idempotency check.")
 
       # Insert post
       db.addPost(post)

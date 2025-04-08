@@ -224,3 +224,9 @@ proc canSeePost*(db: DbCOnn, uid, pid: string, level: PostPrivacyLevel): bool =
     # For now, we will check if the user has been directly mentioned in the post they
     # want to see.
     return uid in db.getRecipients(pid)
+
+proc idempotencyCheck*(db: DbConn, user, content: string): bool =
+  ## Returns true if a user has written a post with this content
+  ## an hour ago.
+  ## TODO: THIS IS NOT TRUE IDEMPOTENCY!!!
+  return false #TODO :Implemented
