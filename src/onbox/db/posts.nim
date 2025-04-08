@@ -67,7 +67,7 @@ proc newPost*(): Post =
 proc addPost*(db: DbConn, post: Post) =
   ## A function to add a post into the database
   db.exec(
-    sql"INSERT INTO posts VALUES (?,?,?,?,?,?,?,?,?);",
+    sql"INSERT INTO posts VALUES (?,?,NULLIF(?,'')::UUID,NULLIF(?,'')::UUID,?,?,?,?,?);",
     post.id,
     post.sender,
     post.replyto,
