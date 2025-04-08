@@ -107,15 +107,14 @@ type
   # User data type.
   User* = object
     id*: string # An unique ID that represents the actual user
+    kdf*: KDF # Key derivation function version
     roles*: seq[int] # Roles associated with this user
+    discoverable*: bool # A boolean indicating if the user is discoverable
+    email_verified*: bool # A boolean indicating if the user has verified their email
     handle*: string # A string containing the user's actual username 
     domain*: string # If a user is federated, then this string will contain their residency. For local users this is empty.
     name*: string # A string containing the user's display name
-    local*: bool # A boolean indicating if this user is from this instance 
-    discoverable*: bool # A boolean indicating if the user is discoverable
-    email_verified*: bool # A boolean indicating if the user has verified their email
     email*: string # A string containing the user's email
     bio*: string # A string containing the user's biography
     password*: string # A string to store a hashed + salted password 
     salt*: string # The actual salt with which to hash the password.
-    kdf*: KDF # Key derivation function version

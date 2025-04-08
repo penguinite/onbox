@@ -46,7 +46,6 @@ func sanitizeHandle*(handle: string, charset: set[char] = safeHandleChars): stri
 proc newUser*(handle: string, local = true, password = ""): User =
   result.id = rng.uuidv4()
   result.handle = sanitizeHandle(handle)
-  result.local = local
 
   if local:
     result.domain = ""
@@ -55,7 +54,7 @@ proc newUser*(handle: string, local = true, password = ""): User =
       result.password = hash(password, result.salt)
   
   # Set some defaults
-  result.roles = @[]
+  result.roles = @[0]
   result.discoverable = false
   result.email_verified = false
 
