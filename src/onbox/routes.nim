@@ -84,6 +84,16 @@ proc multipartParamExists*(mp: MultipartEntries, param: string): bool =
   return mp.hasKey(param) and not mp[param].isEmptyOrWhitespace()
 
 proc unrollForm*(req: Request): FormEntries =
+  # TODO: This works well for simple key=val form data
+  # But it won't work for arrays like: array[]=item_1&array[]=item_2
+  # Nor will it work for tables (What mastodon calls "Nested parameters")
+  # Such as: source[privacy]=public&source[language]=en
+  #
+  # It would be easiest to make a Form Data to JsonNode converter proc
+  # So that we can re-use our JSON input logic, thus making everything
+  # nicer to maintain.
+  #
+  # See: https://docs.joinmastodon.org/client/intro/#form-data
   let entries = req.body.smartSplit('&')
 
   for entry in entries:
@@ -101,10 +111,7 @@ proc unrollForm*(req: Request): FormEntries =
 
     if key.isEmptyOrWhitespace() or val.isEmptyOrWhitespace():
       continue # Invalid entry: Key or val (or both) are empty or whitespace. Invalid.
-
     result[key] = val
-  
-  return result
 
 proc formParamExists*(fe: FormEntries, param: string): bool =
   ## Returns a parameter submitted via a HTML form

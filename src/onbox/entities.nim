@@ -332,9 +332,6 @@ proc status*(db: DbConn, config: ConfigTable, id: string, user_id = ""): JsonNod
     post = db.constructPost(db.getPost(id))
     realurl = realURL(config)
   
-  # We could re-write this to avoid declaring an extra variable
-  # But then we would have to suffer the overheads of newJString() and getStr()
-  # And it's probably best to just keep it this way.
   result = %*{
     "id": post.id,
     "uri": realurl & "notice/" & post.id,
@@ -370,3 +367,33 @@ proc status*(db: DbConn, config: ConfigTable, id: string, user_id = ""): JsonNod
     ## TODO: If we have implemented pinned posts, then add the pinned attribute.
     ## TODO: If we have implemented filters, then add the filtered attribute.
     ## or actually, keep it optional, its alright.
+
+proc statusJson*(db: DbConn, config: ConfigTable, post: Post): JsonNode =
+  let realurl = realURL(config)
+  
+  result = %*{
+    "id": post.id,
+    "uri": realurl & "notice/" & post.id,
+    "url": realurl & "notice/" & post.id,
+    "created_at": formatDate(post.written),
+    "replies_count": 0,
+    "reblogs_count": len(post.boosts),
+    "favourites_count": len(post.reactions),
+    "account": db.account(config, post.sender),
+    "visibility": levelToStr(post.level),
+    # TODO: This only displays Text type.
+    "content": contentToHtml(post.content[0]),
+    # TODO: Implement the following:
+    "media_attachments": [],
+    "sensitive": false,
+    "spoiler_text": "",
+    "language": "en",
+    "emojis": newJArray()
+  }
+  
+  if post.replyto != "":
+    result["in_reply_to_id"] = newJString(post.replyto)
+    result["in_reply_to_account_id"] = newJString(db.getPostSender(post.replyto))
+  else:
+    result["in_reply_to_id"] = newJNull()
+    result["in_reply_to_account_id"] = newJNull()

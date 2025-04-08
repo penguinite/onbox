@@ -209,3 +209,58 @@ func `!$`*(l: PostPrivacyLevel): string =
   of FollowersOnly: return "2"
   of Limited: return "3"
   of Private: return "4"
+
+proc parseRecipients*(data: string): seq[(string, string)] =
+  ## Returns a set of handles (name + optionally, domain)
+  ## This proc was designed with plain-text posts in mind.
+  type State = enum
+    None, Handle, Domain
+
+  var
+    s = None
+    handle, domain = ""
+
+  for ch in data:
+    case ch:
+    of '@':
+      case s:
+      of None: s = Handle
+      of Handle: s = Domain
+      of Domain: s = None
+    of ' ':
+      s = None
+      if handle != "":
+        result.add((handle, domain))
+        handle = ""
+        domain = ""
+    else:
+      case s:
+      of None: continue
+      of Handle: handle.add(ch)
+      of Domain: domain.add(ch)
+  
+  # One last check
+  if handle != "":
+    result.add((handle, domain))
+
+proc parseHashtags*(data: string): seq[string] =
+  ## Returns a set of handles (name + optionally, domain)
+  ## This proc was designed with plain-text posts in mind.
+  var
+    flag = false
+    tag = ""
+
+  for ch in data:
+    case ch:
+    of '#': flag = true
+    of ' ':
+      if tag != "":
+        result.add(tag)
+        flag = false
+        tag = ""
+    else:
+      if flag: tag.add(ch)
+  
+  # One last check
+  if tag != "":
+    result.add(tag)

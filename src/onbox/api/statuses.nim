@@ -17,16 +17,25 @@
 ## This module contains all the routes for the statuses method in the API.
 
 # From somewhere in Onbox
-import onbox/db/[posts, oauth, boosts, bookmarks]
-import onbox/[conf, entities, routes, shared]
+import onbox/db/[posts, oauth, boosts, bookmarks, users, tag]
+import onbox/[conf, entities, routes, shared, strextra]
 
 # From somewhere in the standard library
-import std/[json, strutils]
+import std/[json, strutils, tables]
 
 # From nimble/other sources
 import mummy, waterpark/postgres, iniplus
 
 proc postStatus*(req: Request) =
+  # TODO: This implementation is extremely basic
+  # It doesn't support the following:
+  #     - Scheduled posts (minimum 5 mins in the future)
+  #     - Idempotency through the Idempotency-Key header
+  #     - Media attachments
+  #     - Polls
+  #     - Sensitivity & Spoiler-text (aka. Content warnings)
+  #     - Language
+
   var token, user = ""
   try:
     token = req.verifyClientExists()
@@ -34,17 +43,89 @@ proc postStatus*(req: Request) =
     user = req.verifyClientUser(token)
   except: return
 
+  # We could probably implement a basic type of idempotency
+  # without any extra database tables or overhead.
+  # Simply by checking if a post with the same content
+  # was made by the same user in the last hour.
+  if req.headers.contains("Idempotency-Key"):
+    respJson("Idempotency-Key is not supported yet")
+
+
   var post = newPost()
+  post.modified = false
+  post.local = true
   post.sender = user
+  post.written = now().utc
+  post.level = Public # Public is the default privacy level.
   
-  # Check for any unsupported features
   # Error out if an unsupported feature is given.
   case req.getContentType():
-  of "application/json", "application/x-www-form-urlencoded":
-    discard
-  else: discard
+  of "application/x-www-form-urlencoded":
+    let fm = req.unrollForm()
+    for feature in ["media_ids[]", "poll[options][]", "poll[expires_in]", "poll[multiple]", "poll[hide_totals]", "sensitive", "spoiler_text", "language", "scheduled_at"]:
+      if fm.formParamExists(feature):
+        respJsonError("Unsupported feature: " & feature)
+    
+    if fm.formParamExists("in_reply_to_id"):
+      post.replyto = fm["in_reply_to_id"]
+    
+    if fm.formParamExists("visibility"):
+      post.level = strToLevel(fm["visibility"])
+    post.content = @[
+      PostContent(
+        kind: Text,
+        txt_format: 0, # 
+        txt_published: now().utc,
+        text: fm["status"]
+      )
+    ]
+  of "application/json":
+    let json = parseJson(req.body)
 
-  respJsonError("TODO: To Be Implemented")
+    for feature in ["media_ids", "poll", "sensitive", "spoiler_text", "scheduled_at", "language"]:
+      if json.hasKey(feature):
+        respJsonError("Unsupported feature: " & feature)
+    
+    if json.hasValidStrKey("in_reply_to_id"):
+      post.replyto = json["in_reply_to_id"].getStr()
+    
+    if json.hasValidStrKey("visibility"):
+      post.level = strToLevel(json["visibility"].getStr())
+    post.content = @[
+      PostContent(
+        kind: Text,
+        txt_format: 0, # 
+        txt_published: now().utc,
+        text: json["status"].getStr()
+      )
+    ]
+  else:
+    respJsonError("Unknown content type")
+
+  # Validate post.
+  configPool.withConnection config:
+    dbPool.withConnection db:
+      # Populate post.recipients from the content the user has sent
+      if '@' in post.content[0].text:
+        post.recipients = @[]
+        for handle, domain in parseRecipients(post.content[0].text).items:
+          if db.userHandleExists(handle, domain):
+            post.recipients.add(db.getIdFromHandle(handle, domain))
+
+      # if this post is a reply to another
+      # then check that the original exists
+      if post.replyto != "" and not db.postIdExists(post.replyto):
+        respJsonError("Post in in_reply_to_id doens't exist")
+      
+      post.tags = parseHashtags(post.content[0].text)
+      for tag in post.tags:
+        if not db.tagExists(tag):
+          db.createTag(tag)
+
+      # Insert post
+      db.addPost(post)
+
+      req.respond(200, createHeaders("application/json"), $(statusJson(db, config, post)))
 
 proc boostStatus*(req: Request) =
   # NONSTANDARD: As far as I am aware, boosts have an ID in Mastodon internally.
