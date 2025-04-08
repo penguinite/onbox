@@ -121,25 +121,25 @@ proc account*(db: DbConn, config: ConfigTable, user_id: string): JsonNode =
 
 proc role*(db: DbConn, user_id: string): JsonNode =
   ## Returns a role entity belonging to a user.
+  result = newJArray()
   # TODO: Implement more dynamic roles rather than just is_admin and is_moderator
   if db.userHasRole(user_id, 3):
-    return %* {
+    result.elems.add(%* {
       "id": "0",
       "name": "Admin",
       "color": "",
       "permissions": "1048575",
       "highlighted": true
-    }
+    })
     
   if db.userHasRole(user_id, 2):
-    return %* {
+    result.elems.add(%* {
       "id": "1",
       "name": "Moderator",
       "color": "",
       "permissions": "1048575",
       "highlighted": true
-    }
-  
+    })
   
 proc credentialAccount*(db: DbConn, config: ConfigTable, user_id: string): JsonNode =
   ## Create a credential account
@@ -156,7 +156,7 @@ proc credentialAccount*(db: DbConn, config: ConfigTable, user_id: string): JsonN
     "language": "en", # TODO: Implement source[language] properly
     "follow_requests_count": db.getFollowReqCount(user_id),
     "role": db.role(user_id)
-   }
+  }
 
 proc rules*(config: ConfigTable): JsonNode =
   result = newJArray()
