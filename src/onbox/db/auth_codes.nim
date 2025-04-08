@@ -42,12 +42,12 @@ proc authCodeExists*(db: DbConn, id: string): bool =
     sql"SELECT EXISTS(SELECT 0 FROM auth_codes WHERE id = ?);", id
   )[0] == "t"
 
-proc createAuthCode*(db: DbConn, user, client: string, scopes: seq[string]): string =
+proc createAuthCode*(db: DbConn, user, client: string, scopes: seq[string], date = now().utc): string =
   ## Creates an auth code for a user and returns it.
   result = randstr(32)
   db.exec(
-    sql"INSERT INTO auth_codes VALUES (?,?,?,?);",
-    result, user, client, !$(scopes)
+    sql"INSERT INTO auth_codes VALUES (?,?,?,?,?);",
+    result, user, client, !$(scopes), date
   )
 
 proc getCodeScopes*(db: DbConn, id: string): seq[string] =
