@@ -39,11 +39,14 @@ proc postStatus*(req: Request) =
   # And some parts of it could be more well-optimized but I think
   # this works pretty well!
 
-  var token, user = ""
+  var
+    token, user = ""
+    json: JsonNode
   try:
     token = req.verifyClientExists()
     req.verifyClientScope(token, "write:statuses")
     user = req.verifyClientUser(token)
+    json = req.fetchReqBody()
   except: return
 
   var post = newPost()
@@ -51,42 +54,20 @@ proc postStatus*(req: Request) =
   post.sender = user
   post.written = now().utc
   post.level = Public # Public is the default privacy level.
-  
-  # Error out if an unsupported feature is given.
-  case req.getContentType():
-  of "application/x-www-form-urlencoded":
-    let fm = req.unrollForm()
-    if fm.formParamExists("in_reply_to_id"):
-      post.replyto = fm["in_reply_to_id"]
-    
-    if fm.formParamExists("visibility"):
-      post.level = strToLevel(fm["visibility"])
-    post.content = @[
-      PostContent(
-        kind: Text,
-        txt_format: 0, # 
-        txt_published: now().utc,
-        text: fm["status"]
-      )
-    ]
-  of "application/json":
-    let json = parseJson(req.body)
 
-    if json.hasValidStrKey("in_reply_to_id"):
-      post.replyto = json["in_reply_to_id"].getStr()
+  if json.hasValidStrKey("in_reply_to_id"):
+    post.replyto = json["in_reply_to_id"].getStr()
     
-    if json.hasValidStrKey("visibility"):
-      post.level = strToLevel(json["visibility"].getStr())
-    post.content = @[
-      PostContent(
-        kind: Text,
-        txt_format: 0, # 
-        txt_published: now().utc,
-        text: json["status"].getStr()
-      )
-    ]
-  else:
-    respJsonError("Unknown content type")
+  if json.hasValidStrKey("visibility"):
+    post.level = strToLevel(json["visibility"].getStr())
+  post.content = @[
+    PostContent(
+      kind: Text,
+      txt_format: 0, # 
+      txt_published: now().utc,
+      text: json["status"].getStr()
+    )
+  ]
 
   # Validate post.
   configPool.withConnection config:
@@ -293,8 +274,49 @@ proc viewStatus*(req: Request) =
         var token = ""
         try:
           token = req.verifyClientExists()
-          req.verifyClientScope(token, "write:bookmarks")
+          req.verifyClientScope(token, "read:statuses")
           discard req.verifyClientUser(token)
         except: return
     
       req.respond(200, createHeaders("application/json"), $(status(db, config, id)))
+
+proc viewBulkStatuses*(req: Request) =
+  # TODO: This implementation is seriously deranged...
+  # Fix it!
+
+  # Here's what we want to do:
+  # First check if the post exists, failing if it doesn't.
+  #
+  # Then If the instance is in lockdown mode or if the post we want to view
+  # is private then we will require authentication with a read or read:statuses scope
+  # (Also verifying if the user is allowed to see it.)
+  # 
+  # Now we return the post.
+  var ids: seq[string] = @[]
+  try:
+    for i in req.fetchReqBody()["id"].getElems():
+      ids.add i.getStr()
+  except: return
+
+  configPool.withConnection config:
+    dbPool.withConnection db:
+      var result = newJArray()
+      for id in ids:
+        if not db.postIdExists(id):
+          respJsonError("Record not found", 404)
+
+        let level = db.getPostPrivacyLevel(id)
+        if not db.canSeePost(db.getTokenUser(req.getAuthHeader()), id, level):
+          respJsonError("Record not found", 404)
+
+        # Check if the instance is in lockdown mode.
+        if config.getBoolOrDefault("web", "lockdown_mode", false) or level notin {Public, Unlisted}:
+          var token = ""
+          try:
+            token = req.verifyClientExists()
+            req.verifyClientScope(token, "read:statuses")
+            discard req.verifyClientUser(token)
+          except: return
+        
+        result.elems.add(status(db, config, id))
+      req.respond(200, createHeaders("application/json"), $(result))
