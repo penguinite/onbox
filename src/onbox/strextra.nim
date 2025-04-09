@@ -28,7 +28,7 @@
 import onbox/shared
 
 # From the standard library
-import std/[times, strutils]
+import std/[times, strutils, json], urlly
 
 func basicEscape(s: string): string =
   ## Used by seq[string]'s !$() proc
@@ -265,3 +265,87 @@ proc parseHashtags*(data: string): seq[string] =
   # One last check
   if tag != "":
     result.add(tag)
+
+# Yes, this procedure returns a string but it is about parsing text.
+# (And also way too big to include in routes.nim)
+proc formToJson*(data: string): JsonNode =
+  ## Converts normal form data encoded in `application/x-www-form-urlencoded`
+  ## into a JsonNode.
+  ## 
+  ## Use of this procedure is encouraged to make code cleaner.
+  ## 
+  ## Note: The resulting JsonNode consists mostly of strings.
+  ## Thus, you might need to specifically convert boolean values
+  ## before passing it onto later code.
+  runnableExamples:
+    var data, contentType = "" # PLACEHOLDERS 
+    
+    var json: JsonNode
+    case contentType:
+    of "application/x-www-form-urlencoded":
+      json = formToJson(data)
+    of "application/json":
+      json = parseJson(data)
+    else:
+      raise newException(OSError, "Unknown Content-Type")
+  
+  proc parseObjKey(s: string): (string, string) =
+    var flag = false
+    for ch in s:
+      case ch:
+      of '[': flag = true
+      of ']': break
+      else:
+        case flag:
+        of true: result[1].add(ch)
+        of false: result[0].add(ch)
+
+
+  result = newJObject()
+  for item in data.smartSplit('&'):
+    if '=' notin item:
+      continue # Invalid entry: Does not have equal sign.
+
+    let pair = item.smartSplit('=') # let's just re-use this amazing function.
+
+    if len(pair) != 2:
+      continue # Invalid entry: Does not have precisely two parts.
+
+    var
+      key = pair[0].decodeQueryComponent()
+      val = pair[1].decodeQueryComponent()
+    
+    if key.isEmptyOrWhitespace() or val.isEmptyOrWhitespace():
+      continue # Invalid entry: Key or val (or both) are empty or whitespace. Invalid.
+    
+    # Parse the key portion.
+    
+    # Check if a key is an array
+    if key.endsWith("[]"):
+      if not result.hasKey(key[0..^3]):
+        result[key[0..^3]] = newJArray()
+      if result[key[0..^3]].kind != JArray:
+        continue # Invalid JsonNode kind
+      result[key[0..^3]].elems.add(newJString(val))
+      continue
+    
+    # Check if a key is an object
+    if key.endsWith("]"):
+      # source[privacy]=public&source[language]=en 
+      # {
+      #  "source": "public",
+      #  "language": "en"
+      # }
+
+      # TODO: parseObjKey() returns only a tuple
+      # Keys in the future such as "post[account][id]" are not supported
+      # For now, this'll work but it's not a good idea.
+      let obj = parseObjKey(key)
+      if not result.hasKey(obj[0]):
+        result[obj[0]] = newJObject()
+      if result[obj[0]].kind != JObject:
+        continue # Invalid JsonNode kind
+      result[obj[0]][obj[1]] = newJString(val)
+      continue
+  
+    result[key] = newJString(val)

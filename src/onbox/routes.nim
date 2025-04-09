@@ -83,7 +83,8 @@ proc multipartParamExists*(mp: MultipartEntries, param: string): bool =
   ## Returns a parameter submitted via a HTML form
   return mp.hasKey(param) and not mp[param].isEmptyOrWhitespace()
 
-proc unrollForm*(req: Request): FormEntries =
+proc unrollForm*(req: Request): FormEntries
+  {.deprecated: "Use onbox/strextra.formToJson()".} =
   # TODO: This works well for simple key=val form data
   # But it won't work for arrays like: array[]=item_1&array[]=item_2
   # Nor will it work for tables (What mastodon calls "Nested parameters")
