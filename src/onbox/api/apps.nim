@@ -23,127 +23,64 @@ import onbox/db/[apps, oauth], onbox/[routes]
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, waterpark/postgres, iniplus
+import mummy, waterpark/postgres
 
 proc v1Apps*(req: Request) =
-  # This is a big, complex API route as it needs to handle 3 different data form submission methods.
+  # This is more complex than what I would have preferred...
+  # TODO: A possible refactor is due here.
 
-  # Check if the request matches anything we support.
-  # What we do support is the following:
-  # Typical form submissions: x-www-form-urlencoded
-  # Typical multipart: multipart/form-data
-  # JSON via request body: application/json
-  var contentType = req.getContentType()
+  var json: JsonNode
+  try: json = req.fetchReqBody() 
+  except: return
 
-  var result: JsonNode
-
-  # First, Check if client_name and redirect_uris exist.
-  # If not, then error out.
-  var
-    client_name, website, req_scopes = ""
-
-    # The API docs suggest that we should parse and see if its an absolute uri.
-    # Throwing an error if it isn't... But like, what's the point of this anyway???
-    redirect_uris = ""
-  
-  case contentType:
-  of "application/x-www-form-urlencoded":
-    var fm = req.unrollForm()
-    if not fm.formParamExists("client_name") or not fm.formParamExists("redirect_uris"):
-      respJsonError("Missing required parameters.")
-
-    # Get the website if it exists
-    if fm.formParamExists("website"):
-      website = fm["website"]
-    
-    # Get the scopes if they exist
-    if fm.formParamExists("scopes"):
-      req_scopes = fm["scopes"]
-
-    # Finally, get the stuff we need.
-    client_name = fm["client_name"]
-    redirect_uris = fm["redirect_uris"]
-  of "multipart/form-data":
-    var mp = req.unrollMultipart()
-
-    # Check if the required stuff is there
-    if not mp.multipartParamExists("client_name") or not mp.multipartParamExists("redirect_uris"):
-      respJsonError("Missing required parameters.")
-  
-    # Get the website if it exists
-    if mp.multipartParamExists("website"):
-      website = mp["website"]
-    
-    # Get the scopes if they exist
-    if mp.multipartParamExists("scopes"):
-      req_scopes = mp["scopes"]
-
-    # Finally, get the stuff we need.
-    client_name = mp["client_name"]
-    redirect_uris = mp["redirect_uris"]
-  of "application/json":
-    var json: JsonNode = newJNull()
-    try:
-      json = parseJSON(req.body)
-    except:
-      respJsonError("Invalid JSON.")
-
-    # Double check if the parsed JSON is *actually* valid.
-    if json.kind == JNull:
-      respJsonError("Invalid JSON.")
-    
-    # Check if the required stuff is there
-    if not json.hasValidStrKey("client_name") or not json.hasValidStrKey("redirect_uris"):
-      respJsonError("Missing required parameters.")
-
-    # Get the website if it exists
-    if json.hasValidStrKey("website"):
-      website = json["website"].getStr()
-
-    # Get the scopes if they exist
-    if json.hasValidStrKey("scopes"):
-      req_scopes = json["scopes"].getStr()
-    
-    # Finally, get the stuff we need.
-    client_name = json["client_name"].getStr()
-    redirect_uris = json["redirect_uris"].getStr()
-  else:
-    respJsonError("Unknown Content-Type.")
+  # Check if the required stuff is there
+  if not json.hasValidStrKey("client_name") or not json.hasValidStrKey("redirect_uris"):
+    respJsonError("Missing required parameters.")
 
   # Parse scopes
+  # A client may supply a single string
+  # which we have to split
+  # Or it may supply a string JArray object
+  # 
+  # We have to handle both.
   var scopes = @["read"]
-
-  # If the client has specified a set of scopes
-  # then, we will parse their list.
-  if req_scopes notin scopes:
-    scopes = @[]
-    for scope in req_scopes.split(" "):
-      if not verifyScope(scope):
-        respJsonError("Invalid scope: " & scope)
-      scopes.add(scope)
+  if json.hasKey("scopes"):
+    case json["scopes"].kind:
+    of JString: scopes = json["scopes"].getStr("read").split(" ")
+    of JArray:
+      # A bit ugly, but it'll do.
+      # It'd be nice if std/json provided an equivalent to iniplus's getStringArray()
+      # That way, we wouldn't need to do this sorta thing for code cleanliness.
+      for scope in json["scopes"].getElems(@[newJString("read")]):
+        scopes.add(scope.getStr())
+    else: respJsonError("Unknown scopes JKind")
+  
+  for scope in scopes:
+    if not verifyScope(scope):
+      respJsonError("Invalid scope: " & scope)
 
   var client_id, client_secret: string
   dbPool.withConnection db:
     client_id = db.createClient(
-      client_name,
-      website,
+      json["client_name"].getStr(),
+      json["website"].getStr(""),
       scopes,
-      @[redirect_uris]
+      [json["redirect_uris"].getStr()] # TODO: Make this into an array like scopes.
     )
     client_secret = db.getClientSecret(client_id)
   
-  result = %* {
-    "id": client_id,
-    "name": client_name,
-    "website": website,
-    "redirect_uri": redirect_uris,
-    "client_id": client_id,
-    "client_secret": client_secret,
-    "scopes": scopes # Non-standard: Undocumented.
-  }
-
-  req.respond(200, createHeaders("application/json"), $(result))
-
+  req.respond(
+    200,
+    createHeaders("application/json"), $(%* {
+      "id": client_id,
+      "name": json["client_name"].getStr(),
+      "website": json["website"].getStr(""),
+      "redirect_uri": [json["redirect_uris"].getStr()],
+      "client_id": client_id,
+      "client_secret": client_secret,
+      "scopes": scopes # Non-standard: Undocumented.
+    })
+  )
   
 proc v1AppsVerify*(req: Request) = 
   var token = ""

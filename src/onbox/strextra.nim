@@ -28,7 +28,7 @@
 import onbox/shared
 
 # From the standard library
-import std/[times, strutils, json], urlly
+import std/[times, strutils, json], mummy
 
 func basicEscape(s: string): string =
   ## Used by seq[string]'s !$() proc
@@ -278,14 +278,12 @@ proc formToJson*(data: string): JsonNode =
   ## Thus, you might need to specifically convert boolean values
   ## before passing it onto later code.
   runnableExamples:
-    var data, contentType = "" # PLACEHOLDERS 
-    
     var json: JsonNode
     case contentType:
     of "application/x-www-form-urlencoded":
-      json = formToJson(data)
+      json = formToJson(req.body)
     of "application/json":
-      json = parseJson(data)
+      json = parseJson(req.body)
     else:
       raise newException(OSError, "Unknown Content-Type")
   

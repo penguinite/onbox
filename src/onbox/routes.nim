@@ -114,7 +114,8 @@ proc unrollForm*(req: Request): FormEntries
       continue # Invalid entry: Key or val (or both) are empty or whitespace. Invalid.
     result[key] = val
 
-proc formParamExists*(fe: FormEntries, param: string): bool =
+proc formParamExists*(fe: FormEntries, param: string): bool
+ {.deprecated: "Use onbox/strextra.formToJson/()".} =
   ## Returns a parameter submitted via a HTML form
   return fe.hasKey(param) and not fe[param].isEmptyOrWhitespace()
 
@@ -185,6 +186,14 @@ proc verifyClientExists*(req: Request): string =
     if not db.tokenExists(result):
       req.respond(401, createHeaders("application/json"), "{\"error\": \"Client's auth header is invalid\"}")
       raise newException(CatchableError, "")
+
+proc fetchReqBody*(req: Request): JsonNode =
+  case req.getContentType():
+  of "application/x-www-form-urlencoded": return formToJson(req.body)
+  of "application/json": return parseJson(req.body)
+  else:
+    req.respond(200, createHeaders("application/json"), "{\"error\": \"Couldn't fetch request body\"}")
+    raise newException(CatchableError, "")
 
 proc verifyClientScope*(req: Request, token, scope: string) =
   ## Verifies that the client calling this has a scope.
