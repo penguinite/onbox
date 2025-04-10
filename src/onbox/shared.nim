@@ -59,8 +59,7 @@ type
 
   PostContentType* = enum
     Text = "0"
-    Poll = "1"
-    Media = "2"
+    Media = "1"
 
   PostContent* = object of RootObj
     case kind*: PostContentType
@@ -68,12 +67,6 @@ type
       txt_published*: DateTime # The timestamp of when then Post was last edited
       txt_format*: int # The format that the text is written in.
       text*: string # The text
-    of Poll:
-      id*: string # The poll ID
-      votes*: CountTable[string] # How many votes each option has.
-      total_votes*: int # Total number of votes
-      multi_choice*: bool # If the poll is a multi-choice poll or not.
-      expiration*: DateTime # How long until the poll is dead and no one can post in it.
     of Media:
       media_id*: string
 

@@ -38,21 +38,14 @@ proc realURL*(config: ConfigTable): string =
   return config.getString("instance", "uri") & config.getStringOrDefault("web", "endpoint", "/")
 
 proc createHeaders*(a: string): HttpHeaders = result["Content-Type"] = a
-macro respJsonError*(msg: string, code = 400, headers = createHeaders("application/json")) =
-  var req = ident"req"
-  result = quote do:
-    `req`.respond(
-      `code`, `headers`, $(%*{"error": `msg`})
-    )
-    return
 
-macro respJson*(msg: string, code = 200, headers = createHeaders("application/json")) =
-  var req = ident"req"
-  result = quote do:
-    `req`.respond(
-      `code`, `headers`, `msg`
-    )
-    return
+template respJsonError*(msg: string, code = 400, headers = createHeaders("application/json")) =
+  req.respond(code, headers, $(%* {"error": msg}))
+  return
+
+template respJson*(msg: string, code = 200, headers = createHeaders("application/json")) =
+  req.respond(code, headers, msg)
+  return
 
 proc queryParamExists*(req: Request, query: string): bool =
   ## Check if a query parameter (such as "?query=parameter") is valid and not empty

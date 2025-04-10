@@ -51,9 +51,6 @@ proc renderAuthForm(req: Request, scopes: seq[string], client_id, redirect_uri: 
   ## A function to render the auth form.
   ## I don't want to repeat myself 2 times in the POST and GET section so...
   ## here it is.
-  var headers: HttpHeaders
-  headers["Content-Type"] = "text/html"
-
   var human_scopes = ""
   for scope in scopes:
     human_scopes.add(
@@ -67,7 +64,7 @@ proc renderAuthForm(req: Request, scopes: seq[string], client_id, redirect_uri: 
     login = db.getHandleFromId(db.getSessionUser(session))
 
   req.respond(
-    200, headers,
+    200, createHeaders("text/html"),
     templateify(
       getBuiltinAsset("oauth.html"),
       {
@@ -284,73 +281,31 @@ proc oauthAuthorizePOST*(req: Request) =
     )
 
 proc oauthToken*(req: Request) =
+  var json: JsonNode
+  try: json = req.fetchReqBody()
+  except: return
+
+  for param in ["client_id", "client_secret", "redirect_uri", "grant_type"]:
+    if not json.hasValidStrKey(param):
+      respJsonError("Missing required parameter: " & param)
+
   var
-    grant_type, code, client_id, client_secret, redirect_uri = ""
-    scopes = @["read"]
-
-  var headers: HttpHeaders
-  headers["Content-Type"] = "application/json"
-
-  ## We gotta check for both url-form-encoded or whatever
-  ## And for JSON body requests.
-  case req.headers["Content-Type"]:
-  of "application/x-www-form-urlencoded":
-    let fm = req.unrollForm()
-
-    # Check if the required stuff is there
-    for thing in @["client_id", "client_secret", "redirect_uri", "grant_type"]:
-      if not fm.formParamExists(thing): 
-        respJsonError("Missing required parameter: " & thing)
-
-    grant_type = fm["grant_type"]
-    client_id = fm["client_id"]
-    client_secret = fm["client_secret"]
-    redirect_uri = fm["redirect_uri"]
-
-    if fm.formParamExists("code"):
-      code = fm["code"]
-    
-    # According to API, we can either split by + or space.
-    # so we run this to figure it out. Defaulting to spaces if need
-    if fm.formParamExists("scope"):
-      scopes = fm["scope"].split(getSeparator(fm["scope"]) )
-  of "application/json":
-    var json: JsonNode = newJNull()
-    try:
-      json = parseJSON(req.body)
-    except:
-      respJsonError("Invalid JSON.")
-
-    # Double check if the parsed JSON is *actually* valid.
-    if json.kind == JNull:
-      respJsonError("Invalid JSON.")
-    
-    # Check if the required stuff is there
-    for thing in @["client_id", "client_secret", "redirect_uri", "grant_type"]:
-      if not json.hasValidStrKey(thing): 
-        respJsonError("Missing required parameter: " & thing)
-
     grant_type = json["grant_type"].getStr()
     client_id = json["client_id"].getStr()
     client_secret = json["client_secret"].getStr()
     redirect_uri = json["redirect_uri"].getStr()
+    code = json["code"].getStr("")
+    # A gross one-liner
+    # A client may separate scopes by space or the "+" sign
+    scopes = json["scope"].getStr("read").split(getSeparator(json["scope"].getStr("read")))
 
-    # Get the website if it exists
-    if json.hasValidStrKey("code"):
-      code = json["code"].getStr()
-
-    # Get the scopes if they exist
-    if json.hasValidStrKey("scope"):
-      scopes = json["scope"].getStr().split(getSeparator(json["scope"].getStr()))
-  else:
-    respJsonError("Unknown content-type.")
-  
+  # Verify the provided scopes.
   for scope in scopes:
-    # Verify if scopes are valid.
     if not scope.verifyScope():
       respJsonError("Invalid scope: " & scope)
 
-  if grant_type notin @["authorization_code", "client_credentials"]:
+  # Verify the provided grant-type
+  if grant_type notin ["authorization_code", "client_credentials"]:
     respJsonError("Unknown grant_type")
   
   var token = ""
@@ -379,7 +334,7 @@ proc oauthToken*(req: Request) =
     db.deleteAuthCode(code) # Delete auth code after we are done
   
   req.respond(
-    200, headers,
+    200, createHeaders("application/json"),
     $(%*{
       "access_token": token,
       "token_type": "Bearer",
@@ -391,40 +346,18 @@ proc oauthToken*(req: Request) =
 proc oauthRevoke*(req: Request) =
   ## We gotta check for both url-form-encoded or whatever
   ## And for JSON body requests.
-  var client_id, client_secret, token = ""
-  case req.headers["Content-Type"]:
-  of "application/x-www-form-urlencoded":
-    let fm = req.unrollForm()
+  var json: JsonNode
+  try: json = req.fetchReqBody()
+  except: return
 
-    # Check if the required stuff is there
-    for thing in @["client_id", "client_secret", "token"]:
-      if not fm.formParamExists(thing): 
-        respJsonError("Missing required parameter: " & thing)
+  for param in ["client_id", "client_secret", "token"]:
+    if not json.hasValidStrKey(param):
+      respJsonError("Missing required parameter: " & param)
 
-    client_id = fm["client_id"]
-    client_secret = fm["client_secret"]
-    token = fm["token"]
-  of "application/json":
-    var json: JsonNode = newJNull()
-    try:
-      json = parseJSON(req.body)
-    except:
-      respJsonError("Invalid JSON.")
-
-    # Double check if the parsed JSON is *actually* valid.
-    if json.kind == JNull:
-      respJsonError("Invalid JSON.")
-    
-    # Check if the required stuff is there
-    for thing in @["client_id", "client_secret", "token"]:
-      if not json.hasValidStrKey(thing): 
-        respJsonError("Missing required parameter: " & thing)
-
+  let
     client_id = json["client_id"].getStr()
     client_secret = json["client_secret"].getStr()
     token = json["token"].getStr()
-  else:
-    respJsonError("Unknown content-type.")
 
   # Now we check if the data submitted is actually valid.
   dbPool.withConnection db:
@@ -442,17 +375,7 @@ proc oauthRevoke*(req: Request) =
 
     # Finally, delete the OAuth token.
     db.deleteOAuthToken(token)
-
-  # And respond with nothing
-  respJson($(%*{}))
-
-  # By the way, how is this API supposed to be idempotent?
-  # You're supposed to simultaneously check if the token exists and to let it be deleted multiple times?
-  # I think Mastodon either doesn't actually delete the token (they just mark it as deleted, which is stupid)
-  # or they don't check for the existence of the token before deleting it.
-  # Anyway, this API is not idempotent because thats stupid and there's NO REASON for it to be idempotent in the first place!
-  #
-  # In our case, if we delete a non-existent OAuth token, then nothing happens!
+  req.respond(200, createHeaders("application/json"), "{}")
   
 proc oauthInfo*(req: Request) =
   var url = ""
@@ -478,5 +401,3 @@ proc oauthInfo*(req: Request) =
       "token_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post"]
     }
   ))
-
-
