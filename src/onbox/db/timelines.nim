@@ -76,18 +76,18 @@ proc getPublicTimeline*(db: DbConn, local = false, remote = false, limit = 20): 
   ## Likewise, setting the remote parameter means only remote posts will be included
   if local:
     # Return only local posts
-    for i in db.getAllRows(sql"SELECT id FROM posts WHERE is_local = 'true' ORDER BY created ASC LIMIT ?;", limit):
+    for i in db.getAllRows(sql"SELECT id FROM posts WHERE is_local = 'true' AND privacy_level = 0 ORDER BY created ASC LIMIT ?;", limit):
       result.add(i[0])
     return result
 
   if remote:
     # Return only remote posts
-    for i in db.getAllRows(sql"SELECT id FROM posts WHERE is_local = 'false' ORDER BY created ASC LIMIT ?;", limit):
+    for i in db.getAllRows(sql"SELECT id FROM posts WHERE is_local = 'false' AND privacy_level = 0 ORDER BY created ASC LIMIT ?;", limit):
       result.add(i[0])
     return result
 
   # Return both local and remote posts.
-  for i in db.getAllRows(sql"SELECT id FROM posts ORDER BY created ASC LIMIT ?;", limit):
+  for i in db.getAllRows(sql"SELECT id FROM posts WHERE privacy_level = 0 ORDER BY created ASC LIMIT ?;", limit):
     result.add(i[0])
   return result
 
