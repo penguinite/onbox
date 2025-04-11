@@ -201,7 +201,7 @@ proc contentToHtml*(content: PostContent): string =
   else: raise newException(ValueError, "Unexpected content type: " & $(content.kind))
 
 proc getPostPrivacyLevel*(db: DbConn, id: string): PostPrivacyLevel =
-  toLevel(db.getRow(sql"SELECT level FROM posts WHERE id = ?;", id)[0])
+  toLevel(db.getRow(sql"SELECT privacy_level FROM posts WHERE id = ?;", id)[0])
 
 proc getSender*(db: DbConn, pid: string): string =
   db.getRow(sql"SELECT sender FROM posts WHERE id = ?;", pid)[0]

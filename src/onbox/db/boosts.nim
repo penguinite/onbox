@@ -53,7 +53,7 @@ proc isBoostable*(db: DbConn, pid: string): bool =
   ## Currently, this only checks if the post you're trying to boost
   ## is either a public or unlisted post.
   # TODO: This might be wrong.
-  toLevel(db.getRow(sql"SELECT level FROM posts WHERE id = ?;", pid)[0]) in [Public, Unlisted]
+  toLevel(db.getRow(sql"SELECT privacy_level FROM posts WHERE id = ?;", pid)[0]) in [Public, Unlisted]
 
 proc userBoosted*(db: DbConn, uid, pid: string): bool =
   ## Check if a user has boosted a post
