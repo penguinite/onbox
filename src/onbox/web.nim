@@ -182,5 +182,6 @@ const mummyRoutes* =  @[
   ("/api/v1/statuses/@id/unbookmark", "POST", unbookmarkStatus),
   ("/api/v1/statuses/@id", "GET", viewStatus),
   ("/api/v1/statuses", "POST", postStatus),
-  ("/api/v1/statuses", "GET", viewBulkStatuses)
+  ("/api/v1/statuses", "GET", viewBulkStatuses),
+  ("/api/v1/timelines/public", "GET", timelinesPublic)
 ]

@@ -26,8 +26,49 @@ import std/[json, strutils]
 # From nimble/other sources
 import mummy, waterpark/postgres, iniplus
 
+proc timelinesPublic*(req: Request) =
+  # TODO: This implementation lacks the following:
+  #     - only_media query support (No media support yet, so this isn't implemented)
+  #     - max_id, since_id, min_id or any form of pagination.
+  # Limit access to authenticated clients if lockdown mode is enabled
+  configPool.withConnection config:
+    if config.getBoolOrDefault("web", "lockdown_mode", false):
+      try:
+        var token = req.verifyClientExists()
+        req.verifyClientScope(token, "read:statuses")
+      except: return
+    
+  var
+    local = false
+    remote = false
+    limit = 20
+  
+  if req.queryParamExists("local"):
+    local = parseBool(req.queryParams["local"])
+  if req.queryParamExists("remote"):
+    remote = parseBool(req.queryParams["remote"])
+  if req.queryParamExists("limit"):
+    limit = parseInt(req.queryParams["limit"])
+  
+  if limit > 40:
+    respJsonError("Limit cannot be over 40", 401)
+  
+  if local and remote:
+    respJsonError("Remote and local can't both be set to true", 401)
+
+
+  configPool.withConnection config:
+    var result = newJArray()
+    dbPool.withConnection db:
+      for id in db.getPublicTimeline(local, remote, limit):
+        result.add(status(db, config, id))
+    req.respond(200, createHeaders("application/json"), $(result))
+
+
+
 proc timelinesHome*(req: Request) =
-  # TODO: Implement pagination *properly*
+  # TODO: This implementation lacks the following:
+  #     - max_id, since_id, min_id or any form of pagination.
   # If any of these are present, then just error out.
   for i in @["max_id", "since_id", "min_id"]:
     if req.queryParamExists(i):
