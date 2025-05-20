@@ -23,20 +23,14 @@ import std/[strutils, os]
 import mummy, mummy/routers, iniplus, waterpark/postgres
 
 log "Onbox version ", version
-log "Copyright © Leo Gavilieau <xmoo@privacyrequired.com> 2022-2023"
 log "Copyright © penguinite <penguinite@tuta.io> 2024-2025"
+log "Copyright © Leo Gavilieau <xmoo@privacyrequired.com> 2022-2023"
 log "Licensed under the GNU Affero General Public License version 3 or later"
 
 when not defined(useMalloc):
-  {.warning: "Onbox is suspectible to a memory leak, which, for now, can only be fixed by supplying the -d:useMalloc compile-time option".}
-  {.warning: "Your build does not supply -d:useMalloc, therefore it is susceptible to a memory leak".}
-  log "This build of Onbox was built without -d:useMalloc, and is thus suspectible to a memory leak"
-
-proc exit() {.noconv.} =
-  quit(0)
-
-# Catch Ctrl+C so we can exit our way.
-setControlCHook(exit)
+  {.warning: "Onbox has a memory leak, which can only be fixed by supplying \"-d:useMalloc\" during compilation".}
+  {.warning: "Your build wasn't built with \"-d:useMalloc\" and so it is susceptible to a memory leak".}
+  log "Your build wasn't built with \"-d:useMalloc\" and so it is susceptible to a memory leak"
 
 log "Using ", getConfigFilename(), " as config file"
 

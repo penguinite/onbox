@@ -17,14 +17,14 @@
 ## This module contains all the routes for the oauth method in the api
 
 # From somewhere in Quark
-import onbox/db/timelines
 import onbox/[conf, routes, entities]
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, waterpark/postgres, iniplus
+import mummy, waterpark/postgres, iniplus,
+       amicus/timelines
 
 proc timelinesPublic*(req: Request) =
   # TODO: This implementation lacks the following:

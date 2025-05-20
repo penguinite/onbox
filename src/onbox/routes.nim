@@ -16,13 +16,14 @@
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Onbox
-import onbox/[conf, strextra], onbox/db/[oauth, users]
+import onbox/[strextra, conf]
 
 # From the standard library
 import std/[mimetypes, os, macros, tables, json, strutils]
 
 # From elsewhere
-import waterpark/postgres, mummy, mummy/multipart, iniplus
+import waterpark/postgres, mummy,
+       mummy/multipart, iniplus, amicus/[oauth, users]
 
 const mimedb*: MimeDB = newMimetypes()
 
@@ -78,16 +79,7 @@ proc multipartParamExists*(mp: MultipartEntries, param: string): bool =
 
 proc unrollForm*(req: Request): FormEntries
   {.deprecated: "Use onbox/strextra.formToJson()".} =
-  # TODO: This works well for simple key=val form data
-  # But it won't work for arrays like: array[]=item_1&array[]=item_2
-  # Nor will it work for tables (What mastodon calls "Nested parameters")
-  # Such as: source[privacy]=public&source[language]=en
-  #
-  # It would be easiest to make a Form Data to JsonNode converter proc
-  # So that we can re-use our JSON input logic, thus making everything
-  # nicer to maintain.
-  #
-  # See: https://docs.joinmastodon.org/client/intro/#form-data
+  # TODO: Deprecate this.
   let entries = req.body.smartSplit('&')
 
   for entry in entries:

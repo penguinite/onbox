@@ -20,19 +20,14 @@
 ## It can be used to create new users, delete posts, add new MRF policies, setup database containers and more!
 ## Generally, this command aims to be a Onbox instance administrator's best friend.
 # From Onbox:
-import onbox/db/[users, posts, auth_codes, sessions, email_codes]
-import onbox/[database, shared, conf]
+import onbox/[database, conf, shared]
 
 # Standard library
-import std/[osproc, times, strformat, strutils]
+import std/[osproc, strformat, strutils]
 
 # Third-party libraries
-import cligen, rng, iniplus, db_connector/db_postgres
-
-## Utility stuff first!
-const
-  setupSql = staticRead("assets/setup.sql")
-  purgeSql = staticRead("assets/purge.sql")
+import cligen, rng, iniplus, db_connector/db_postgres,
+       amicus/[users, shared, posts, auth_codes, sessions, sql, email_codes]
 
 proc parseSqlFile(input: string): seq[string] =
   ## This implements the weird SQL script convention mentioned
@@ -103,7 +98,7 @@ proc user_new*(args: seq[string], admin = false, moderator = false, unapproved =
     cnf = getConfig(config)
     db = getDb(cnf)
   
-  var user = newUser(
+  var user = createUser(
     handle = args[0],
     local = true,
     password = args[1]
@@ -127,7 +122,7 @@ proc user_new*(args: seq[string], admin = false, moderator = false, unapproved =
   if not unapproved or not cnf.getBoolOrDefault("user", "require_approval", false):
     user.roles.add(1)
     
-  db.addUser(user)
+  db.insertUser(user)
   
   log "Successfully inserted user"
   echo "username: ", user.handle

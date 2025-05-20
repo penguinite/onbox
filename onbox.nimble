@@ -4,7 +4,7 @@ version       = "0.0.2"
 author        = "penguinite"
 description   = "A simple lightweight MastoAPI backend server"
 license       = "AGPL-3.0-or-later"
-bin           = @["onbox","onboxctl","onboxdev"]
+bin           = @["onbox","onboxctl"]
 srcDir        = "src"
 binDir        = "build"
 backend       = "cpp"
@@ -22,9 +22,6 @@ task all, "Builds everything with versioning embedded.":
 
 task ctl, "Shorthand for nimble run onboxctl":
   exec("nimble run onboxctl " & cleanArgs("ctl").join(" "))
-
-task dev, "For running the internal developer tool.":
-  exec("nimble run onboxctl " & cleanArgs("dev").join(" "))
 
 task musl, "A task to build a binary linked with musl rather than glibc":
   exec("nimble build -d:musl -d:release --opt:speed")
@@ -45,3 +42,4 @@ requires "waterpark >= 0.1.7"
 requires "cligen >= 1.7.3"
 requires "smtp"
 requires "urlly"
+requires "amicus"

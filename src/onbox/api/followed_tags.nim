@@ -17,13 +17,14 @@
 ## This module contains all the routes for the oauth method in the api
 
 # From somewhere in Onbox
-import onbox/db/tag, onbox/[routes,entities]
+import onbox/[routes, entities]
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, waterpark/postgres
+import mummy, waterpark/postgres,
+       amicus/tag
 
 proc followedTags*(req: Request) =
   # TODO: Implement pagination *properly*
@@ -59,6 +60,6 @@ proc followedTags*(req: Request) =
     respJsonError("Limit cannot be over 200", 401)
 
   dbPool.withConnection db:
-    for tag in db.getTagsFollowedByUser(user, limit):
+    for tag in db.getTagFollows(user, limit):
       result.elems.add(tag(db, tag, user))
   req.respond(200, createHeaders("application/json"), $(result))

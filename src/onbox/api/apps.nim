@@ -17,13 +17,14 @@
 ## This module contains all the routes for the apps method in the mastodon api
 
 # From somewhere in Quark
-import onbox/db/[apps, oauth], onbox/[routes]
+import onbox/routes
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, waterpark/postgres
+import mummy, waterpark/postgres,
+       amicus/[apps, oauth]
 
 proc v1Apps*(req: Request) =
   # This is more complex than what I would have preferred...
@@ -56,18 +57,17 @@ proc v1Apps*(req: Request) =
     else: respJsonError("Unknown scopes JKind")
   
   for scope in scopes:
-    if not verifyScope(scope):
+    if not scopeValid(scope):
       respJsonError("Invalid scope: " & scope)
 
   var client_id, client_secret: string
   dbPool.withConnection db:
-    client_id = db.createClient(
+    (client_id, client_secret) = db.createClient(
       json["client_name"].getStr(),
       json["website"].getStr(""),
       scopes,
       [json["redirect_uris"].getStr()] # TODO: Make this into an array like scopes.
     )
-    client_secret = db.getClientSecret(client_id)
   
   req.respond(
     200,
@@ -90,5 +90,10 @@ proc v1AppsVerify*(req: Request) =
   dbPool.withConnection db:
     let id = db.getTokenApp(token)
     req.respond(200, createHeaders("application/json"),
-      $(%* {"name": db.getClientName(id), "website": db.getClientLink(id)})
+      $(%*
+        {
+          "name": db.getClientName(id),
+          "website": db.getClientLink(id)
+        }
+      )
     )

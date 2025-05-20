@@ -17,13 +17,15 @@
 ## This module contains all the routes for the accounts method in the mastodon api.
 
 # From Onbox
-import ../db/[oauth, apps, users], ../[conf, routes, entities]
+import onbox/[conf, routes, entities]
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, iniplus, waterpark, waterpark/postgres
+import mummy, iniplus,
+       waterpark, waterpark/postgres,
+       amicus/[oauth, apps, users]
 
 proc accountsVerifyCredentials*(req: Request) =
   var token, user = ""
@@ -40,7 +42,11 @@ proc accountsVerifyCredentials*(req: Request) =
   
   dbPool.withConnection db:
     configPool.withConnection config:
-      req.respond(200, createHeaders("application/json"), $(credentialAccount(db, config, user)))
+      req.respond(
+        200,
+        createHeaders("application/json"),
+        $(credentialAccount(db, config, user))
+      )
 
 proc accountsGet*(req: Request) =
   # Run some basic input checks first.
@@ -52,9 +58,10 @@ proc accountsGet*(req: Request) =
     # Then check the oauth token.
     if config.getBoolOrDefault("web", "lockdown_mode", false):
       try:
-        var token = req.verifyClientExists()
         # Check that the client has an authenticated user bound to it.
-        discard req.verifyClientUser(token)
+        discard req.verifyClientUser(
+          req.verifyClientExists()
+        )
       except: return
 
   dbPool.withConnection db:
@@ -82,9 +89,10 @@ proc accountsGetMultiple*(req: Request) =
     # Then check the oauth token.
     if config.getBoolOrDefault("web", "lockdown_mode", false):
       try:
-        var token = req.verifyClientExists()
         # Check that the client has an authenticated user bound to it.
-        discard req.verifyClientUser(token)
+        discard req.verifyClientUser(
+          req.verifyClientExists()
+        )
       except: return
 
   var result = newJArray()

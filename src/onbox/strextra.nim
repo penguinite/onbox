@@ -24,19 +24,9 @@
 ## 
 ## This module is basically meant to be a complementary module to std/strutils
 
-# From Onbox
-import onbox/shared
-
 # From the standard library
-import std/[times, strutils, json], mummy
+import std/[strutils, json], mummy
 
-func basicEscape(s: string): string =
-  ## Used by seq[string]'s !$() proc
-  for ch in s:
-    case ch:
-    of '\\',',','"': result.add "\\" & ch
-    else: result.add ch
-  
 func smartSplit*(s: string, specialChar: char = '&'): seq[string] =
   ## A split function that is both aware of quotes and backslashes.
   ## Aware, as in, it won't split if it sees the specialCharacter surrounded by quotes, or backslashed.
@@ -107,113 +97,11 @@ func htmlEscape*(pre_s: string): string =
     else:
       result.add(ch)
 
-func `!$`*(date: DateTime): string = 
-  ## Converts a date into a database-compatible string
-  return format(date, "yyyy-MM-dd HH:mm:ss")
-
-proc toDate*(row: string): DateTime =
-  ## Creates a date out of a database row
-  return parse(row, "yyyy-MM-dd HH:mm:ss", utc())
-
-func toLevel*(s: string): PostPrivacyLevel =
-  case s:
-  of "0": return Public
-  of "1": return Unlisted
-  of "2": return FollowersOnly
-  of "3": return Limited
-  of "4": return Private
-  else: raise newException(CatchableError, "Unknown string passed to strextra.toLevel(): " & s)
-
-func `!$`*(s: openArray[string]): string =
-  ## Converts an openArray[string] into a simple string
-  ## suitable for inserting into a database.
-  for i in s:
-    result.add('\"' & basicEscape(i) & "\",")
-  
-  # Bug: Exception occurs when trying
-  # trim the last character of an empty string.
-  # Fix: Add a length check :-)
-  if len(result) != 0:
-    result = result[0..^2]
-
-  result = '{' & result & '}' 
-
-func toStrSeq*(s: string): seq[string] =
-  ## Converts a postgres string array into a real sequence.
-  var
-    tmp = ""
-    backslash = false
-    inString = false
-  for ch in s:
-    # We are dealing with: "a,",b
-    if backslash:
-      tmp.add(ch)
-      backslash = false
-      continue
-
-    if inString:
-      case ch:
-      of '"': inString = false
-      of '\\': backslash = true
-      else: tmp.add(ch)
-    else:
-      case ch:
-      of '"': inString = true
-      of '\\': backslash = true
-      of '{','}': continue
-      of ',':
-        result.add tmp
-        tmp = ""
-      else: tmp.add ch
-
-  if tmp != "":
-    result.add(tmp)
-
-func `!$`*(s: openArray[int]): string =
-  ## Converts an openArray[string] into a simple string
-  ## suitable for inserting into a database.
-  for i in s:
-    result.add($i & ",")
-
-  # Bug: Exception occurs when trying
-  # trim the last character of an empty string.
-  # Fix: Add a length check :-)
-  if len(result) != 0:
-    result = result[0..^2]
-
-  result = '{' & result & '}' 
-
-func toIntSeq*(s: string): seq[int] =
-  ## Converts a postgres integer array into a real sequence.
-  var tmp = ""
-  for ch in s:
-    # We are dealing with: 1,2,3
-    case ch:
-    of ',': result.add parseInt(tmp)
-    of '{','}': continue
-    else: tmp.add(ch)
-
-  if tmp != "":
-    result.add parseInt(tmp)
-
-func `!$`*(k: KDF): string = $(k)
-
-func toKDF*(str: string): KDF = 
-  # Feel free to change this if and when the KDF needs
-  # to be updated :)
-  PBKDF_HMAC_SHA512
-
-func `!$`*(l: PostPrivacyLevel): string =
-  case l:
-  of Public: return "0"
-  of Unlisted: return "1"
-  of FollowersOnly: return "2"
-  of Limited: return "3"
-  of Private: return "4"
-
 proc parseRecipients*(data: string): seq[(string, string)] =
-  ## Returns a set of handles (name + optionally, domain)
-  ## This proc was designed with plain-text posts in mind.
+  ## Returns a set of handles (name and optionally, a domain)
+  ## This procedure was designed with plain-text posts in mind.
+  runnableExamples:
+    assert parseRecipients("Hi @john@example.com!")[0] == ("john","example.com")
   type State = enum
     None, Handle, Domain
 
@@ -222,13 +110,14 @@ proc parseRecipients*(data: string): seq[(string, string)] =
     handle, domain = ""
 
   for ch in data:
-    case ch:
-    of '@':
+    if ch == '@':
       case s:
       of None: s = Handle
       of Handle: s = Domain
       of Domain: s = None
-    of ' ':
+      continue
+
+    if ch in {' ','?','%','&','/','(',')','[',']','{','}','"','\'','!','$'}:
       s = None
       if handle != "":
         result.add((handle, domain))

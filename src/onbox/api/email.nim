@@ -17,14 +17,14 @@
 ## This module contains all the email-related API routes.
 
 # From somewhere in Onbox
-import onbox/db/[oauth, email_codes, users]
-import onbox/[routes,conf,email]
+import onbox/[routes, conf, strextra, email]
 
 # From somewhere in the standard library
-import std/[json, tables]
+import std/[json]
 
 # From nimble/other sources
-import mummy, waterpark/postgres, iniplus
+import mummy, waterpark/postgres,
+       amicus/[oauth, email_codes, users]
 
 proc emailConfirmation*(req: Request) =
   var token, user = ""
@@ -49,22 +49,12 @@ proc emailConfirmation*(req: Request) =
 
   # Get email from client
   var email = ""
+
   case req.getContentType():
   of "application/x-www-form-urlencoded":
-    let fm = req.unrollForm()
-    if fm.formParamExists("email"):
-      email = fm["email"]
-  of "multipart/form-data":
-    let mp = req.unrollMultipart()
-    if mp.multipartParamExists("email"):
-      email = mp["email"]
+    email = formToJson(req.body)["email"].getStr("")
   of "application/json":
-    var json: JsonNode = newJNull()
-    try: json = parseJSON(req.body)
-    except: respJsonError("Invalid JSON.")
-
-    if json.hasValidStrKey("email"):
-      email = json["email"].getStr()
+    email = parseJson(req.body)["email"].getStr("")
   else:
     respJsonError("Unknown Content-Type.")
   

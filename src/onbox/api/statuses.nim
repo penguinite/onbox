@@ -17,14 +17,14 @@
 ## This module contains all the routes for the statuses method in the API.
 
 # From somewhere in Onbox
-import onbox/db/[posts, oauth, boosts, bookmarks, users, tag]
-import onbox/[conf, entities, routes, shared, strextra]
+import onbox/[conf, entities, routes, strextra]
 
 # From somewhere in the standard library
-import std/[json, strutils, tables]
+import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, waterpark/postgres, iniplus
+import mummy, waterpark/postgres, iniplus,
+       amicus/[posts, oauth, boosts, bookmarks, users, tag, shared]
 
 proc postStatus*(req: Request) =
   # TODO: This implementation is extremely basic
@@ -130,20 +130,13 @@ proc boostStatus*(req: Request) =
   try:
     case req.headers["Content-Type"]:
     of "application/x-www-form-urlencoded":
-      let form = req.unrollForm()
-      if form.formParamExists("visibility"):
-        level = strToLevel(form["visibility"])
+      level = strToLevel(formToJson(req.body)["visibility"].getStr())
     of "application/json":
       # I wish the API docs forced developers to use one
       # content-type or the other. Instead of having to
       # accept both methods...
       # I saw this being used in the ihabunek/toot client
-      var json: JsonNode = newJNull()
-      json = parseJSON(req.body)
-      assert json.kind != JNull
-
-      if json.hasValidStrKey("visibility"):
-        level = strToLevel(json["visibility"].getStr())
+      level = strToLevel(parseJson(req.body)["visibility"].getStr())
     else: discard
   except:
     level = Public
@@ -162,7 +155,7 @@ proc boostStatus*(req: Request) =
   dbPool.withConnection db:
     if not db.postIdExists(id) or not db.isBoostable(id):
       respJsonError("Record not found", 404)
-    db.addBoost(id, user, level)
+    db.addBoost(user, id, level)
     configPool.withConnection config:
       result = status(db, config, id)
 
@@ -172,7 +165,6 @@ proc boostStatus*(req: Request) =
   result["reblog"] = deepCopy(result)
   
   req.respond(200, createHeaders("application/json"), $(result))
-
 
 
 proc unboostStatus*(req: Request) =
@@ -191,7 +183,7 @@ proc unboostStatus*(req: Request) =
   dbPool.withConnection db:
     if not db.postIdExists(id):
       respJsonError("Record not found", 404)
-    db.removeBoost(id, user)
+    db.removeBoost(user, id)
     configPool.withConnection config:
       req.respond(200, createHeaders("application/json"), $(status(db, config, id)))
   

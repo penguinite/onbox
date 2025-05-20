@@ -16,17 +16,17 @@
 # along with Onbox. If not, see <https://www.gnu.org/licenses/>. 
 
 # From somewhere in Onbox
-import onbox/db/[users, sessions]
-import onbox/[conf, assets, routes, crypto, shared]
+import onbox/[conf, assets, routes, strextra, shared]
 
 # API routes!
 import onbox/api/[instance, apps, oauth, nodeinfo, accounts, email, followed_tags, timelines, statuses]
 
 # From somewhere in the standard library
-import std/[tables, strutils, times]
+import std/[tables, strutils, json, times]
 
 # From nimble/other sources
-import mummy, waterpark, waterpark/postgres, iniplus
+import mummy, waterpark, waterpark/postgres, iniplus,
+       amicus/[users, sessions, crypto, shared, roles]
 
 template renderError(err: string) =
   req.respond(400, headers, templateWithAsset("signin.html", {"message_type": "error", "message": err}.toTable))
@@ -51,21 +51,27 @@ proc signInPost*(req: Request) =
     # and they are already logged in.
     renderError("Already logged in")
 
-  var fm = req.unrollForm()
+  var js: JsonNode
+  case req.getContentType():
+  of "application/x-www-form-urlencoded":
+    js = formToJson(req.body)
+  of "application/json":
+    js = parseJson(req.body)
 
   # Check first if user and password exist.
-  if not fm.formParamExists("user") or not fm.formParamExists("pass"):
+  if not js.hasKey("user") or not js.hasKey("pass"):
     renderError("Missing required fields. Make sure the Username and Password fields are filled out properly.")
 
   # Then, see if the user exists at all via handle or email.
   var id = ""
   dbPool.withConnection db:
-    var user = fm["user"]
-    if db.userEmailExists(user):
-      id = db.getUserIdByEmail(user)
+    var user = js["user"].getStr()
+    if db.emailExists(user):
+      id = db.getUserByEmail(user)
     
-    if db.userHandleExists(sanitizeHandle(user)):
-      id = db.getIdFromHandle(sanitizeHandle(user))
+    user = filterString(user, handleFilter)
+    if db.userHandleExists(user):
+      id = db.getIdFromHandle(user)
   
   if id == "":
     renderError("User doesn't exist!")
@@ -76,10 +82,10 @@ proc signInPost*(req: Request) =
     kdf: KDF
 
   dbPool.withConnection db:
-    if db.userHasRole(id, -1):
+    if db.userHasRole(id, int(Roles.Frozen)):
       renderError("Your account has been frozen. Contact an administrator.")
 
-    if not db.userHasRole(id, 1):
+    if not db.userHasRole(id, int(Roles.Approved)):
       renderError("Your account hasn't been approved yet, please wait or contact an administrator.")
 
     configPool.withConnection config:
@@ -93,7 +99,7 @@ proc signInPost*(req: Request) =
     hash = db.getUserPass(id)
   
   # Finally, compare the hashes.
-  if hash != crypto.hash(fm["pass"], salt, kdf):
+  if hash != crypto.hash(js["pass"].getStr(), salt, kdf):
     renderError("Invalid password!")
 
   # And then, see if we need to update the hash
@@ -103,10 +109,10 @@ proc signInPost*(req: Request) =
     dbPool.withConnection db:
       db.updateUserById(
         id, "password",
-        crypto.hash(fm["pass"], salt, crypto.latestKdf)
+        crypto.hash(js["pass"].getStr(), salt, crypto.latestKdf)
       )
 
-  if fm.formParamExists("rememberme"):
+  if js.hasKey("rememberme"):
     var session: string
     let date = utc(now() + 400.days) # 400 days is the upper limit on cookie age for chrome.
     dbPool.withConnection db:
@@ -143,7 +149,7 @@ proc logoutSession*(req: Request) =
 
   # Just render the homepage
   # Since we dont have a dedicated page for this kinda thing.
-  req.respond(200, headers,getBuiltinAsset("home.html"))
+  req.respond(200, headers, getBuiltinAsset("home.html"))
 
 proc serveCSS*(req: Request) = 
   req.respond(200, createHeaders("text/css"), getBuiltinAsset("style.css"))

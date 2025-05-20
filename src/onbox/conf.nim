@@ -59,10 +59,13 @@ import waterpark
 
 type ConfigPool* = Pool[ConfigTable]
 
-proc newConfigPool*(size: int, filename: string = getConfigFilename()): ConfigPool =
+proc newConfigPool*(size: int, filename = getConfigFilename()): ConfigPool =
   ## Creates a new configuration pool.
   result = newPool[ConfigTable]()
-  for _ in 0 ..< size: result.recycle(parseString(readFile(filename)))
+  for _ in 0 ..< size:
+    result.recycle(
+      parseString(readFile(filename))
+    )
 
 template withConnection*(pool: ConfigPool, config, body) =
   ## Syntactic sugar for automagically borrowing and returning a config table from a pool.

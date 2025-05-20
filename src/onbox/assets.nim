@@ -75,7 +75,6 @@ proc getHeader*(config: ConfigTable, user_id: string): string =
       return config.getString("storage", "upload_uri") & "user/" & user_id & "/header.webp"
     else:
       return config.realURL() & "media/user/" & user_id & "/header.webp"
-
   of "pony":
     # "pony" is a media pooling feature, similar in spirit to Jortage.
     # This is an experimental feature as no reliable server exists for this

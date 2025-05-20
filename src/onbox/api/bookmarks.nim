@@ -17,13 +17,14 @@
 ## This module contains all the routes for the bookmarks method in the mastodon api.
 
 # From somewhere in Onbox
-import onbox/db/bookmarks, onbox/[conf, entities, routes]
+import onbox/[conf, entities, routes]
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, waterpark/postgres
+import mummy, waterpark/postgres,
+       amicus/bookmarks
 
 proc bookmarksGet*(req: Request) =
   var token, user = ""

@@ -17,13 +17,14 @@
 ## This module contains all the routes that handle stuff related to the nodeinfo standard.
 
 # From somewhere in Onbox
-import onbox/db/[users, sessions, posts], onbox/[shared, conf, routes]
+import onbox/[shared, conf, routes]
 
 # From somewhere in the standard library
-import std/[json]
+import std/json
 
 # From nimble/other sources
-import mummy, iniplus, waterpark/postgres
+import mummy, iniplus, waterpark/postgres,
+       amicus/[users, sessions, posts]
 
 proc resolveNodeinfo*(req: Request) =
   configPool.withConnection cnf:
@@ -61,8 +62,8 @@ proc nodeInfo2x0*(req: Request) =
           "usage": {
             "totalPosts": db.getNumTotalPosts(),
             "users": {
-              "activeHalfYear": db.getTotalSessions(),
-              "activeMonth": db.getTotalValidSessions(),
+              "activeHalfYear": db.getNumSessions(),
+              "activeMonth": db.getNumValidSessions(),
               "total": db.getTotalLocalUsers()
             }
           },

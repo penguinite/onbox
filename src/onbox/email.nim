@@ -18,10 +18,8 @@
 ## Functions for working with email. (Primarily sending an email)
 
 {.define: ssl.}
-import std/strutils
-import onbox/shared
-import smtp, iniplus
-
+import std/strutils, onbox/shared,
+       smtp, iniplus
 
 proc sendEmail(config: ConfigTable, address: string, message: Message) =
   ## Sends an email to an address containing a message.

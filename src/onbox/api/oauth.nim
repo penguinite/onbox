@@ -20,13 +20,14 @@
 # Also I hear that there are new changes, so we must update.
 
 # From somewhere in Onbox
-import onbox/db/[apps, oauth, sessions, users, auth_codes], onbox/[conf, assets, routes, strextra]
+import onbox/[conf, assets, routes, strextra]
 
 # From somewhere in the standard library
 import std/[json, strutils]
 
 # From nimble/other sources
-import mummy, temple, iniplus, waterpark/postgres
+import mummy, temple, iniplus, waterpark/postgres,
+       amicus/[apps, oauth, sessions, users, auth_codes]
 
 proc success(msg: string): Table[string, string] =
   ## Returns a table suitable for further processing in templateify()
@@ -129,7 +130,7 @@ proc oauthAuthorizeGET*(req: Request) =
   
     for scope in scopes:
       # Then verify if every scope is valid.
-      if not scope.verifyScope():
+      if not scope.scopeValid():
         respJsonError("Invalid scope: \"" & scope & "\" (Separator: " & scopeSeparator & ")")
 
   dbPool.withConnection db:
@@ -159,32 +160,29 @@ proc oauthAuthorizeGET*(req: Request) =
 
   req.renderAuthForm(scopes, client_id, redirect_uri)
 
+
 proc oauthAuthorizePOST*(req: Request) =
   var headers = createHeaders("application/json")
-  let fm = req.unrollForm()
+  let js = formToJson(req.body)
 
-  # If response_type exists
-  if not fm.formParamExists("response_type"):
+  if not js.hasKey("response_type"):
     respJsonError("Missing required field: response_type")
   
-  # If response_type doesn't match "code"
-  if fm["response_type"] != "code":
+  if js["response_type"].getStr() != "code":
     respJsonError("Required field response_type has been set to an invalid value.")
 
-  # If client id exists
-  if not fm.formParamExists("client_id"):
-    respJsonError("Missing required field: response_type")
+  if not js.hasKey("client_id"):
+    respJsonError("Missing required field: client_id")
 
-  # Check if client_id is associated with a valid app
   dbPool.withConnection db:
-    if not db.clientExists(fm["client_id"]):
+    if not db.clientExists(js["client_id"].getStr()):
       respJsonError("Client_id isn't registered to a valid app.")
-  var client_id = fm["client_id"]
+  var client_id = js["client_id"].getStr()
   
   # If redirect_uri exists
-  if not fm.formParamExists("redirect_uri"):
+  if not js.hasKey("redirect_uri"):
     respJsonError("Missing required field: redirect_uri")
-  var redirect_uri = htmlEscape(fm["redirect_uri"])
+  var redirect_uri = htmlEscape(js["redirect_uri"].getStr())
 
   # Check if redirect_uri matches the redirect_uri for the app
   dbPool.withConnection db:
@@ -194,15 +192,15 @@ proc oauthAuthorizePOST*(req: Request) =
   var
     scopes = @["read"]
     scopeSeparator = ' '
-  if fm.formParamExists("scope"):
+  if not js.hasKey("scope"):
     # According to API, we can either split by + or space.
     # so we run this to figure it out. Defaulting to spaces if need
-    scopeSeparator = getSeparator(fm["scope"])
-    scopes = fm["scope"].split(scopeSeparator)
+    scopeSeparator = getSeparator(js["scope"].getStr())
+    scopes = getStr(js["scope"]).split(scopeSeparator)
   
     for scope in scopes:
       # Then verify if every scope is valid.
-      if not scope.verifyScope():
+      if not scope.scopeValid():
         respJsonError("Invalid scope: \"" & scope & "\" (Separator: " & scopeSeparator & ")")
 
   dbPool.withConnection db:
@@ -213,11 +211,9 @@ proc oauthAuthorizePOST*(req: Request) =
       respJsonError("An attached scope wasn't specified during app registration.")
   
   var force_login = false
-  if fm.formParamExists("force_login"):
-    try:
-      force_login = fm["force_login"].parseBool()
-    except:
-      force_login = true
+  if js.hasKey("force_login"):
+    try: force_login = getStr(js["force_login"]).parseBool()
+    except: force_login = true
   
   # Check for authorization or "force_login" parameter
   # If auth isnt present or force_login is true then redirect user to the login page
@@ -228,7 +224,7 @@ proc oauthAuthorizePOST*(req: Request) =
     if not db.sessionExists(req.fetchSessionCookie()):
       req.redirectToLogin(headers, client_id, redirect_uri, scopes, force_login)
 
-  if not fm.formParamExists("action"):
+  if not js.hasKey("action"):
     req.renderAuthForm(scopes, client_id, redirect_uri)
     return
   
@@ -237,10 +233,10 @@ proc oauthAuthorizePOST*(req: Request) =
     user = db.getSessionUser(req.fetchSessionCookie())
     if db.authCodeExists(user, client_id):
       db.deleteAuthCode(
-        db.getSpecificAuthCode(user, client_id)
+        db.getAuthCode(user, client_id)
       )
 
-  case fm["action"].toLowerAscii():
+  case js["action"].getStr():
   of "authorized":
     var code = ""
 
@@ -269,7 +265,7 @@ proc oauthAuthorizePOST*(req: Request) =
       )
       return
   else:
-    # There's not really anything to do.
+    # There's not really anything to do here.
     var headers: HttpHeaders
     headers["Content-Type"] = "text/html"
     req.respond(
@@ -279,6 +275,7 @@ proc oauthAuthorizePOST*(req: Request) =
         success("Authorization request has been rejected!")
       )
     )
+
 
 proc oauthToken*(req: Request) =
   var json: JsonNode
@@ -301,7 +298,7 @@ proc oauthToken*(req: Request) =
 
   # Verify the provided scopes.
   for scope in scopes:
-    if not scope.verifyScope():
+    if not scope.scopeValid():
       respJsonError("Invalid scope: " & scope)
 
   # Verify the provided grant-type

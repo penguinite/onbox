@@ -19,14 +19,14 @@
 ## And it needs refactoring pretty badly.
 
 # From somewhere in Onbox
-import onbox/db/[users, posts, fields, follows, reactions, boosts, bookmarks, tag]
 import onbox/[shared, routes, assets]
 
 # From somewhere in the standard library
 import std/[json, times]
 
 # From Elsewhere (third-party libraries)
-import iniplus, db_connector/db_postgres
+import iniplus, db_connector/db_postgres,
+       amicus/[users, posts, fields, follows, shared, reactions, boosts, bookmarks, tag]
 
 # TODO: One easy way to improve performance would be to switch
 # to another JSON library such as treeform's jsony or disruptek's jason.
@@ -56,17 +56,15 @@ proc fields*(db: DbConn, user_id: string): JsonNode =
         "value": field.val,
       })
 
-proc tagHistory(db: DbConn, tag: string): seq[JsonNode] =
+proc tagHistory(db: DbConn, tag: string, days = 7): seq[JsonNode] =
   var
-    accNum = db.getTagUsageUserNum(tag, days = 7)
-    postNum = db.getTagUsagePostNum(tag, days = 7)
+    accNum = db.getTagUsageUserNum(tag, days = days)
+    postNum = db.getTagUsagePostNum(tag, days = days)
 
-  var i = -1
-  for date in getTagUsageDays(7):
-    inc i
+  for i in countup(0,days - 1):
     result.add(
       %* {
-        "day": date,
+        "day": toUnix(toTime(now().utc - i.days)),
         "uses": postNum[i],
         "accounts": accNum[i]
       }
@@ -75,7 +73,7 @@ proc tagHistory(db: DbConn, tag: string): seq[JsonNode] =
 proc tag*(db: DbConn, tag: string, user = ""): JsonNode =
   result = newJObject()
   if user != "":
-    result["following"] = newJBool(db.userFollowsTag(tag, user))
+    result["following"] = newJBool(db.followsTag(tag, user))
 
   return %* {
     "name": tag,
@@ -311,6 +309,7 @@ proc levelToStr(l: PostPrivacyLevel): string =
   of FollowersOnly: return "private"
   of Limited: return "limited"
   of Private: return "direct"
+  of Deleted: return "deleted"
 
 proc strToLevel*(s: string): PostPrivacyLevel =
   # Our "Private" is the MastoAPI's "direct"
@@ -321,6 +320,7 @@ proc strToLevel*(s: string): PostPrivacyLevel =
   of "private": return FollowersOnly 
   of "limited": return Limited
   of "direct": return Private
+  of "deleted": return Deleted
   else:
     raise newException(ValueError, "Unacceptable value for converting to Post Privacy Level: " & s)
 
@@ -338,7 +338,7 @@ proc status*(db: DbConn, config: ConfigTable, id: string, user_id = ""): JsonNod
     "url": realurl & "notice/" & post.id,
     "created_at": formatDate(post.written),
     "replies_count": db.getNumOfReplies(post.id),
-    "reblogs_count": db.getNumOfBoosts(post.id),
+    "reblogs_count": db.getNumBoosts(post.id),
     # TODO: This only displays Text type.
     "content": contentToHtml(db.getPostText(post.id)), 
     "favourites_count": db.getNumOfReactions(post.id),
@@ -360,8 +360,8 @@ proc status*(db: DbConn, config: ConfigTable, id: string, user_id = ""): JsonNod
     result["in_reply_to_account_id"] = newJNull()
 
   if user_id != "":
-    result["favourited"] = newJBool(db.userReacted(post.id, user_id))
-    result["reblogged"] = newJBool(db.userBoosted(post.id, user_id))
+    result["favourited"] = newJBool(db.userReacted(user_id, post.id))
+    result["reblogged"] = newJBool(db.userBoosted(user_id, post.id))
     result["bookmarked"] = newJBool(db.bookmarkExists(user_id, post.id))
     ## TODO: If we have implemented mutes and blocks, then add the muted attribute.
     ## TODO: If we have implemented pinned posts, then add the pinned attribute.
