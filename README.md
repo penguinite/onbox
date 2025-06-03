@@ -1,5 +1,9 @@
 # Onbox
 
+**Migration notice:** The git repository for this project has moved to [https://codeberg.org/onbox/onbox](https://codeberg.org/onbox/onbox), this link will still work but it will not contain any new updates.
+
+---
+
 Onbox (formerly Pothole) is a lightweight and powerful backend social networking server written in Nim. It allows you to share your digital life without the constraints of modern, commercial social media!
 
 *Note:* Onbox is a work-in-progress. A lot of features are missing and the codebase is still likely to change. In other words, this is still in pre-alpha stage. Using it right now isn't recommended.
